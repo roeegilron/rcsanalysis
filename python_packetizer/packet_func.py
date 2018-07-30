@@ -1,6 +1,6 @@
 import numpy as np
 
-
+# Note: This function is deprecated!!!!!! Please see the 'silent' version below.
 def packet_time_calculator_verbose(input_packets):
     current_run_time = 0
     backtrack_time = 0
@@ -55,6 +55,7 @@ def packet_time_calculator_verbose(input_packets):
 
 def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='TimeDomainData'):
     td_packets = input_td_data[td_packet_str]
+    num_points_divisor = 2 * len(td_packets[0]['ChannelSamples'])
 
     current_run_time = 0
     old_run_time = 0
@@ -70,7 +71,7 @@ def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='Tim
     timing_multiplier = timing_dict[td_packets[0]['SampleRate']]  # Assume uniform timing in TD data
 
     for i in td_packets:
-        num_points = i['Header']['dataSize'] // 4
+        num_points = i['Header']['dataSize'] // num_points_divisor
         #             print('Num Data Points: {}'.format(num_points))
         current_run_time += ((i['Header']['systemTick'] - old_packet_time) % (2 ** 16))
         #             print('Current Run Time: {}'.format(current_run_time))
