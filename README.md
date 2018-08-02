@@ -1,7 +1,7 @@
 Unravel RC+S Time Domain Data
 ==========================
 
-This codebase parses RC+S time domain data into human readable CSV's such that all samples collected at the same time are on the same row. This package explicitly unpacks the RC+S `RawDataTD.json` output file into a .csv with samples along rows and channels in columns. This makes data analysis much easier. The .csv file can take up 2x more space than .json file, it can be useful for quick data analysis or for easy data sharing. You can also skip saving the actual file (which takes majority of code runtime to just use the derived table).  
+This codebase parses RC+S time domain data into human readable CSV's such that all samples collected at the same time are on the same row. This package explicitly unpacks the RC+S `RawDataTD.json` output file into a .csv with samples along rows and channels in columns. This makes data analysis much easier. Though the .csv file can take up 2x more space than .json file, it can be useful for quick data analysis or for easy data sharing. You can also skip saving the actual file (which takes majority of code runtime to just use the derived table).  
   
 RC+S streams data in packet form, such that if you have gaps between packets, this can adversely affect the computation of PSD's or other event related measures.   
   
