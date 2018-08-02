@@ -3,7 +3,7 @@ function outdat = populateTimeStamp(outdat,srate,filename)
 %% 
 start = tic;
 [pn,fn] = fileparts(filename);
-fid = fopen(fullfile(pn,'Packet-Loss-Report.txt'),'w+'); 
+fid = fopen(fullfile(pn,[fn '-Packet-Loss-Report.txt']),'w+'); 
 idxpackets = find(outdat.timestamp~=0); 
 timestamps = datetime(datevec(outdat.timestamp(idxpackets)./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds 
 % find abnormal packet gaps and report some states 
@@ -19,6 +19,10 @@ fprintf(fid,'gap mode %s, gap median %s, max gap %s\n',gapmode,gapmedian,maxgap)
 pctlost = 1; 
 isi = 1/srate; 
 medTimeExpanded = zeros(size(outdat,1),1);
+packTimes = zeros(size(timestamps,1));
+endTimes  = NaT(size(timestamps,1),1);
+endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+
 for p = 1:length(idxpackets)
     if p == 1 
         % for first packet, just assume medtronic time is correct 
@@ -28,9 +32,10 @@ for p = 1:length(idxpackets)
         tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
         % cast to microseconds
         datstr = [datestr(tmptime) '.000'];
-        reftime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
-        reftime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-
+        endTime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
+        endTime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+        packTimes(p) = (numpoints-1)/srate;
+        endTimes(p) = endTime; 
     else
         % for all other packets, implement folowing algorithem 
         idxpopulate = idxpackets(p):-1:idxpackets(p-1)+1;
@@ -40,48 +45,51 @@ for p = 1:length(idxpackets)
             tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
             % cast to microseconds
             datstr = [datestr(tmptime) '.000'];
-            reftime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
-            reftime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-
+            endTime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
+            endTime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+            endTimes(p) = endTime;
         else 
             % if gap is smaller than 6.55 seconds verify packet time with systemTick clock 
+            % and increment from last end time 
             difftime = outdat.systemTick(idxpackets(p))-outdat.systemTick(idxpackets(p-1));
-            packtime = mod(difftime,2^16) / 1e4;% packet time in seconds 
+            if p == 2 
+                packtime = mod(difftime,2^16) / 1e4 + 1/srate;% packet time in seconds 
+            else
+                packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
+            end
+            packTimes(p) = packtime;
             
-            if (packtime - numpoints/srate) < isi 
-                % if differnence is smaller than inter sample rate difference, ok to increment from last sample 
-                timeuse = outdat.timestamp(idxpackets(p-1));
-                tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
-                secondsToAdd = seconds(packtime);
+            if (packtime - numpoints/srate) <= isi 
+                secondsToAdd = seconds(packtime ) ;
                 % cast to microseconds
-                datstr = [datestr(tmptime) '.000'];
-                reftime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
-                reftime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-                reftime = reftime + secondsToAdd; 
-
+                endTime = endTimes(p-1) + secondsToAdd;
+                endTimes(p) = endTime; 
             else 
                 % we lost some some time, use systemTick to find out how much data was lost. 
                 pctlen(pctlost)  = abs(packtime - numpoints/srate);
                 % increment time use by difference between packtime and
                 % numpoints / srate 
-                timeuse = outdat.timestamp(idxpackets(p)) + pctlen(pctlost) * 1e4;
                 pctlost = pctlost + 1; 
-                % should be same as above - just add packet time 
-                timeuse = outdat.timestamp(idxpackets(p-1));
-                tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
-                secondsToAdd = seconds(packtime);
+                secondsToAdd =  seconds(packtime );
                 % cast to microseconds
-                datstr = [datestr(tmptime) '.000'];
-                reftime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
-                reftime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-                reftime = reftime + secondsToAdd; 
+                endTime = endTimes(p-1) + secondsToAdd;
+                endTimes(p) = endTime;             
             end
         end
     end
     % populate each sample with a time stamp 
-    timevec = reftime: - seconds(1/srate): (reftime- seconds((numpoints-1)/srate)); 
+    timevec = endTime: - seconds(1/srate): (endTime- seconds((numpoints-1)/srate)); 
     medTimeExpanded(idxpopulate) = datenum(timevec); % use Matlab datenum, at end cast back to str 
 end
+%% add data to packet loss report
+fprintf(fid,'\n\n'); 
+fprintf(fid,'%d packet loss events under 6.55 seoncds occured \n', length(pctlen));
+fprintf(fid,'%.4f seconds average packet loss  \n', mean(pctlen));
+fprintf(fid,'%.4f seconds mode packet loss \n', mode(pctlen));
+fprintf(fid,'%.4f seconds median packet loss  \n', median(pctlen));
+fprintf(fid,'%.4f seconds max packet loss \n', max(pctlen));
+fprintf(fid,'%.4f seconds min packet loss \n', min(pctlen));
+%% convert derived data to string and add to table 
 medTimeStr = datetime(datevec(medTimeExpanded),'TimeZone','America/Chicago');
 medTimeStr.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
 ncol = size(outdat,2);
