@@ -5,6 +5,7 @@ function MAIN(varargin)
 
 %% Depedencies: 
 % https://github.com/JimHokanson/turtle_json
+% in the a folder called "toolboxes" in the directory where MAIN is. 
 if isempty(varargin)
     [fn,pn] = uigetfile('*.json');
     filename = fullfile(pn,fn);
