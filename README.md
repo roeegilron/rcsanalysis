@@ -1,11 +1,15 @@
-Code to analyze RC+S data
+Unravel RC+S Time Domain Data
 ==========================
 
-This code parses RC+S time domain data into human readable CSV's. 
-RC+S streams data in packet form, such that if you have gaps between packets, this can adversely affect the computation of PSD's or other event related measures. 
+This codebase parses RC+S time domain data into human readable CSV's such that all samples collected at the same time are on the same row. This package explicitly unpacks the RC+S `RawDataTD.json` output file into a .csv with samples along rows and channels in columns. This makes data analysis much easier. The .csv file can take up 2x more space than .json file, it can be useful for quick data analysis or for easy data sharing. You can also skip saving the actual file (which takes majority of code runtime to just use the derived table).  
+  
+RC+S streams data in packet form, such that if you have gaps between packets, this can adversely affect the computation of PSD's or other event related measures.   
+  
 Since most data analysis steps likely used on RC+S data rely on getting time domain data into matrix form this can be useful. 
 
-This code also serves a resource to help understand some of the headers associated with each packet in the RC+S data. Below is a schematic example we will work with: 
+This code also serves a resource to help understand some of the headers associated with each packet in the RC+S data. 
+  
+Below is a schematic example we will work with: 
 
 ![RC+S schematics](figures/packet-loss.jpg)
 
