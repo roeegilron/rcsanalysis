@@ -112,7 +112,6 @@ def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='Tim
 """ All the Code Below Is For the Second Generation Packetizer """
 
 
-
 def init_numpy_array(input_json, num_cols):
     num_rows = len(input_json[0]['TimeDomainData'])
     return np.zeros((num_rows, num_cols))
@@ -135,7 +134,8 @@ def extract_td_meta_data(input_json):
 def code_micro_and_macro_packet_loss(meta_matrix):
     meta_matrix[np.where((np.diff(meta_matrix[:, 1]) % (2 ** 8)) > 1)[0] + 1, 4] = 1  # Top packet of microloss
     meta_matrix[np.where((np.diff(meta_matrix[:, 3]) >= ((2 ** 16) * .0001)))[0] + 1, 5] = 1  # Top packet of macroloss
-    meta_matrix[:, 6] = ((meta_matrix[:, 4]).astype(int) & (meta_matrix[:, 5]).astype(int))  # Code coincidence of micro and macro loss
+    meta_matrix[:, 6] = ((meta_matrix[:, 4]).astype(int) & (meta_matrix[:, 5]).astype(
+        int))  # Code coincidence of micro and macro loss
     return meta_matrix
 
 
@@ -145,7 +145,8 @@ def calculate_statistics(meta_array, intersample_tick_count):
     micro_loss_stack = np.dstack((np.where(meta_array[:, 4] == 1)[0] - 1, np.where(meta_array[:, 4] == 1)[0]))[0]
 
     # Remove micropacket losses that coincided with macropacket losses
-    micro_loss_stack = micro_loss_stack[np.isin(micro_loss_stack[:, 1], np.where(meta_array[:, 5] == 1)[0], invert=True)]
+    micro_loss_stack = micro_loss_stack[
+        np.isin(micro_loss_stack[:, 1], np.where(meta_array[:, 5] == 1)[0], invert=True)]
 
     # Allocate array for calculating micropacket loss
     loss_array = np.zeros(len(micro_loss_stack))
