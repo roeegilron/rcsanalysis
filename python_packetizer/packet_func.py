@@ -112,6 +112,7 @@ def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='Tim
 """ All the Code Below Is For the Second Generation Packetizer """
 
 
+
 def init_numpy_array(input_json, num_cols):
     num_rows = len(input_json[0]['TimeDomainData'])
     return np.zeros((num_rows, num_cols))
@@ -142,19 +143,22 @@ def calculate_statistics(meta_array, intersample_tick_count):
     num_real_points = meta_array[:, 9].sum()
     num_macro_rollovers = meta_array[:, 5].sum()
     micro_loss_stack = np.dstack((np.where(meta_array[:, 4] == 1)[0] - 1, np.where(meta_array[:, 4] == 1)[0]))[0]
-    micro_loss_stack = micro_loss_stack[
-        np.isin(micro_loss_stack[:, 1], np.where(meta_array[:, 5] == 1)[0], invert=True)]
-    print(micro_loss_stack)
+
+    # Remove micropacket losses that coincided with macropacket losses
+    micro_loss_stack = micro_loss_stack[np.isin(micro_loss_stack[:, 1], np.where(meta_array[:, 5] == 1)[0], invert=True)]
 
     # Allocate array for calculating micropacket loss
-
     loss_array = np.zeros(len(micro_loss_stack))
 
+    # Loop over meta data to extract and calculate micropacket loss.
     for index, packet in enumerate(micro_loss_stack):
         loss_array[index] = (((meta_array[packet[1], 2] - (meta_array[packet[1], 9] * intersample_tick_count)) -
                               meta_array[packet[0], 2]) % (2 ** 16)) / intersample_tick_count
+
+    # Calculate the total number of lost data points due to micropacket loss.
     loss_as_scalar = np.around(loss_array).sum()
-    return num_real_points, num_macro_rollovers, micro_loss_stack, loss_array, loss_as_scalar
+
+    return num_real_points, num_macro_rollovers, loss_as_scalar
 
 
 def unpacker(meta_array, input_json, intersample_tick_count):
@@ -172,7 +176,8 @@ def unpacker(meta_array, input_json, intersample_tick_count):
     master_time = meta_array[0, 3]
     old_system_tick = 0
     running_us_counter = 0
-    
+
+    # Loop over metadata and
     for i in meta_array:
         if i[5]:
             # We just suffered a macro packet loss...
@@ -200,4 +205,27 @@ def unpacker(meta_array, input_json, intersample_tick_count):
         array_bottom += i[9]
     return final_array
 
+
 # time_df.time_master = pd.to_datetime(time_df.time_master, unit='s', origin=pd.Timestamp('2000-03-01'))
+
+def save_to_disk(data_matrix, filename_str, time_format, data_type):
+    num_cols = data_matrix.shape[1]
+    if data_type == 'time_domain':
+        channel_names = ['accel_' + x for x in ['x', 'y', 'z']]
+    else:
+        channel_names = ['channel_' + str(x) for x in range(0, num_cols)]
+    column_names = ['time_master', 'microseconds'] + channel_names
+    df = pd.DataFrame(data_matrix, columns=column_names)
+    if time_format == 'full':
+        df.time_master = pd.to_datetime(df.time_master, unit='s', origin=pd.Timestamp('2000-03-01'))
+        df.microseconds = pd.to_timedelta(df.microseconds, unit='us')
+        df['actual_time'] = df.time_master + df.microseconds
+        df.to_csv(filename_str, index=False)
+    else:
+        df.to_csv(filename_str, index=False)
+    return
+
+
+def print_session_statistics():
+    # TODO: Implement a printing function to show statistics to the user at the end of processing
+    return
