@@ -204,6 +204,10 @@ def unpacker(meta_array, input_json, intersample_tick_count):
         # Update counters for next loop
         old_system_tick = i[2]
         array_bottom += i[9]
+
+    # Convert systemTicks into microseconds
+    final_array[:, 1] = final_array[:, 1] * 100
+
     return final_array
 
 
@@ -211,7 +215,7 @@ def unpacker(meta_array, input_json, intersample_tick_count):
 
 def save_to_disk(data_matrix, filename_str, time_format, data_type):
     num_cols = data_matrix.shape[1]
-    if data_type == 'time_domain':
+    if data_type == 'accel':
         channel_names = ['accel_' + x for x in ['x', 'y', 'z']]
     else:
         channel_names = ['channel_' + str(x) for x in range(0, num_cols)]
