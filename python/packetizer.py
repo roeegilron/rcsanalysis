@@ -4,6 +4,14 @@ import json
 import pandas as pd
 import datetime
 
+''' All of the below code is for V2 of the packetizer (current version) '''
+
+
+
+''' End of V2 implementation '''
+
+''' All of the below code is for V1 of the packetizer '''
+
 
 def import_timing_config(timing_fname):
     try:
@@ -62,6 +70,8 @@ def main():
     log_file.close()
     sys.exit(0)
 
+
+''' End of V1 packetizer '''
 
 if __name__ == '__main__':
     main()

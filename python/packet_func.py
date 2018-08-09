@@ -2,123 +2,16 @@ import numpy as np
 import datetime as dt
 import pandas as pd
 
-# Note: This function is deprecated!!!!!! Please see the 'silent' version below.
-def packet_time_calculator_verbose(input_packets):
-    current_run_time = 0
-    backtrack_time = 0
-    old_run_time = 0
-    old_packet_time = input_packets[0]['Header']['systemTick']
-
-    current_packet_number = input_packets[0]['Header']['dataTypeSequence']
-    old_packet_number = input_packets[0]['Header']['dataTypeSequence']
-    packet_counter = 0
-    lost_packet_array = []
-
-    voltage_array = {x['Key']: np.empty(0) for x in input_packets[0]['ChannelSamples']}
-    timestamp_array = np.empty(0)
-
-    for i in input_packets:
-        num_points = i['Header']['dataSize'] // 4
-        print('Num Data Points: {}'.format(num_points))
-        current_run_time += ((i['Header']['systemTick'] - old_packet_time) % (2 ** 16))
-        print('Current Run Time: {}'.format(current_run_time))
-        backtrack_time = current_run_time - (
-                (num_points - 1) * 10)  # 100usec * 10 = 1msec (period for recording at 1000Hz)
-        print('Backtrack Time {}'.format(backtrack_time))
-        print('Upcoming Packet Number: {}'.format(i['Header']['dataTypeSequence']))
-        current_packet_number = (i['Header']['dataTypeSequence'] - old_packet_number) % (2 ** 8)
-        print('Packet Delta: {}'.format(current_packet_number))
-        print('Old Packet Number: {}\n'.format(old_packet_number))
-        if (current_packet_number > 1):
-            print("^We just lost a packet...^\n")
-            lost_packet_array.append(packet_counter)
-            print('Old Packet Time: {}'.format(old_run_time))
-            lower_bound_time = old_run_time + 10
-            print('Missing Packet Lower Bound Time: {}'.format(lower_bound_time))
-            missing_data_count = ((backtrack_time - lower_bound_time) // 10)
-            print('Missing Data Count: {}'.format(missing_data_count))
-            timestamp_array = np.append(timestamp_array,
-                                        np.linspace(lower_bound_time, (backtrack_time), missing_data_count,
-                                                    endpoint=False))
-            for j in i['ChannelSamples']:
-                voltage_array[j['Key']] = np.append(voltage_array[j['Key']], np.array([0] * missing_data_count))
-
-        timestamp_array = np.append(timestamp_array, np.linspace(backtrack_time, current_run_time, num_points))
-        for j in i['ChannelSamples']:
-            voltage_array[j['Key']] = np.append(voltage_array[j['Key']], j['Value'])
-
-        old_run_time = current_run_time
-        old_packet_number = i['Header']['dataTypeSequence']
-        old_packet_time = i['Header']['systemTick']
-        packet_counter += 1
-
-    return ((timestamp_array - timestamp_array[0]), voltage_array, lost_packet_array)
-
-
-def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='TimeDomainData'):
-    td_packets = input_td_data[td_packet_str]
-    num_points_divisor = 2 * len(td_packets[0]['ChannelSamples'])
-
-    current_run_time = 0
-    old_run_time = 0
-    old_packet_time = td_packets[0]['Header']['systemTick']
-
-    old_packet_number = td_packets[0]['Header']['dataTypeSequence']
-    packet_counter = 0
-    lost_packet_array = {}
-
-    voltage_array = {x['Key']: np.empty(0) for x in td_packets[0]['ChannelSamples']}
-    timestamp_array = np.empty(0)
-
-    timing_multiplier = timing_dict[td_packets[0]['SampleRate']]  # Assume uniform timing in TD data
-
-    for i in td_packets:
-        num_points = i['Header']['dataSize'] // num_points_divisor
-        #             print('Num Data Points: {}'.format(num_points))
-        current_run_time += ((i['Header']['systemTick'] - old_packet_time) % (2 ** 16))
-        #             print('Current Run Time: {}'.format(current_run_time))
-        backtrack_time = current_run_time - ((num_points - 1) * timing_multiplier)
-        #             print('Backtrack Time {}'.format(backtrack_time))
-        #             print('Upcoming Packet Number: {}'.format(i['Header']['dataTypeSequence']))
-        packet_delta = (i['Header']['dataTypeSequence'] - old_packet_number) % (2 ** 8)
-        #             print('Packet Delta: {}'.format(current_packet_number))
-        #             print('Old Packet Number: {}\n'.format(old_packet_number))
-        if packet_delta > 1:
-            #                 print("^We just lost a packet...^\n")
-            #                 print('Old Packet Time: {}'.format(old_run_time))
-            lower_bound_time = old_run_time + timing_multiplier
-            #                 print('Missing Packet Lower Bound Time: {}'.format(lower_bound_time))
-            missing_data_count = ((backtrack_time - lower_bound_time) // timing_multiplier)
-            lost_packet_array[packet_counter] = [packet_delta, missing_data_count]
-            #                 print('Missing Data Count: {}'.format(missing_data_count))
-            timestamp_array = np.append(timestamp_array,
-                                        np.linspace(lower_bound_time, backtrack_time, missing_data_count,
-                                                    endpoint=False))
-            for j in i['ChannelSamples']:
-                voltage_array[j['Key']] = np.append(voltage_array[j['Key']], np.array([0] * missing_data_count))
-
-        timestamp_array = np.append(timestamp_array, np.linspace(backtrack_time, current_run_time, num_points))
-        for j in i['ChannelSamples']:
-            voltage_array[j['Key']] = np.append(voltage_array[j['Key']], j['Value'])
-
-        old_run_time = current_run_time
-        old_packet_number = i['Header']['dataTypeSequence']
-        old_packet_time = i['Header']['systemTick']
-        packet_counter += 1
-
-    return [((timestamp_array - timestamp_array[0]) * 0.0001), voltage_array, lost_packet_array]
-
-
 """ All the Code Below Is For the Second Generation Packetizer """
 
 
-def init_numpy_array(input_json, num_cols):
-    num_rows = len(input_json[0]['TimeDomainData'])
+def init_numpy_array(input_json, num_cols, data_type):
+    num_rows = len(input_json[0][data_type])
     return np.zeros((num_rows, num_cols))
 
 
 def extract_td_meta_data(input_json):
-    meta_matrix = init_numpy_array(input_json, 11)
+    meta_matrix = init_numpy_array(input_json, 11, 'TimeDomainData')
     for index, packet in enumerate(input_json[0]['TimeDomainData']):
         meta_matrix[index, 0] = packet['Header']['dataSize']
         meta_matrix[index, 1] = packet['Header']['dataTypeSequence']
@@ -127,6 +20,20 @@ def extract_td_meta_data(input_json):
         meta_matrix[index, 7] = index
         meta_matrix[index, 8] = len(packet['ChannelSamples'])
         meta_matrix[index, 9] = packet['Header']['dataSize'] / (2 * len(packet['ChannelSamples']))
+        meta_matrix[index, 10] = packet['SampleRate']
+    return meta_matrix
+
+
+def extract_accel_meta_data(input_json):
+    meta_matrix = init_numpy_array(input_json, 11, 'AccelData')
+    for index, packet in enumerate(input_json[0]['AccelData']):
+        meta_matrix[index, 0] = packet['Header']['dataSize']
+        meta_matrix[index, 1] = packet['Header']['dataTypeSequence']
+        meta_matrix[index, 2] = packet['Header']['systemTick']
+        meta_matrix[index, 3] = packet['Header']['timestamp']['seconds']
+        meta_matrix[index, 7] = index
+        meta_matrix[index, 8] = 3  # Each accelerometer packet has samples for 3 axes
+        meta_matrix[index, 9] = 8  # Number of samples in each channel always 8 for accel data
         meta_matrix[index, 10] = packet['SampleRate']
     return meta_matrix
 
@@ -234,3 +141,110 @@ def save_to_disk(data_matrix, filename_str, time_format, data_type):
 def print_session_statistics():
     # TODO: Implement a printing function to show statistics to the user at the end of processing
     return
+
+
+# Note: This function is deprecated!!!!!! Please see the 'silent' version below.
+def packet_time_calculator_verbose(input_packets):
+    current_run_time = 0
+    backtrack_time = 0
+    old_run_time = 0
+    old_packet_time = input_packets[0]['Header']['systemTick']
+
+    current_packet_number = input_packets[0]['Header']['dataTypeSequence']
+    old_packet_number = input_packets[0]['Header']['dataTypeSequence']
+    packet_counter = 0
+    lost_packet_array = []
+
+    voltage_array = {x['Key']: np.empty(0) for x in input_packets[0]['ChannelSamples']}
+    timestamp_array = np.empty(0)
+
+    for i in input_packets:
+        num_points = i['Header']['dataSize'] // 4
+        print('Num Data Points: {}'.format(num_points))
+        current_run_time += ((i['Header']['systemTick'] - old_packet_time) % (2 ** 16))
+        print('Current Run Time: {}'.format(current_run_time))
+        backtrack_time = current_run_time - (
+                (num_points - 1) * 10)  # 100usec * 10 = 1msec (period for recording at 1000Hz)
+        print('Backtrack Time {}'.format(backtrack_time))
+        print('Upcoming Packet Number: {}'.format(i['Header']['dataTypeSequence']))
+        current_packet_number = (i['Header']['dataTypeSequence'] - old_packet_number) % (2 ** 8)
+        print('Packet Delta: {}'.format(current_packet_number))
+        print('Old Packet Number: {}\n'.format(old_packet_number))
+        if (current_packet_number > 1):
+            print("^We just lost a packet...^\n")
+            lost_packet_array.append(packet_counter)
+            print('Old Packet Time: {}'.format(old_run_time))
+            lower_bound_time = old_run_time + 10
+            print('Missing Packet Lower Bound Time: {}'.format(lower_bound_time))
+            missing_data_count = ((backtrack_time - lower_bound_time) // 10)
+            print('Missing Data Count: {}'.format(missing_data_count))
+            timestamp_array = np.append(timestamp_array,
+                                        np.linspace(lower_bound_time, (backtrack_time), missing_data_count,
+                                                    endpoint=False))
+            for j in i['ChannelSamples']:
+                voltage_array[j['Key']] = np.append(voltage_array[j['Key']], np.array([0] * missing_data_count))
+
+        timestamp_array = np.append(timestamp_array, np.linspace(backtrack_time, current_run_time, num_points))
+        for j in i['ChannelSamples']:
+            voltage_array[j['Key']] = np.append(voltage_array[j['Key']], j['Value'])
+
+        old_run_time = current_run_time
+        old_packet_number = i['Header']['dataTypeSequence']
+        old_packet_time = i['Header']['systemTick']
+        packet_counter += 1
+
+    return ((timestamp_array - timestamp_array[0]), voltage_array, lost_packet_array)
+
+
+def packet_time_calculator_silent(input_td_data, timing_dict, td_packet_str='TimeDomainData'):
+    td_packets = input_td_data[td_packet_str]
+    num_points_divisor = 2 * len(td_packets[0]['ChannelSamples'])
+
+    current_run_time = 0
+    old_run_time = 0
+    old_packet_time = td_packets[0]['Header']['systemTick']
+
+    old_packet_number = td_packets[0]['Header']['dataTypeSequence']
+    packet_counter = 0
+    lost_packet_array = {}
+
+    voltage_array = {x['Key']: np.empty(0) for x in td_packets[0]['ChannelSamples']}
+    timestamp_array = np.empty(0)
+
+    timing_multiplier = timing_dict[td_packets[0]['SampleRate']]  # Assume uniform timing in TD data
+
+    for i in td_packets:
+        num_points = i['Header']['dataSize'] // num_points_divisor
+        #             print('Num Data Points: {}'.format(num_points))
+        current_run_time += ((i['Header']['systemTick'] - old_packet_time) % (2 ** 16))
+        #             print('Current Run Time: {}'.format(current_run_time))
+        backtrack_time = current_run_time - ((num_points - 1) * timing_multiplier)
+        #             print('Backtrack Time {}'.format(backtrack_time))
+        #             print('Upcoming Packet Number: {}'.format(i['Header']['dataTypeSequence']))
+        packet_delta = (i['Header']['dataTypeSequence'] - old_packet_number) % (2 ** 8)
+        #             print('Packet Delta: {}'.format(current_packet_number))
+        #             print('Old Packet Number: {}\n'.format(old_packet_number))
+        if packet_delta > 1:
+            #                 print("^We just lost a packet...^\n")
+            #                 print('Old Packet Time: {}'.format(old_run_time))
+            lower_bound_time = old_run_time + timing_multiplier
+            #                 print('Missing Packet Lower Bound Time: {}'.format(lower_bound_time))
+            missing_data_count = ((backtrack_time - lower_bound_time) // timing_multiplier)
+            lost_packet_array[packet_counter] = [packet_delta, missing_data_count]
+            #                 print('Missing Data Count: {}'.format(missing_data_count))
+            timestamp_array = np.append(timestamp_array,
+                                        np.linspace(lower_bound_time, backtrack_time, missing_data_count,
+                                                    endpoint=False))
+            for j in i['ChannelSamples']:
+                voltage_array[j['Key']] = np.append(voltage_array[j['Key']], np.array([0] * missing_data_count))
+
+        timestamp_array = np.append(timestamp_array, np.linspace(backtrack_time, current_run_time, num_points))
+        for j in i['ChannelSamples']:
+            voltage_array[j['Key']] = np.append(voltage_array[j['Key']], j['Value'])
+
+        old_run_time = current_run_time
+        old_packet_number = i['Header']['dataTypeSequence']
+        old_packet_time = i['Header']['systemTick']
+        packet_counter += 1
+
+    return [((timestamp_array - timestamp_array[0]) * 0.0001), voltage_array, lost_packet_array]
