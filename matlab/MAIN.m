@@ -14,9 +14,16 @@ else
 end
 
 jsonobj = deserializeJSON(filename);
+if ~isempty(strfind(filename,'RawDataTD'))
 [outtable, srate] = unravelData(jsonobj);
+end
+
+if ~isempty(strfind(filename,'RawDataAccel'))
+[outtable, srate] = unravelDataACC(jsonobj);
+end
 outdatcomplete = populateTimeStamp(outtable,srate,filename); 
 [pn,fn,ext] = fileparts(filename); 
 writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
+save(fullfile(pn,[fn '.mat']),'outdatcomplete');
 end
 

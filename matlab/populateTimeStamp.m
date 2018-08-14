@@ -19,7 +19,7 @@ fprintf(fid,'gap mode %s, gap median %s, max gap %s\n',gapmode,gapmedian,maxgap)
 pctlost = 1; 
 isi = 1/srate; 
 medTimeExpanded = zeros(size(outdat,1),1);
-packTimes = zeros(size(timestamps,1));
+packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
 

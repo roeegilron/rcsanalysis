@@ -50,8 +50,5 @@ outtable.Properties.VariableDescriptions{nchan+1} = ...
     'systemTick ? INS clock-driven tick counter, 16bits, LSB is 100microseconds, (highly accurate, high resolution, rolls over)';
 outtable.Properties.VariableDescriptions{nchan+2} = ...
     'timestamp ? INS clock-driven time, LSB is seconds (highly accurate, low resolution, does not roll over)';
-%% XXXX TO DO XXXX
-% add variable descriptions to the other elements of the table. 
-%% XXXX       XXXX
 
 end
