@@ -69,54 +69,106 @@ def calculate_statistics(meta_array, intersample_tick_count):
     return num_real_points, num_macro_rollovers, loss_as_scalar
 
 
-def unpacker(meta_array, input_json, intersample_tick_count):
-    # First we verify that the number of channels and sampling rate does not change
+def unpacker_td(meta_array, input_json, intersample_tick_count):
+    # First we verify that num of channels and sampling rate does not change
     if np.diff(meta_array[:, 8]).sum():
         raise ValueError('Number of Active Channels Changes Throughout the Recording')
     if np.diff(meta_array[:, 10]).sum():
         raise ValueError('Sampling Rate Changes Throughout the Recording')
 
     # Initialize array to hold output data
-    final_array = np.zeros((meta_array[:, 9].sum().astype(int), 2 + meta_array[0, 8].astype(int)))
+    final_array = np.zeros((meta_array[:, 9].sum().astype(int), 3 + meta_array[0, 8].astype(int)))
 
     # Initialize variables for looping:
+
     array_bottom = 0
     master_time = meta_array[0, 3]
     old_system_tick = 0
-    running_us_counter = 0
-
-    # Loop over metadata and
-    for i in meta_array:
+    running_ms_counter = 0
+    for packet_number, i in enumerate(meta_array):
         if i[5]:
             # We just suffered a macro packet loss...
             old_system_tick = 0
-            running_us_counter = 0
+            running_ms_counter = 0
             master_time = i[3]  # Resets the master time
 
-        running_us_counter += ((i[2] - old_system_tick) % (2 ** 16))
-        backtrack_time = running_us_counter - ((i[9] - 1) * intersample_tick_count)
+        running_ms_counter += ((i[2] - old_system_tick) % (2 ** 16))
+        backtrack_time = running_ms_counter - ((i[9] - 1) * intersample_tick_count)
 
         # Populate master clock time into array
         final_array[int(array_bottom):int(array_bottom + i[9]), 0] = np.array([master_time] * int(i[9]))
 
         # Linspace microsecond clock and populate into array
-        final_array[int(array_bottom):int(array_bottom + i[9]), 1] = np.linspace(backtrack_time, running_us_counter,
+        final_array[int(array_bottom):int(array_bottom + i[9]), 1] = np.linspace(backtrack_time, running_ms_counter,
                                                                                  int(i[9]))
 
-        # Unpack time domain data from original packets into array
+        # Put packet number into array for debugging
+        final_array[int(array_bottom):int(array_bottom + i[9]), -1] = np.array([packet_number] * int(i[9]))
+
+        # Unpack timedomain data from original packets into array
         for j in range(0, int(i[8])):
             final_array[int(array_bottom):int(array_bottom + i[9]), j + 2] = \
-                input_json[0]['TimeDomainData'][int(i[7])]['ChannelSamples'][j]['Value']
+            input_json[0]['TimeDomainData'][int(i[7])]['ChannelSamples'][j]['Value']
 
         # Update counters for next loop
         old_system_tick = i[2]
         array_bottom += i[9]
 
-    # Convert systemTicks into microseconds
-    final_array[:, 1] = final_array[:, 1] * 100
+    # Convert systemTick into microseconds
 
+    final_array[:, 1] = final_array[:, 1] * 100
     return final_array
 
+
+def unpacker_accel(meta_array, input_json, intersample_tick_count):
+    # First we verify that num of channels and sampling rate does not change
+    if np.diff(meta_array[:, 8]).sum():
+        raise ValueError('Number of Active Channels Changes Throughout the Recording')
+    if np.diff(meta_array[:, 10]).sum():
+        raise ValueError('Sampling Rate Changes Throughout the Recording')
+
+    # Initialize array to hold output data
+    final_array = np.zeros((meta_array[:, 9].sum().astype(int), 3 + meta_array[0, 8].astype(int)))
+
+    # Initialize variables for looping:
+
+    array_bottom = 0
+    master_time = meta_array[0, 3]
+    old_system_tick = 0
+    running_ms_counter = 0
+    for packet_number, i in enumerate(meta_array):
+        if i[5]:
+            # We just suffered a macro packet loss...
+            old_system_tick = 0
+            running_ms_counter = 0
+            master_time = i[3]  # Resets the master time
+
+        running_ms_counter += ((i[2] - old_system_tick) % (2 ** 16))
+        backtrack_time = running_ms_counter - ((i[9] - 1) * intersample_tick_count)
+
+        # Populate master clock time into array
+        final_array[int(array_bottom):int(array_bottom + i[9]), 0] = np.array([master_time] * int(i[9]))
+
+        # Linspace microsecond clock and populate into array
+        final_array[int(array_bottom):int(array_bottom + i[9]), 1] = np.linspace(backtrack_time, running_ms_counter,
+                                                                                 int(i[9]))
+
+        # Put packet number into array for debugging
+        final_array[int(array_bottom):int(array_bottom + i[9]), -1] = np.array([packet_number] * int(i[9]))
+
+        # Unpack timedomain data from original packets into array
+        for accel_index, accel_channel in enumerate(['XSamples', 'YSamples', 'ZSamples']):
+            final_array[int(array_bottom):int(array_bottom + i[9]), accel_index + 2] = \
+            input_json[0]['AccelData'][int(i[7])][accel_channel]
+
+        # Update counters for next loop
+        old_system_tick = i[2]
+        array_bottom += i[9]
+
+    # Convert systemTick into microseconds
+
+    final_array[:, 1] = final_array[:, 1] * 100
+    return final_array
 
 # time_df.time_master = pd.to_datetime(time_df.time_master, unit='s', origin=pd.Timestamp('2000-03-01'))
 
