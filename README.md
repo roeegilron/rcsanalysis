@@ -35,16 +35,22 @@ Schematic Example of RC+S Packet Structure:
 
 The following packet headers are found in a `RawDataTD.json` file:
 
-`systemTick` INS clock-driven tick counter, 16bit roll-over counter, LSB is 100microseconds (high accuracy and resolution).
+`dataTypeSequence` - 8bit Packet number counter, rolls over.
 
-`timestamp`  Timezone-naive INS wall clock time, does not roll-over, LSB is seconds (high accuracy, low resolution). Time calculated in seconds since March 1st, 2000 at midnight.
+`systemTick` - 16bit INS clock-driven tick counter, rolls over, LSB is 100microseconds (high accuracy and resolution).
 
-To convert this raw number (`timestamp`) to a human readable form in Matlab use:   
-`datetime(datevec(timestamp./86400 + datenum(2000,3,1,0,0,0)))`     
-`TdSampleRates`  0x00 is 250Hz, 0x01 is 500Hz, 0x02 is 1000Hz, 0xF0 is disabled.  
-`dataTypeSequence` - packet counter, counts to 255 and roles over.  
+`TdSampleRates` - Hexadecimal value corresponding to sample rate used for a given recording: 0x00 is 250Hz, 0x01 is 500Hz, 0x02 is 1000Hz, and 0xF0 is disabled.   
+
+`timestamp`  Timezone-naive INS wall clock time, does not roll over, LSB is seconds (high accuracy, low resolution). Time calculated in seconds since March 1st, 2000 at midnight.
+
+To convert this raw number (`timestamp`) to a human readable form in `Matlab` use:   
+`datetime(datevec(timestamp./86400 + datenum(2000,3,1,0,0,0)))`
+
+#### Intuitive Approach to Deserializing RC+S Data
 
 In above example, we are streaming data at 1000Hz. Our first packet (labeled `packet #` in figure, actually named `dataTypeSequence` in header) we stream packets 0-2 but then miss packet #3. This represents a small packet loss and we can compute how much time was lost by subtracting the time of the last sample in packet 4 from the last sample on packet 2 (7537-6539 = 998). Since the LSB on the `systemTick` is 100 microseconds, this represents a gap of 99.8 milliseconds. However, we have 25 data points in packet 4, at 1000Hz this is 25 milliseconds - so there is a 74.8 millisecond gap between packet 4 and packet 2. For cases in which the packet loss is larger than the system tick (as evident by the time stamp field incrementing by more than 6.5536 seconds) we can not use `systemTick` to compute time and rely on the `timestamp` field. This is what happens between packet 5 and 117. There are other ways to approach "unraveling" the data as well such as interpolation but this is the method we chose to implement here.
+
+A fully commented algorithm for deserializing RC+S time domain data can be appreciated in the `Python` implementation by reading the comments (in sequential order) contained within the `extract_td_meta_data`, `code_micro_and_macro_packet_loss`, and `unpacker_td` functions.
 
 Streaming modes in RC+S: 
 -------------
@@ -62,4 +68,3 @@ To Do:
 * Consider implementing more efficient datetime storage (double rather than string) if human readability not important. 
 * Backtrace first packet `timestamp` from a system rollover. 
 * Consider using data that exists in TimeSync.json option.
-
