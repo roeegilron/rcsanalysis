@@ -1,5 +1,4 @@
 import numpy as np
-import datetime as dt
 import pandas as pd
 
 """ All the Code Below Is For the Second Generation Packetizer """
@@ -175,12 +174,11 @@ def unpacker_accel(meta_array, input_json, intersample_tick_count):
     final_array[:, 1] = final_array[:, 1] * 100
     return final_array
 
-# time_df.time_master = pd.to_datetime(time_df.time_master, unit='s', origin=pd.Timestamp('2000-03-01'))
-
 def save_to_disk(data_matrix, filename_str, time_format, data_type):
+    # TODO: We need to find a different way of dynamically naming columns. Current method won't work.
     num_cols = data_matrix.shape[1]
     if data_type == 'accel':
-        channel_names = ['accel_' + x for x in ['x', 'y', 'z']]
+        channel_names = ['accel_' + x for x in ['x', 'y', 'z']] # None of his channel name stuff works.
     else:
         channel_names = ['channel_' + str(x) for x in range(0, num_cols)]
     column_names = ['time_master', 'microseconds'] + channel_names
