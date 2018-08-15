@@ -47,23 +47,28 @@ def code_micro_and_macro_packet_loss(meta_matrix):
 
 
 def calculate_statistics(meta_array, intersample_tick_count):
+    # Calculate total number of actual data points that were received
     num_real_points = meta_array[:, 9].sum()
+
+    # Calculate the total number of large roll-overs (>= 6.5536 seconds)
     num_macro_rollovers = meta_array[:, 5].sum()
+
+    # Calculate the packet number before and after the occurrence of a small packet losse
     micro_loss_stack = np.dstack((np.where(meta_array[:, 4] == 1)[0] - 1, np.where(meta_array[:, 4] == 1)[0]))[0]
 
-    # Remove micropacket losses that coincided with macropacket losses
+    # Remove small packet losses that coincided with large packet losses
     micro_loss_stack = micro_loss_stack[
         np.isin(micro_loss_stack[:, 1], np.where(meta_array[:, 5] == 1)[0], invert=True)]
 
     # Allocate array for calculating micropacket loss
     loss_array = np.zeros(len(micro_loss_stack))
 
-    # Loop over meta data to extract and calculate micropacket loss.
+    # Loop over meta data to extract and calculate number of data points lost to small packet loss.
     for index, packet in enumerate(micro_loss_stack):
         loss_array[index] = (((meta_array[packet[1], 2] - (meta_array[packet[1], 9] * intersample_tick_count)) -
                               meta_array[packet[0], 2]) % (2 ** 16)) / intersample_tick_count
 
-    # Calculate the total number of lost data points due to micropacket loss.
+    # Sum the total number of lost data points due to small packet loss.
     loss_as_scalar = np.around(loss_array).sum()
 
     return num_real_points, num_macro_rollovers, loss_as_scalar
