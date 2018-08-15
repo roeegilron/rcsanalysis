@@ -189,9 +189,9 @@ def save_to_disk(data_matrix, filename_str, time_format, data_type):
         df.time_master = pd.to_datetime(df.time_master, unit='s', origin=pd.Timestamp('2000-03-01'))
         df.microseconds = pd.to_timedelta(df.microseconds, unit='us')
         df['actual_time'] = df.time_master + df.microseconds
-        df.to_csv(filename_str, index=False)
     else:
-        df.to_csv(filename_str, index=False)
+        df['actual_time'] = df.time_master + (df.microseconds / 1E6)
+    df.to_csv(filename_str, index=False)
     return
 
 
