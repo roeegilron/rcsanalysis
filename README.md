@@ -43,7 +43,7 @@ The following packet headers are found in a `RawDataTD.json` file:
 
 `timestamp`  Timezone-naive INS wall clock time, does not roll over, LSB is seconds (high accuracy, low resolution). Time calculated in seconds since March 1st, 2000 at midnight.
 
-To convert `timestamp` to the actual datetime, in `Matlab` use:   
+To convert `timestamp` to the actual datetime in `Matlab` use:   
 ```matlab
 datetime(datevec(timestamp./86400 + datenum(2000,3,1,0,0,0)))
 ```
@@ -74,14 +74,36 @@ pd.to_datetime(timestamp, unit='s', origin=pd.Timestamp('2000-03-01'))
 
 A fully commented algorithm for deserializing RC+S time domain data can be appreciated in the `Python` implementation by reading the comments (in sequential order) contained within the `extract_td_meta_data`, `code_micro_and_macro_packet_loss`, and `unpacker_td` functions.
 
-Streaming modes in RC+S: 
--------------
-A variety of factors influence the degree of packet loss one can expect with RC+S. These include packet size, the streaming mode (3/4 - 4 is better for streaming), ratio (the ratio of packets sent from INS to CTM vs commands sent from CTM to INS) and the number of data channels being acquired. During our benchmark testing we used mode 4, ratio 32, 50msec packets and streamed 2 time domain channels as well as IMU data. In this setting we achieve packet loss comprising around ~1% of the data in a 2 hour continuous recording under ideal bench-top conditions. 
-
-Contents: 
+Factors Impacting Packet Loss
 -------------
 
-* `python`    - Folder with Python code to read RC+S data 
+A number of factors impact the fidelity with which the RC+S streams data back to the host computer. Several RC+S streaming parameters can be configured depending on the individual use case:
+
+### CTM Mode:
+
+* The RC+S CTM can operate in two different modes: Mode 3 & Mode 4. 
+	* Mode 3 is optimal for streaming data across _longer distances_ but at a _slower rate_.
+	* Mode 4 is best for streaming data across _shorter distances_ but at a _faster rate_.
+
+### CTM Ratio:
+
+* The number of packets sent by the INS to the host computer vs. the number of packets sent by the host computer to the INS can be varied programmatically at the start of a recording session.
+* In general, high CTM Ratios should be used for high-throughput sensing applications; lower CTM Ratios should be used when INS parameters most be updated rapidly (as would be the case in a distributed DBS application).
+
+### Other Factors:
+
+* A number of other factors impact streaming performance. These include, but are not limited to, distances between the host computer, CTM, and INS; 60Hz environmental noise; number of channels being streamed; and sampling frequency.
+* Recordings found within the `sample_data` folder were acquired with CTM Mode = 3, CTM Ratio = 4, two time domain channels streaming at 1000 Hz, and accelerometry data streaming at 64 Hz.
+
+## Instructions for Use:
+
+* `Python`:
+	* Requirements:
+		* Python >= v3.5
+		* pandas
+		* numpy
+	* Usage:
+		* _TBD..._
 * `Matlab` - Folder with Matlab code to do the same. see `MAIN` function to select TD file. 
 
 To Do: 
