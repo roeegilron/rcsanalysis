@@ -82,13 +82,15 @@ for p = 1:length(idxpackets)
     medTimeExpanded(idxpopulate) = datenum(timevec); % use Matlab datenum, at end cast back to str 
 end
 %% add data to packet loss report
-fprintf(fid,'\n\n'); 
-fprintf(fid,'%d packet loss events under 6.55 seoncds occured \n', length(pctlen));
-fprintf(fid,'%.4f seconds average packet loss  \n', mean(pctlen));
-fprintf(fid,'%.4f seconds mode packet loss \n', mode(pctlen));
-fprintf(fid,'%.4f seconds median packet loss  \n', median(pctlen));
-fprintf(fid,'%.4f seconds max packet loss \n', max(pctlen));
-fprintf(fid,'%.4f seconds min packet loss \n', min(pctlen));
+if exist('pctlen','var') % in short recording you may not have any packet loss
+    fprintf(fid,'\n\n');
+    fprintf(fid,'%d packet loss events under 6.55 seoncds occured \n', length(pctlen));
+    fprintf(fid,'%.4f seconds average packet loss  \n', mean(pctlen));
+    fprintf(fid,'%.4f seconds mode packet loss \n', mode(pctlen));
+    fprintf(fid,'%.4f seconds median packet loss  \n', median(pctlen));
+    fprintf(fid,'%.4f seconds max packet loss \n', max(pctlen));
+    fprintf(fid,'%.4f seconds min packet loss \n', min(pctlen));
+end
 %% convert derived data to string and add to table 
 medTimeStr = datetime(datevec(medTimeExpanded),'TimeZone','America/Chicago');
 medTimeStr.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';

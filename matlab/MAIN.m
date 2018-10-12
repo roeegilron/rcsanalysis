@@ -23,7 +23,7 @@ if ~isempty(strfind(filename,'RawDataAccel'))
 end
 outdatcomplete = populateTimeStamp(outtable,srate,filename); 
 [pn,fn,ext] = fileparts(filename); 
-writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
+% writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
 save(fullfile(pn,[fn '.mat']),'outdatcomplete');
 end
 
