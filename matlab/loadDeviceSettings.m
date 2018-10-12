@@ -1,0 +1,122 @@
+function tblout  = loadDeviceSettings(fn)
+DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
+%%
+recNum = 0;
+inRecord = 0; 
+for f = 1:length(DeviceSettings)
+    fnms = fieldnames(DeviceSettings{f});
+    curStr = DeviceSettings{f};
+    if isfield(curStr,'SensingConfig')
+        if isfield(curStr.SensingConfig,'timeDomainChannels')
+            curStr.SensingConfig.timeDomainChannels
+            tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
+        end
+    end
+    if isfield(curStr,'StreamState')
+        if ~inRecord
+            if curStr.StreamState.TimeDomainStreamEnabled % recording started
+                recNum = recNum + 1;
+                timenum = curStr.RecordInfo.HostUnixTime;
+                t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                outRec(recNum).timeStart = t;
+                outRec(recNum).unixtimeStart  = timenum;
+                outRec(recNum).tdData = tdData;
+                inRecord = 1;
+            end
+        end
+        if inRecord 
+            if ~curStr.StreamState.TimeDomainStreamEnabled % recording ended
+                inRecord = 0; 
+                timenum = curStr.RecordInfo.HostUnixTime;
+                t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                outRec(recNum).timeEnd = t;
+                outRec(recNum).unixtimeEnd  = timenum;
+                outRec(recNum).duration = outRec(recNum).timeEnd - outRec(recNum).timeStart;
+            end
+        end
+        
+    end
+end
+
+% loop on structures and construct table of files that exist
+tblout = struct2table(outRec);
+end
+
+function outstruc = translateTimeDomainChannelsStruct(tdDat);
+outstruc = tdDat;
+for f = 1:length(outstruc)
+    % lpf 1 (front end)
+    switch tdDat(f).lpf1
+        case 9
+            outstruc(f).lpf1 = '50Hz';
+        case 18
+            outstruc(f).lpf1 = '100Hz';
+        case 36
+            outstruc(f).lpf1 = '450Hz';
+    end
+    % lpf 1 (bacnk end amplifier)
+    switch tdDat(f).lpf2
+        case 9
+            outstruc(f).lpf2 = '100Hz';
+        case 11
+            outstruc(f).lpf2 = '160Hz';
+        case 12
+            outstruc(f).lpf2 = '350Hz';
+        case 14
+            outstruc(f).lpf2 = '1700Hz';
+    end
+    % channels - minus input
+    switch tdDat(f).minusInput
+        case 0
+            outstruc(f).minusInput = 0;
+        case 2
+            outstruc(f).minusInput = 1;
+        case 4
+            outstruc(f).minusInput = 2;
+        case 8
+            outstruc(f).minusInput = 3;
+        case 16
+            outstruc(f).minusInput = 4;
+        case 32
+            outstruc(f).minusInput = 5;
+        case 64
+            outstruc(f).minusInput = 6;
+        case 128
+            outstruc(f).minusInput = 7;
+    end
+    % channels - plus input
+    switch tdDat(f).plusInput
+        case 0
+            outstruc(f).plusInput = 0;
+        case 2
+            outstruc(f).plusInput = 1;
+        case 4
+            outstruc(f).plusInput = 2;
+        case 8
+            outstruc(f).plusInput = 3;
+        case 16
+            outstruc(f).plusInput = 4;
+        case 32
+            outstruc(f).plusInput = 5;
+        case 64
+            outstruc(f).plusInput = 6;
+        case 128
+            outstruc(f).plusInput = 7;
+    end
+    % sample rate 
+    switch tdDat(f).sampleRate
+        case 0
+            outstruc(f).sampleRate = 250;
+        case 1
+            outstruc(f).sampleRate = 500;
+        case 2 
+            outstruc(f).sampleRate = 1000;
+        case 240
+            outstruc(f).sampleRate = 'disabled';     
+    end
+    outstruc(f).chanOut = sprintf('+%d-%d',...
+        outstruc(f).plusInput,outstruc(f).minusInput);
+end
+
+end
+
