@@ -92,13 +92,18 @@ if exist('pctlen','var') % in short recording you may not have any packet loss
     fprintf(fid,'%.4f seconds min packet loss \n', min(pctlen));
 end
 %% convert derived data to string and add to table 
-medTimeStr = datetime(datevec(medTimeExpanded),'TimeZone','America/Chicago');
+% medTimeStr = datetime(datevec(medTimeExpanded),'TimeZone','America/Chicago');
+medTimeStr = datetime(datevec(medTimeExpanded),'TimeZone','America/Los_Angeles');
 medTimeStr.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
 ncol = size(outdat,2);
 outdat.derivedTimes = medTimeStr;
 outdat.Properties.VariableDescriptions{ncol+1} = 'derived time stamps from systemTick and timestamp variables'; 
 fprintf('finished deriving time in %.2f\n',toc(start));
 %% left over 
+%XXXXXXXXX
+% XXX What is time zone????? 
+% XXXXXXXX 
+
 % uxtime = [TDdat.TimeDomainData.PacketRxUnixTime];
 % each increment of of systemTime by +1 is extra 0.1 mili seconds 
 
