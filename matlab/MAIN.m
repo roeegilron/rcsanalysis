@@ -1,4 +1,4 @@
-function MAIN(varargin)
+function [outdatcomplete, srates, unqsrates] = MAIN(varargin)
 %% This function reads TimeDomain *.json from RC+S
 %% The main reason for this function is to convert this *.json file to a 
 %% an easier to analyze *.csv file, and in particular to deal with packet loss issues. 
@@ -15,15 +15,16 @@ end
 
 jsonobj = deserializeJSON(filename);
 if ~isempty(strfind(filename,'RawDataTD'))
-[outtable, srate] = unravelData(jsonobj);
+    [outtable, srates] = unravelData(jsonobj);
 end
 
 if ~isempty(strfind(filename,'RawDataAccel'))
-[outtable, srate] = unravelDataACC(jsonobj);
+    [outtable, srates] = unravelDataACC(jsonobj);
 end
-outdatcomplete = populateTimeStamp(outtable,srate,filename); 
+outdatcomplete = populateTimeStamp(outtable,srates,filename); 
 [pn,fn,ext] = fileparts(filename); 
 % writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
-save(fullfile(pn,[fn '.mat']),'outdatcomplete','srate');
+unqsrates = unique(srates); 
+save(fullfile(pn,[fn '.mat']),'outdatcomplete','srates','unqsrates');
 end
 

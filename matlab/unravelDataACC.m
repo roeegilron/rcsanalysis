@@ -1,4 +1,4 @@
-function [outtable, srate] = unravelDataACC(TDdat)
+function [outtable, srates] = unravelDataACC(TDdat)
 %% Function to unravel TimeDomainData
 % input: a structure time domain data that is read from TimeDomainRaw.json 
 % file that is spit out by RC+S Summit interface. 
@@ -9,7 +9,7 @@ function [outtable, srate] = unravelDataACC(TDdat)
 
 
 %% deduce sampling rate 
-srate = getSampleRateAcc([TDdat.AccelData.SampleRate]');
+srates = getSampleRateAcc([TDdat.AccelData.SampleRate]');
 
 %% pre allocate memory 
 % find out how many channels of data you have 

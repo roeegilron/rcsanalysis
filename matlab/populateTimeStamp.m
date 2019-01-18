@@ -1,4 +1,4 @@
-function outdat = populateTimeStamp(outdat,srate,filename)
+function outdat = populateTimeStamp(outdat,srates,filename)
 %% function to populate time stamps according to INS with Unix style time 
 %% 
 start = tic;
@@ -17,13 +17,15 @@ maxgap = max(timestamps( idxlarge+1) - timestamps( idxlarge));
 fprintf(fid,'gap mode %s, gap median %s, max gap %s\n',gapmode,gapmedian,maxgap);
 
 pctlost = 1; 
-isi = 1/srate; 
 medTimeExpanded = zeros(size(outdat,1),1);
 packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
 
 for p = 1:length(idxpackets)
+    srate = srates(p); 
+    isi = 1/srate; 
+    
     if p == 1 
         % for first packet, just assume medtronic time is correct 
         idxpopulate = idxpackets(p):-1:1;
@@ -77,7 +79,9 @@ for p = 1:length(idxpackets)
             end
         end
     end
+   
     % populate each sample with a time stamp 
+    outdat.samplerate(idxpopulate) = srates(p);
     timevec = endTime: - seconds(1/srate): (endTime- seconds((numpoints-1)/srate)); 
     medTimeExpanded(idxpopulate) = datenum(timevec); % use Matlab datenum, at end cast back to str 
 end

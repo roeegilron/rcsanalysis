@@ -1,10 +1,10 @@
-function srate = getSampleRate(srates)
+function sratesout = getSampleRate(srates)
 %% input: matrix of sample rates of each packet from TimeDomainData.Json 
 %% output: sample rate in Hz 
 
 
 if length(unique(srates)) > 1 
-    error('you have non uniform sample rates in your data'); 
+    warning('you have non uniform sample rates in your data'); 
 else
     sratenum = unique(srates); 
     switch sratenum 
@@ -16,4 +16,16 @@ else
             srate = 1e3; 
     end
 end
+fprintf('out of %d packets:\n\t%d packets at 250Hz\n\t%d packets at 500Hz\n \t%d packets at 1000Hz\n',...
+    length(srates),...
+    sum((srates==0)),...
+    sum((srates==1)),...
+    sum((srates==2)));
+% make sample rates numbers 
+sratesout = srates; 
+sratesout(srates==0) = 250;
+sratesout(srates==1) = 500;
+sratesout(srates==2) = 1000;
+
+
 clear temp*; 

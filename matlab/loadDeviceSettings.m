@@ -1,4 +1,4 @@
-function tblout  = loadDeviceSettings(fn)
+function outRec  = loadDeviceSettings(fn)
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 %%
 recNum = 0;
@@ -39,7 +39,7 @@ end
 
 % loop on structures and construct table of files that exist
 [pn,fnm,ext ] = fileparts(fn);
-save(fullfile(pn,[fnm '.mat']),'outRec');
+save(fullfile(pn,[fnm '.mat']),'outRec','DeviceSettings');
 % tblout = struct2table(outRec);
 end
 

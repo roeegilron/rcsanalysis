@@ -7,12 +7,20 @@ function tblout = getDataBaseRCSdata(dirname)
 % rawTDdata .mat exist 
 % plot (boolean) 
 
+% depends on: 
+% turtle json 
+
+% add path
+ptadd = genpath(fullfile(pwd,'toolboxes','turtle_json'));
+addpath(ptadd); 
+
 dirsdata = findFilesBVQX(dirname,'Sess*',struct('dirs',1,'depth',1));
 % extract times and .mat status 
 dbout = []; 
 for d = 1:length(dirsdata)
     diruse = findFilesBVQX(dirsdata{d},'Device*',struct('dirs',1,'depth',1));
-    if isempty(diruse) % no data exists insdie  
+    
+    if isempty(diruse) % no data exists inside  
         
         dbout(d).rectime = []; 
         dbout(d).matExist  = 0; 
@@ -27,6 +35,11 @@ for d = 1:length(dirsdata)
         dbout(d).sessname = fn;
         tdfile = findFilesBVQX(dirsdata{d},'RawDataTD.json');
         dbout(d).tdfile = tdfile{1}; 
+        timeReport = reportime(tdfile{1});
+        dbout(d).startTime = timeReport.startTime;
+        dbout(d).endTime = timeReport.endTime;
+        dbout(d).duration = timeReport.duration;
+
         % does mat file exist? 
         matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');
         if isempty(matfile) % no matlab data loaded
@@ -40,6 +53,8 @@ for d = 1:length(dirsdata)
     end
 end
 tblout = struct2table(dbout); 
+% clean up 
+rmpath(ptadd); 
 end
 
 function t = getTime(fn)
