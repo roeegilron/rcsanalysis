@@ -1,4 +1,4 @@
-function [outdatcomplete,outRec,eventTable] =  MAIN_load_rcs_data_from_folder(varargin)
+function [outdatcomplete,outRec,eventTable,outdatcompleteAcc] =  MAIN_load_rcs_data_from_folder(varargin)
 %% function load rcs data from a folder 
 if isempty(varargin)
     [dirname] = uigetdir(pwd,'choose a dir with rcs .json data');
@@ -6,18 +6,28 @@ else
     dirname  = varargin{1};
 end
 %% load files 
-filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json',}; 
+filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json'}; 
 for j = 1:length(filesLoad)
     ff = findFilesBVQX(dirname,filesLoad{j});
     checkForErrors(ff);
     [fileExists, fn] = checkIfMatExists(ff{1});
     if fileExists
-        load(fn);
+        if strcmp(filesLoad{j},'RawDataAccel.json') % if acc file rename it 
+            a = load(fn); 
+            outdatcompleteAcc = a.outdatcomplete; 
+            sratesAcc = a.srates; 
+            unqsratesAcc = a.unqsrates;
+        else
+            load(fn);
+        end
     else
         switch filesLoad{j}
             case 'RawDataTD.json'
                 fileload = fullfile(dirname,'RawDataTD.json');
                 [outdatcomplete, srates, unqsrates] = MAIN(fileload);
+            case 'RawDataAccel.json'
+                fileload = fullfile(dirname,'RawDataAccel.json');
+                [outdatcompleteAcc, ~, ~] = MAIN(fileload);
             case 'DeviceSettings.json'
                 fileload = fullfile(dirname,'DeviceSettings.json');
                 outRec = loadDeviceSettings(fileload);
