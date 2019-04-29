@@ -5,12 +5,16 @@ load /Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v05-home-visit-10
 fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/Raw_Data/BR_reorg_manual/brpd_09/v08_06_mnt/s_001_tsk-rest/brpd09_2017_04_18_10_07_43__MR_0.txt';
 dat = importdata(fn);
 ypc = dat(:,1); 
+load /Users/roee/Starr_Lab_Folder/Data_Analysis/Raw_Data/BR_reorg_manual/brpd_07/v08_06_mnt/data/dataBR.mat
+idxStimAndRest = find(cellfun(@(x) any(strfind(x,'rest')),datTab.task) & datTab.stim==1);
+ypc = datTab.lfp{idxStimAndRest(1)}; 
 %% plot 
+close all;
 y = outdatachunk.key1; 
 srate = 500;
 [fftOut,f]   = pwelch(y,srate,srate/2,0:1:200,srate,'psd');
 hfig = figure; 
-subplot(1,2,1); 
+hsub(1) = subplot(1,2,1); 
 hplt = plot(f,log10(fftOut)); 
 hplt.LineWidth = 5;
 hplt.Color = [0 0 0.8 0.7];
@@ -22,7 +26,7 @@ title('RC+S','FontSize',30);
 
 srate = 794;
 [fftOut,f]   = pwelch(ypc,srate,srate/2,0:1:200,srate,'psd');
-subplot(1,2,2); 
+hsub(2) = subplot(1,2,2); 
 hplt = plot(f,log10(fftOut)); 
 hplt.LineWidth = 5;
 hplt.Color = [0.8 0 0 0.7];
@@ -36,7 +40,10 @@ params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/pres
 params.figtype = '-dpdf';
 params.resolution = 300;
 params.closeafterprint = 1; 
-params.figname = 'rcs pcs stim comaprison stn';
+params.figname = 'rcs pcs stim comaprison stn zoom out better settings zoomed in';
+
+linkaxes(hsub,'x');
+xlim(hsub(1),[0 80]); 
 
 plot_hfig(hfig,params)
 

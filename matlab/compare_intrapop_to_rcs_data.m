@@ -71,7 +71,9 @@ for c = 1:length(cns)
     ylabel('Power  (log_1_0\muV^2/Hz)');
     lgndttls{1} = sprintf('RC+S %s',outRec.tdData(c).chanFullStr);
     title(ttlstr);
+    fprintf('%s %s rms = %.2f\n',lgndttls{1},ttlstr,rms(y).*1e3);
     clear y yout;
+    
     % Neuro Omega (intra op);
     hold on;
     y = neuroOmegaTab.dat(c,:);
@@ -88,6 +90,7 @@ for c = 1:length(cns)
     ylabel('Power  (log_1_0\muV^2/Hz)');
     lgndttls{2} = neuroOmegaDat(c).chanName;
     title(ttlstr);
+    fprintf('%s %s rms = %.2f\n',neuroOmegaDat(c).chanName,ttlstr,rms(y));
     clear y yout;
     legend(hplt(c,:),lgndttls);
     % add legends
@@ -100,7 +103,10 @@ params.figtype = '-djpeg';
 params.resolution = 300;
 params.closeafterprint = 1;
 params.figname = 'rc-s_vs_neuroomega-normalized-5-150';
-plot_hfig(hfig,params)
+% plot_hfig(hfig,params)
+figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/figures';
+figname = 'neuroomega vs rc+s.fig';
+savefig(hfig,fullfile(figdir,figname)); 
 
 
 %% plot pac 

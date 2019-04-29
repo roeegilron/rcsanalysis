@@ -51,6 +51,13 @@ for p = 1:size(datasizes,1)
     varnames{maxnchans+2} = 'timestamp'; 
     outdat(packetidx,maxnchans+3) = srates(p); 
     varnames{maxnchans+3} = 'samplerate'; 
+    
+    
+    outdat(packetidx,maxnchans+4) = TDdat.TimeDomainData(p).PacketGenTime;
+    varnames{maxnchans+4} = 'PacketGenTime'; 
+    
+    outdat(packetidx,maxnchans+5) =  TDdat.TimeDomainData(p).PacketRxUnixTime; 
+    varnames{maxnchans+5} = 'PacketRxUnixTime'; 
 end
 
 
@@ -66,6 +73,12 @@ outtable.Properties.VariableDescriptions{nchan+2} = ...
 
 outtable.Properties.VariableDescriptions{nchan+3} = ...
     'sample rate for each packet, used in cases in which the sample rate is not conssistent through out session';
+
+outtable.Properties.VariableDescriptions{nchan+4} = ...
+    'API estimate of when the data packet was created on the INS within the PC clock domain. Estimate created by using results of latest latency check (one is done at system initialization, but can re-perform whenever you want) and time sync streaming. Potentially useful for syncing with other sensors or devices by bringing things into the PC clock domain, but is only accurate within 50ms give or take.';
+
+outtable.Properties.VariableDescriptions{nchan+5} = ...
+    'PC clock-driven time when the packet was received via Bluetooth, as accurate as a C# DateTime.now (10-20ms)';
 
 
 end

@@ -1,4 +1,4 @@
-function [outdatcomplete,outRec,eventTable,outdatcompleteAcc] =  MAIN_load_rcs_data_from_folder(varargin)
+function [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(varargin)
 %% function load rcs data from a folder 
 if isempty(varargin)
     [dirname] = uigetdir(pwd,'choose a dir with rcs .json data');
@@ -6,7 +6,7 @@ else
     dirname  = varargin{1};
 end
 %% load files 
-filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json'}; 
+filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json'}; 
 for j = 1:length(filesLoad)
     ff = findFilesBVQX(dirname,filesLoad{j});
     checkForErrors(ff);
@@ -40,7 +40,9 @@ for j = 1:length(filesLoad)
                 end
                 [pn,fnm, ext] = fileparts(fileload);
                 save(fullfile(pn,[fnm '.mat']),'eventTable');
-
+            case 'RawDataPower.json'
+                fileload = fullfile(dirname,'RawDataPower.json');
+                powerTable = loadPowerData(fileload);
         end
         
     end

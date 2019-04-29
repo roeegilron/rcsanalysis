@@ -6,7 +6,7 @@ outTab(1).sessionid = {sessionid};
 outTab(1).EventSubType = '1';
 outTab(1).EventType = 'Sent';
 outTab(1).UnixOnsetTime = outRec(1).timeStart;
-outTab(1).UnixOffsetTime =  outRec(1).timeEnd;
+outTab(1).UnixOffsetTime =  outRec(1).timeStart;
 
 
 eventTable = struct2table(outTab);

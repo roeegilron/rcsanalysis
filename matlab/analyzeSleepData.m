@@ -1,13 +1,14 @@
 function analyzeSleepData()
 %% open data
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/DMP_data/RCS01';
+rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/DMP_dump_2';
 sessdirs = findFilesBVQX(rootdir,'DeviceNPC700395H*',struct('dirs',1));
 fidF = fopen('failed files.txt','w+');
 fidS = fopen('sucesss files.txt','w+');
 for s = 1:length(sessdirs)
     try
         start = tic;
-        MAIN_load_rcs_data_from_folder(sessdirs{s});
+        [~] = MAIN_load_rcs_data_from_folder(sessdirs{s});
         fprintf('folder %d out of %d done in %f\n',...
             s,length(sessdirs),toc(start));
         fprintf(fidS,'%s\n',sessdirs{s});
@@ -19,11 +20,13 @@ end
 
 %% read data
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/DMP_data/RCS01';
+rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/DMP_dump_2';
 figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/DMP_data/figures';
 resdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/results/sleep_data'; 
 
 ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
 tdfile  = findFilesBVQX(rootdir,'DeviceSettings.mat');
+acfile  = findFilesBVQX(rootdir,'RawDataAccel.mat'); 
 for f = 1:length(ffiles)
     load(ffiles{f});
     load(tdfile{f});
@@ -34,51 +37,84 @@ for f = 1:length(ffiles)
     %     fprintf('file % d of %d\n',f,length(ffiles));
     allDat(f).outdatcomplete = outdatcomplete; 
     allDat(f).outRec = outRec; 
-    
+    allDat(f).fileLen = fileLen(f); 
+    load(acfile{f}); 
+    allDat(f).outdatcompleteAcc = outdatcomplete; 
     clear outdatcomplete 
 end
 figure;
 histogram(fileLen);
-save(fullfile(resdir,'raw_sleep_data.mat'),'allDat'); 
+save(fullfile(resdir,'raw_sleep_data2.mat'),'allDat','-v7.3'); 
+%% plot table of continous recordings 
+clc;
+clear all;
+close all;
+resdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/results/sleep_data'; 
+load(fullfile(resdir,'raw_sleep_data.mat'),'allDat'); 
+sleepDat = struct2table(allDat); 
+%% plot spectral representation of the data from DMP (it has weird behaviour in which recording stops every 30 seconds) 
+clear all; 
+close all; 
+resdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/results/sleep_data'; 
+load(fullfile(resdir,'raw_sleep_data2.mat'),'allDat'); 
 
-%% plot spectral representation of the data 
-params.minChunkSize = 20; % in seconds
+sleepDat = struct2table(allDat); 
+% params set
+params.maxgap = seconds( 1* 0.5 ); % max gap you allow in seconds between two data points 
+params.minchunksize = seconds(20); % min chunk size you will accept 
+params.plot =  0; % do you want to plot data 
+%% 
+% idnetifny isues with sampling rate 
 cnt = 1;
-for f = 1:length(allDat)
+sleepChunks = table();
+
+cnt = 1;
+sleepChunks = table();
+for f = 1:size(sleepDat,1)
     outdatcomplete = allDat(f).outdatcomplete; 
     srate = unique(outdatcomplete.samplerate);
-    fileLen(f) = minutes(minutes(outdatcomplete.derivedTimes(end) - outdatcomplete.derivedTimes(1)));
-    if  fileLen(f) > minutes(1)
-        fprintf('file len is %s minutes\n', fileLen(f));
-        difs = milliseconds(diff(outdatcomplete.derivedTimes));
-        idxsMs =  find(difs > 10);
-        for cc = 1:length(idxsMs) -1
-            idxChunk = idxsMs(cc)+ srate*5 : 1: idxsMs(cc+1);
-            if ceil(length(idxChunk)/srate) > params.minChunkSize % make sure chunk size is big 
-                for i = 1:4
-                    fnm = sprintf('key%d',i-1);
-                    y = outdatcomplete.(fnm);
-                    y = y(idxChunk);
-                    y = y - mean(y);
-                    [fftOut,freq]   = pwelch(y,srate,srate/2,0:1:100,srate,'psd');
-                    resChunks(cnt).datOut = []; 
-timeOut = []; 
-hfig = figure;
-(:,i) = y; 
-                    resChunks(cnt).time = outdatcomplete.derivedTimes(idxChunk); 
-                    resChunks(cnt).fftOut(i,:) = log10(fftOut);
-                    resChunks(cnt).mins(i) = min(log10(fftOut));
-                    resChunks(cnt).maxs(i) = max(log10(fftOut));
-                    resChunks(cnt).f(i,:) = freq;
-                    resChunks(cnt).chanStr{i}   = outRec(1).tdData(i).chanFullStr;
+    outDat = sleepDat.outdatcomplete{f};
+    dateArray = outDat.derivedTimes;
+    
+    if  sleepDat.fileLen(f) > minutes(1) & length(srate) ==1 
+        y = outDat.key3; 
+        res = findIdxOfContinousData(y,dateArray,params);
+        srate = unique(outDat.samplerate); 
+        fprintf('file len is %.2f minutes, max dur %s total chunks %s\n', minutes(sleepDat.fileLen(f)),...
+            res.maxDuration,sum(res.durations));
+        for r = 1:size(res.startIdx,1)
+            for c = 1:4
+                fnm = sprintf('key%d',c-1);
+                y = outDat.(fnm);
+                y = y - mean(y);
+                
+                %             sleepDat.outRec{1,1}(1).tdData(1).chanFullStr;
+                
+                
+                sleepChunks.time(cnt) = outDat.derivedTimes(res.startIdx(r));
+                sleepChunks.duration(cnt) = res.durations(r);
+                
+                ychunk = y(res.startIdx(r):res.endIdx(r));
+                
+                [fftOut,freq]   = pwelch(ychunk,srate,srate/2,0:1:100,srate,'psd');
+                if sum(log10(fftOut))==0
+                    x = 2;
                 end
-                cnt = cnt + 1;
+                
+                sleepChunks.freq(cnt,:) = freq;
+                chanName = sprintf('chan%d_fftOut',c);
+                sleepChunks.(chanName)(cnt,:) = log10(fftOut);
             end
+            cnt = cnt + 1;
         end
+        
     end
-    clear outdatcomplete; 
-    fprintf('file %d out of %d done\n',f,length(ffiles));
 end
+resdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/results/sleep_data'; 
+save(fullfile(resdir,'sleepChunks2.mat'),'sleepChunks');    
+
+   
+
 
 %% prep data
 % preallocate size 

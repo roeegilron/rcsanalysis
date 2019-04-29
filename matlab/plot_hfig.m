@@ -44,6 +44,10 @@ switch figtype
         fnmsv = sprintf('%s.jpeg',figname);
         res = sprintf('-r%d',resolution);
         print(hfig,fullfile(figdir,fnmsv),'-djpeg',res);
+    case '-dpng'
+        fnmsv = sprintf('%s.png',figname);
+        res = sprintf('-r%d',resolution);
+        print(hfig,fullfile(figdir,fnmsv),'-dpng',res);
 end
 if closeafterprint
     close(hfig);

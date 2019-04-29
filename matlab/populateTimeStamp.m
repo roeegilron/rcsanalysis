@@ -42,13 +42,27 @@ for p = 1:length(idxpackets)
         % for all other packets, implement folowing algorithem 
         idxpopulate = idxpackets(p):-1:idxpackets(p-1)+1;
         numpoints = length(idxpopulate);
-        if timestamps(p)-timestamps(p-1) > 2^16/1e4 % if gap is larger than 6.55 seconds don't incerment from last packet 
+        if timestamps(p)-timestamps(p-1) > seconds(2^16/1e4) % if gap is larger than 6.55 seconds don't incerment from last packet 
+            % find out what value to give based on 
+            % packet count 
+            gapLenInSeconds = timestamps(p)-timestamps(p-1);
+            numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
+            systemTickPreviousPacket = outdat.systemTick(idxpackets(p-1));
+            systemTickCurrentPacket = outdat.systemTick(idxpackets(p));
+            exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
+                                    systemTickPreviousPacket/1e4 + ...
+                                    systemTickCurrentPacket/1e4);
+            
             timeuse = outdat.timestamp(idxpackets(p));
             tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
             % cast to microseconds
             datstr = [datestr(tmptime) '.000'];
             endTime = datetime(datstr,'InputFormat','dd-MMM-yyyy HH:mm:ss.SSS'); % include microseconds
             endTime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+            
+            endTimes(p) = endTime;
+            %% tese new algorith XXXXXXX
+            endTime = endTimes(p-1) + exactGapTime;
             endTimes(p) = endTime;
         else 
             % if gap is smaller than 6.55 seconds verify packet time with systemTick clock 

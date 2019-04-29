@@ -83,7 +83,7 @@ prfig.figtype             = '-djpeg';
 prfig.closeafterprint     = 0; 
 prfig.resolution          = 300; 
 prfig.figname             = 'med off vs on variability'; 
-plot_hfig(hfig,prfig); 
+% plot_hfig(hfig,prfig); 
 
 %% plot histogram according to update rates 
 updateRates = [1 5 10 20 30]; 
@@ -125,7 +125,80 @@ for b = 1:length(binwidth)
         suptitle(ttluse); 
         % save figure
         prfig.figname = sprintf('med histograms ur - %0.2d bw %0.2d',updateRates(u),binwidth(b));
-        plot_hfig(hfig,prfig); 
-
+%         plot_hfig(hfig,prfig); 
     end
 end
+
+%% do this only for stn 1-3 in subplot fashion for poster presenation
+updateRates = [1  30]; 
+binsForUpdr = [0.5, 0.1,0.1,0.1, 0.1];
+binwidth    = [2  10]; 
+bins        = [2 60]; % in seconds
+
+centerFreq  = [15.5, 15.5 18.5 19.5]; 
+
+c = 2; % chan 1-1
+hfig = figure;
+hsub(1) = subplot(2,2,2);
+hsub(2) = subplot(2,2,4);
+hsub(3) = subplot(2,2,[1 3]);
+fs = 40;
+hold on;
+for i = 1:2
+    u =i; % update rate 1
+    ur = updateRates(u);
+    b = 1; % bw 1;
+    axes(hsub(i));
+    hold on;
+    for m = 1:2
+        
+        
+        fnm = sprintf('key%d',c-1);
+        pout = res(m).(fnm);
+        idxf = f > centerFreq(c) - binwidth(b)/2 & f < centerFreq(c) + binwidth(b)/2;
+        power = mean(pout(:,idxf),2);
+        ur = updateRates(u);
+        pwrTrun = power(1:(length(power)-rem(length(power),ur)));
+        reshpPower = reshape(pwrTrun,length(pwrTrun)/ur,ur);
+        powerUse = mean(reshpPower,2);
+        h = histogram(powerUse,'BinWidth',binsForUpdr(u),'Normalization','probability');
+        h.FaceColor = clrs(m,:);
+        h.FaceAlpha = 0.5;
+        xlabel('beta power (a.u.)');
+        ylabel('Prob. (%)');
+        ttluse = sprintf('STN on/off meds - %d bins',bins(i));
+        title(ttluse);
+    end
+    legend({'off meds','on meds'});
+    set(gca,'FontSize',fs);
+end
+% plot general med effect 
+axes(hsub(3));
+hold on;
+fnm = 'key1';
+for m = 1:2
+    pout = res(m).(fnm);
+    power = mean(pout,1);
+    hplt = plot(f,power);
+    hplt.Color = [clrs(m,:) 0.7];
+    hplt.LineWidth = 3;
+end
+legend({'off meds','on meds'});
+ylabel(hsub(3),'Power (log_1_0\muV^2/Hz)');
+xlabel(hsub(3),'Frequency (Hz)');
+
+title('STN medication effect - 1 hour average');
+set(gca,'FontSize',fs);
+xlim([1 100]); 
+
+% plot hfig
+p.plotwidth           = 450/10;
+p.plotheight          = 139/10;
+p.figdir              = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/figures';
+p.figname             = 'STN med effects';
+p.figtype             = '-dpdf';
+p.closeafterprint     = 1;
+hfig.PaperSize = [p.plotwidth p.plotheight];
+hfig.Units = 'centimeters';
+hfig.PaperPositionMode = 'manual';
+plot_hfig(hfig,p);

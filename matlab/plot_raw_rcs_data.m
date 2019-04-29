@@ -1,7 +1,9 @@
 function plot_raw_rcs_data(fldrname)
+%% add path 
+addpath(genpath(fullfile(pwd,'toolboxes','Annotate-v1.1.0')));
 %% this functiosn plots
 hfig = figure;
-[outdatcomplete,outRec,eventTable,outdatcompleteAcc] =  MAIN_load_rcs_data_from_folder(fldrname);
+[outdatcomplete,outRec,eventTable,outdatcompleteAcc, powerTable] =  MAIN_load_rcs_data_from_folder(fldrname);
 dat.outdatcomplete = outdatcomplete;
 dat.outdatcompleteAcc = outdatcompleteAcc;
 dat.eventTable = eventTable;
@@ -30,6 +32,15 @@ hzoom.Enable = 'on';
 hfig.UserData = dat;
 %% plot raw data
 
+% figure out add / subtract factor for event times (if pc clock is not same
+% as INS time). 
+idxTimeCompare = find(outdatcomplete.PacketRxUnixTime~=0,1);
+packRxTimeRaw  = outdatcomplete.PacketRxUnixTime(idxTimeCompare); 
+packtRxTime    =  datetime(packRxTimeRaw/1000,...
+            'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+derivedTime    = outdatcomplete.derivedTimes(idxTimeCompare); 
+timeDiff       = derivedTime - packtRxTime;
+
 numplots = 5;
 for c = 1:4 % loop on channels
     fnm = sprintf('key%d',c-1);
@@ -41,6 +52,37 @@ for c = 1:4 % loop on channels
     hplt.Color = [0 0 0.8 0.7];
     title( hsub(c),outRec(1).tdData(c).chanFullStr );
     set(hsub(c),'FontSize',18);
+   
+    
+
+    % plot event numbers 
+    [events,eIdxs] = unique(eventTable.EventSubType);
+    colrsUse = distinguishable_colors(length(eIdxs));
+    for e = 1:length(eIdxs)
+        eventIdxs = strcmp(events(e),eventTable.EventSubType);
+        ylims = get(gca,'YLim');
+        hold on;
+        t = eventTable.UnixOffsetTime(eventIdxs) + timeDiff;% bcs clock time may be off compared to INS time
+        hplt = plot([t t],ylims);
+        for p = 1:length(hplt)
+            hplt(p).Color = [colrsUse(e,:) 0.6];
+            hplt(p).LineWidth = 3;
+        end
+        hplts(1,e) = hplt(1); 
+    end
+    legend(hplts,events');
+    
+     % plot annotations 
+   
+    NewAxisTicks  = (eventTable.UnixOffsetTime + timeDiff)';
+    NewAxisLabels = eventTable.EventSubType;
+    newAxTick     = [ NewAxisTicks];
+    newAxLabels   = [ NewAxisLabels];
+    [sortedTicks, idxs] = sort(newAxTick);
+    if c == 1
+        hsub(c).XTick = sortedTicks;
+        hsub(c).XTickLabel = newAxLabels(idxs);
+    end
 end
 
 % plot accleratoin
@@ -84,7 +126,7 @@ for c = 1:4 % loop on channels
     y = y - mean(y);
     % plot gausian spectrogram 
     res(c) = compute_spectrogram_gaussian(y,srate); 
-    [fftOut,f]   = pwelch(y(idxuse),srate,srate/2,0:1:srate/2,srate,'psd');
+    [fftOut,f]   = pwelch(y,srate,srate/2,0:1:srate/2,srate,'psd');
     fout(c).f = f; 
     fout(c).fftOut = log10(fftOut); 
 end

@@ -1,12 +1,12 @@
 function plotAdaptiveJson(res)
 %% input is the "res" structure from read adaptive .json
 %% not that fig dir is hard coded here 
-%% it open a dynamic chooser to plot everything 
-%% and also plots all the fields indiivually thought this is commmented out 
+%% it opens a dynamic chooser to plot everything 
+%% and also plots all the fields indiivually though this is commmented out 
 %% on line 36
 prfig.plotwidth           = 10;
 prfig.plotheight          = 10; 
-prfig.figdir              = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/adaptive_example/DeviceNPC700239H'; 
+prfig.figdir              = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v18_adaptive_month5/figures'; 
 prfig.figtype             = '-djpeg';
 prfig.closeafterprint     = 1; 
 prfig.resolution          = 100; 

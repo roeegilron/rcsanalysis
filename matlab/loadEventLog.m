@@ -20,6 +20,10 @@ else
             'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
         outTab(e).UnixOffsetTime = t;
         
+        t = datetime(eventLog(e).RecordInfo.HostUnixTime/1000,...
+            'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+        outTab(e).HostUnixTime = t;
+        
     end
     eventTable = struct2table(outTab);
 end

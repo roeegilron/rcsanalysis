@@ -1,6 +1,6 @@
-function noise_floor_temp(rawfn) 
+function noise_floor_temp() 
 %% load data 
-% rawfn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/noise-floor-test-2/RCS-tests-Oct9-2018/test31/Session1539112319744/DeviceNPC700395H/RawDataTD.mat';
+rawfn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/noise-floor-test-2/RCS-tests-Oct9-2018/test31/Session1539112319744/DeviceNPC700395H/RawDataTD.mat';
 [pn,fn] = fileparts(rawfn); 
 outdir = pn;
 load(rawfn);
