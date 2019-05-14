@@ -1,6 +1,6 @@
 function plot_data_psd_overlay(dirname)
 %% set params
-params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v15_home-visit-4-months/figures';
+params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v03_postop_day_2/figures';
 params.figtype = '-dpdf';
 params.resolution = 300;
 params.closeafterprint = 1; 
@@ -24,10 +24,11 @@ include = {'off-stim-on-meds','on-stim-on-meds'};
 include = {'rest-off-stim-off-meds','rest-on-stim-off-meds'};
 include = {'off-stim-on-meds','on-stim-on-meds'};
 include = {'rest_0-1','rest_0-8','rest_1-6','rest_2_5'};
+include = {'dysk_start','before_dysk'};
 % include = {'off-stim-on-meds','on-stim-on-meds'};
 
 cns = 1:4;
-cns = [1 3];
+cns = [2 4];
 %% plot psd
 lgaxesLFP = [];
 lgttlsLFP = {};

@@ -25,7 +25,7 @@ else
         outTab(e).HostUnixTime = t;
         
     end
-    eventTable = struct2table(outTab);
+    eventTable = struct2table(outTab,'AsArray',true);
 end
 
 

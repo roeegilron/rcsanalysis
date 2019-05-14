@@ -32,8 +32,7 @@ hzoom.Enable = 'on';
 hfig.UserData = dat;
 %% plot raw data
 
-% figure out add / subtract factor for event times (if pc clock is not same
-% as INS time). 
+
 idxTimeCompare = find(outdatcomplete.PacketRxUnixTime~=0,1);
 packRxTimeRaw  = outdatcomplete.PacketRxUnixTime(idxTimeCompare); 
 packtRxTime    =  datetime(packRxTimeRaw/1000,...

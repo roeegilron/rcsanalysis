@@ -52,7 +52,7 @@ for d = 1:length(dirsdata)
         dbout(d).plot = false; 
     end
 end
-tblout = struct2table(dbout); 
+tblout = struct2table(dbout,'AsArray',true); 
 % clean up 
 rmpath(ptadd); 
 end
