@@ -55,10 +55,10 @@ for c = 1:4 % loop on channels
     
 
     % plot event numbers 
-    [events,eIdxs] = unique(eventTable.EventSubType);
+    [events,eIdxs] = unique(eventTable.EventType);
     colrsUse = distinguishable_colors(length(eIdxs));
     for e = 1:length(eIdxs)
-        eventIdxs = strcmp(events(e),eventTable.EventSubType);
+        eventIdxs = strcmp(events(e),eventTable.EventType);
         ylims = get(gca,'YLim');
         hold on;
         t = eventTable.UnixOffsetTime(eventIdxs) + timeDiff;% bcs clock time may be off compared to INS time
