@@ -37,7 +37,7 @@ for j = 1:length(filesLoad)
                     if params.jsononly 
                         jsonojb = deserializeJSON(fileload); 
                         save(fullfile(dirname,['RawDataTD' '_json_only_.mat']),'jsonojb');
-                    else
+                    else 
                         [outdatcomplete, srates, unqsrates] = MAIN(fileload);
                     end
                 else

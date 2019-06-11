@@ -2,7 +2,7 @@ function MAIN_load_rcsdata_from_folders(varargin)
 % this function loads RCS data that exist in any folder. 
 
 %% set params
-params.jsononly = 1; % only loads .json data 
+params.jsononly = 0; % only loads .json data 
 %% function load rcs data from a folder 
 if isempty(varargin)
     [dirname] = uigetdir(pwd,'choose a dir with rcs session folders');
