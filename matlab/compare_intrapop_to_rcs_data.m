@@ -11,11 +11,21 @@ clc;
 %% intraop data:
 % ecog
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v02-surgery/intraop/NO data/analyzed/RCS01_Lecog_Llfp_rest_postlead_newlocatio2_ecog_filt.mat';
+% left side 
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/done/RCS02_bilatM1_Llfp_rest_postlead_ecog_filt.mat';
+% right side 
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/done/RCS02_bilatM1_Llfp_rest_postlead_ecog_filt.mat';
+% both sides 
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/RCS02_bilatM1_bilatlfp_rest_postlead_ecog_filt.mat';
+
 load(fnm);
 clear fnm
 
 %% load rest rc+s data
+% right side
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v03-postop/rcs-data/Session1539481694013/DeviceNPC700395H/rest.mat';
+% left side 
+% fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v04_10_day/rcs_data/off_meds/RCS02L/Session1557938513404/DeviceNPC700398H/rest.mat';
 load(fnm);
 clear fnm;
 

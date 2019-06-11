@@ -1,10 +1,10 @@
 function plot_data_psd_overlay(dirname)
 %% set params
-params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v03_postop_day_2/figures';
+params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS03/noise_floor/figures';
 params.figtype = '-dpdf';
 params.resolution = 300;
 params.closeafterprint = 1; 
-params.figname = 'compare-stim-levels';
+params.figname = 'compare-noise-levels';
 %% set params norm 
 pnorm.norm    = 0; 
 pnorm.normUse = [0 100]; 
@@ -25,10 +25,13 @@ include = {'rest-off-stim-off-meds','rest-on-stim-off-meds'};
 include = {'off-stim-on-meds','on-stim-on-meds'};
 include = {'rest_0-1','rest_0-8','rest_1-6','rest_2_5'};
 include = {'dysk_start','before_dysk'};
+include = {'dysk_start','before_dysk'};
+include = {'noise_floor_in_inc','noise_floor_no_incubator'};
+include = {'in_incubator','outside_incubator'};
 % include = {'off-stim-on-meds','on-stim-on-meds'};
 
 cns = 1:4;
-cns = [2 4];
+cns = [1 3];
 %% plot psd
 lgaxesLFP = [];
 lgttlsLFP = {};
@@ -74,10 +77,10 @@ for i = 1:length(include);
 
             end
             hplt(nmplt) = plot(f,log10(fftOut));
-            hplt(nmplt).LineWidth = 5;
+            hplt(nmplt).LineWidth = 2;
             %hplt.Color = [0 0 0.8 0.7];
             hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
-            xlim([0 250]);
+            xlim([0 500]);
             xlabel('Frequency (Hz)');
             ylabel('Power  (log_1_0\muV^2/Hz)');
             set(gca,'FontSize',20);

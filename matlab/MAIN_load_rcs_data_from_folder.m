@@ -5,6 +5,11 @@ if isempty(varargin)
 else
     dirname  = varargin{1};
 end
+if nargin>=2 % check if there is a params argument 
+    params  = varargin{2};
+else
+    params = []; 
+end
 %% load files 
 filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json'}; 
 for j = 1:length(filesLoad)
@@ -24,10 +29,33 @@ for j = 1:length(filesLoad)
         switch filesLoad{j}
             case 'RawDataTD.json'
                 fileload = fullfile(dirname,'RawDataTD.json');
-                [outdatcomplete, srates, unqsrates] = MAIN(fileload);
+                if ~isempty(params)
+                    % relies on .json mex reader package that only works on PC's or Macs 
+                    % for running larger muber of files
+                    % on linux cluser need to do this (fast) step first on
+                    % PC/MAC
+                    if params.jsononly 
+                        jsonojb = deserializeJSON(fileload); 
+                        save(fullfile(dirname,['RawDataTD' '_json_only_.mat']),'jsonojb');
+                    else
+                        [outdatcomplete, srates, unqsrates] = MAIN(fileload);
+                    end
+                else
+                        [outdatcomplete, srates, unqsrates] = MAIN(fileload);
+                end
             case 'RawDataAccel.json'
-                fileload = fullfile(dirname,'RawDataAccel.json');
-                [outdatcompleteAcc, ~, ~] = MAIN(fileload);
+                if ~isempty(params)
+                    if params.jsononly
+                        jsonojb = deserializeJSON(fileload);
+                        save(fullfile(dirname,['RawDataAccel' '_json_only_.mat']),'jsonojb');
+                    else
+                        fileload = fullfile(dirname,'RawDataAccel.json');
+                        [outdatcompleteAcc, ~, ~] = MAIN(fileload);
+                    end
+                else
+                    fileload = fullfile(dirname,'RawDataAccel.json');
+                    [outdatcompleteAcc, ~, ~] = MAIN(fileload);
+                end
             case 'DeviceSettings.json'
                 fileload = fullfile(dirname,'DeviceSettings.json');
                 outRec = loadDeviceSettings(fileload);
@@ -43,6 +71,7 @@ for j = 1:length(filesLoad)
             case 'RawDataPower.json'
                 fileload = fullfile(dirname,'RawDataPower.json');
                 powerTable = loadPowerData(fileload);
+                save(fullfile(dirname,['RawDataPower' '.mat']),'powerTable');
         end
         
     end

@@ -1,7 +1,7 @@
 function res = compute_spectrogram_gaussian(data,fs)
 %% params
 params.minimum_frequency = 0.1; %lowest freq to examine
-params.maximum_frequency = 50; %highest freq to examine (remember Nyquist! <samplingrate/2 at least!)
+params.maximum_frequency = 120; %highest freq to examine (remember Nyquist! <samplingrate/2 at least!)
 params.number_of_frequencies = 50; %number of frequencies to look at
 params.minimum_frequency_step_size = 0.5;
 params.fractional_bandwidth = .35; %this sets the width of the gaussian for filtering. recommend between .2-.35

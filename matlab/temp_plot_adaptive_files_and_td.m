@@ -6,9 +6,12 @@ clear all; close all; clc;
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553574501259/DeviceNPC700395H'; 
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553618614674/DeviceNPC700395H'; 
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
-params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/figures';
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H/';
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
+params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
 %% load data 
-fnAdaptive = fullfile(params.dir,'AdaptiveLog.json'); 
+fnAdaptive = fullfile([params.dir 'AdaptiveLog.json']); 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(params.dir);
 %%
 fnAdaptive = fullfile(params.dir,'AdaptiveLog.json'); 
@@ -17,7 +20,7 @@ res = readAdaptiveJson(fnAdaptive);
 %% histogram of current 
 hfig = figure;
 cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
-idxuse = cur >= 2 & cur <= 3.5; 
+idxuse = cur >= 0 & cur <= 3; 
 histogram(cur(idxuse),'Normalization','probability'); 
 ylabel('% spent at each current level'); 
 title('1 hour in clinic adaptive'); 
@@ -144,7 +147,7 @@ fnmuse = fullfile(params.outdir,ttluse);
 print(hfig,fnmuse,'-r300','-djpeg')
 savefig(fnmuse); 
 
-%% plot detector and time domai n
+%% plot detector and time domain
 cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:); 
 timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
 uxtimes = datetime(res.timing.PacketGenTime/1000,...
@@ -183,7 +186,7 @@ title('Detector');
 ylabel('Detector (a.u.)'); 
 xlabel('Time'); 
 legend({'Detector','Low threshold','High threshold'}); 
-
+set(gca,'FontSize',24)
 % state and current 
 hsub(2) =  subplot(3,1,2); 
 hold on; 
@@ -197,7 +200,7 @@ hplt2 = plot(timeUse,cur,'LineWidth',3);
 hplt2.Color = [0.8 0.8 0 0.2]; 
 ylim([-1 4]);
 legend([hplt1 hplt2],{'state','current'}); 
-
+set(gca,'FontSize',24)
 % spetral rep of data 
 hsub(3) = subplot(3,1,3); 
 win = barthannwin(500); 
@@ -219,6 +222,7 @@ view(hsub(c),2);
 axis(hsub(c),'tight');
 xlabel(hsub(c),'seconds');
 ylabel(hsub(c),'Frequency (Hz)');
+set(gca,'FontSize',24)
 
 % find ipad events and use xlim for that 
 linkaxes(hsub,'x'); 
@@ -226,7 +230,7 @@ linkaxes(hsub,'x');
 idxIpad = cellfun(@(x) any(strfind(lower(x),'ipad')),eventTable.EventType);
 xlimsuse = eventTable.UnixOffsetTime(idxIpad);
 set(hsub(1),'XLim',xlimsuse);
-
+%%
 % zoom into spcecici range 
 xlimsuse = [datetime('26-Mar-2019 12:31:52.542')   datetime('26-Mar-2019 12:33:15.119')]; 
 xlimsuse.TimeZone = 'America/Los_Angeles';

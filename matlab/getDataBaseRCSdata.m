@@ -39,6 +39,16 @@ for d = 1:length(dirsdata)
         dbout(d).startTime = timeReport.startTime;
         dbout(d).endTime = timeReport.endTime;
         dbout(d).duration = timeReport.duration;
+        
+        % load event file 
+        try
+            evFile = findFilesBVQX(dirsdata{d},'EventLog.json');
+            dbout(d).eventFile = evFile{1};
+            eventData = loadEventLog(dbout(d).eventFile);
+            dbout(d).eventData = eventData;
+        catch
+        end
+
 
         % does mat file exist? 
         matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');

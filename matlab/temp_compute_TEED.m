@@ -1,12 +1,12 @@
 %%
-res = readAdaptiveJson('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H/AdaptiveLog.json'); 
+res = readAdaptiveJson('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02R/Session1559757210876/DeviceNPC700404H/AdaptiveLog.json'); 
 %%
 
 cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:); 
 timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
 uxtimes = datetime(res.timing.PacketGenTime/1000,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-idxuse = [1:21128]; % since there is 6Hz pulse here, have start end time
+idxuse = [3199:3444]; % since there is 6Hz pulse here, have start end time
 
 tss = res.timing.timestamp;
 figure; 
@@ -22,10 +22,10 @@ plot(timesUseTruc,curruntInMaTrunc);
 totaltime = timesUseTruc(end) - timesUseTruc(1); 
 secTime   = seconds(totaltime); 
 
-pw = 100; % pulse width
-f  = 160.3;% frequency (hz) 
-r  = 1570; % impedence 
-openloopCur = 2.5; % in mili amps. 
+pw = 60; % pulse width
+f  = 130.2;% frequency (hz) 
+r  = 1913; % impedence 
+openloopCur = 2.1; % in mili amps. 
 
 % total TEED per second adaptive 
 curSquaredNormalizedByTime = sum( (curruntInMaTrunc.^2) ./ diffsUse ); 

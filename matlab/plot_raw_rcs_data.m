@@ -78,9 +78,13 @@ for c = 1:4 % loop on channels
     newAxTick     = [ NewAxisTicks];
     newAxLabels   = [ NewAxisLabels];
     [sortedTicks, idxs] = sort(newAxTick);
-    if c == 1
-        hsub(c).XTick = sortedTicks;
-        hsub(c).XTickLabel = newAxLabels(idxs);
+    try
+        if c == 1
+            hsub(c).XTick = sortedTicks;
+            hsub(c).XTickLabel = newAxLabels(idxs);
+        end
+    catch 
+        fprintf('ticksn not working \n');
     end
 end
 
