@@ -44,6 +44,7 @@ for j = 1:length(filesLoad)
                         [outdatcomplete, srates, unqsrates] = MAIN(fileload);
                 end
             case 'RawDataAccel.json'
+                fileload = fullfile(dirname,'RawDataAccel.json');
                 if ~isempty(params)
                     if params.jsononly
                         jsonojb = deserializeJSON(fileload);

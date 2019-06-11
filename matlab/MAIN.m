@@ -25,23 +25,34 @@ end
 
 
 
+
+
 if ~isempty(strfind(filename,'RawDataTD'))
-    if ~isempty(jsonobj.TimeDomainData) % no data exists 
-        [outtable, srates] = unravelData(jsonobj);
+    if ~isempty(jsonobj)
+        if ~isempty(jsonobj.TimeDomainData)  % no data exists
+            [outtable, srates] = unravelData(jsonobj);
+        else
+            outtable = table();
+            srates = [];
+        end
     else
-        outtable = table(); 
+        outtable = table();
         srates = [];
     end
 end
 
 
 if ~isempty(strfind(filename,'RawDataAccel'))
-    if ~isempty(jsonobj.AccelData) % no data exists
-        [outtable, srates] = unravelDataACC(jsonobj);
+    if ~isempty(jsonobj)
+        if ~isempty(jsonobj.AccelData)  % no data exists
+            [outtable, srates] = unravelDataACC(jsonobj);
+        else
+            outtable = table();
+            srates = [];
+        end
     else
         outtable = table();
         srates = [];
-        
     end
 end
 if ~isempty(outtable)
