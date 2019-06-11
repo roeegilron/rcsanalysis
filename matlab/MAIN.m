@@ -26,14 +26,29 @@ end
 
 
 if ~isempty(strfind(filename,'RawDataTD'))
-    [outtable, srates] = unravelData(jsonobj);
+    if ~isempty(jsonobj.TimeDomainData) % no data exists 
+        [outtable, srates] = unravelData(jsonobj);
+    else
+        outtable = table(); 
+        srates = [];
+    end
 end
 
 
 if ~isempty(strfind(filename,'RawDataAccel'))
-    [outtable, srates] = unravelDataACC(jsonobj);
+    if ~isempty(jsonobj.AccelData) % no data exists
+        [outtable, srates] = unravelDataACC(jsonobj);
+    else
+        outtable = table();
+        srates = [];
+        
+    end
 end
-outdatcomplete = populateTimeStamp(outtable,srates,filename); 
+if ~isempty(outtable)
+    outdatcomplete = populateTimeStamp(outtable,srates,filename);
+else
+    outdatcomplete = table();
+end
 [pn,fn,ext] = fileparts(filename); 
 % writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
 unqsrates = unique(srates); 

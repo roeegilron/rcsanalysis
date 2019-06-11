@@ -37,6 +37,10 @@ for f = 1:length(DeviceSettings)
     end
 end
 
+if ~exist('outRec','var') % if no data exists create empty 'outRec' structure 
+    outRec = []; 
+end
+
 % loop on structures and construct table of files that exist
 [pn,fnm,ext ] = fileparts(fn);
 save(fullfile(pn,[fnm '.mat']),'outRec','DeviceSettings');
