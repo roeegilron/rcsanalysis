@@ -14,7 +14,7 @@ fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v02-surgery/int
 % left side 
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/done/RCS02_bilatM1_Llfp_rest_postlead_ecog_filt.mat';
 % right side 
-fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/done/RCS02_bilatM1_Llfp_rest_postlead_ecog_filt.mat';
+% fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/done/RCS02_bilatM1_Llfp_rest_postlead_ecog_filt.mat';
 % both sides 
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/RCS02_bilatM1_bilatlfp_rest_postlead_ecog_filt.mat';
 
@@ -30,6 +30,12 @@ load(fnm);
 clear fnm;
 
 %% re ref neuromega data according to RC+S recording config 
+% idx use left
+idxuse = 60754:90572; 
+% idx use right
+idxuse = 15901:30503; 
+% default 
+% idxuse = 1:size(lfp.contact(1).signal,2);
 
 outdatcomplete = outdatachunk ;
 cns = {outRec.tdData.chanOut};
@@ -40,17 +46,25 @@ for c = 1:length(cns)
     if c <= 2 
         idxmins = idxmins + 1; 
         idxplus = idxplus + 1; 
-        neuroOmegaDat(c).dat = lfp.contact(idxplus).signal - lfp.contact(idxmins).signal;
+        neuroOmegaDat(c).dat = lfp.contact(idxplus).signal(idxuse) - lfp.contact(idxmins).signal(idxuse);
     else
         idxmins = idxmins - 7;
         idxplus = idxplus - 7;
-        neuroOmegaDat(c).dat = ecog.contact(idxplus).signal - ecog.contact(idxmins).signal;
+        neuroOmegaDat(c).dat = ecog.contact(idxplus).signal(idxuse) - ecog.contact(idxmins).signal(idxuse);
     end
     
     neuroOmegaDat(c).chanName = sprintf('Neuro-Omega %s',cns{c});
 
 end
 neuroOmegaTab = struct2table(neuroOmegaDat);
+% plot raw data neuromega to check for transienst 
+figure;
+for i = 1:4
+    hsub(i) = subplot(4,1,i); 
+    plot(hsub(i),neuroOmegaTab.dat(i,:));
+    title(neuroOmegaTab.chanName{i});
+end
+linkaxes(hsub,'x'); 
 
 %% plot data 
 hfig = figure; 
@@ -81,7 +95,7 @@ for c = 1:length(cns)
     ylabel('Power  (log_1_0\muV^2/Hz)');
     lgndttls{1} = sprintf('RC+S %s',outRec.tdData(c).chanFullStr);
     title(ttlstr);
-    fprintf('%s %s rms = %.2f\n',lgndttls{1},ttlstr,rms(y).*1e3);
+    fprintf('%s %s rms = %.2f\n',lgndttls{1},ttlstr,rms(y.*1e3));
     clear y yout;
     
     % Neuro Omega (intra op);
@@ -106,6 +120,8 @@ for c = 1:length(cns)
     % add legends
 
 end
+return 
+
 suptitle('Comparison of RC+S and NeuroOmega - normalized 5-150Hz');
 % set params
 params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v03-postop/figures';

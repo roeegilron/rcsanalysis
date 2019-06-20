@@ -1,8 +1,19 @@
 function reportFolderTimeStamps()
 %% this function converts folder time stamps to human readable
 %% and report this to screen
+
 dirname = uigetdir();
 fdirs = findFilesBVQX(dirname,'Sess*',struct('depth',1,'dirs',1));
+% report fast 
+fid = fopen(fullfile(dirname,'folderTimes.txt'),'w+'); 
+for f = 1:size(fdirs,1)
+    [pn,fn,ext] = fileparts(fdirs{f});
+    rawTime = str2num(strrep(lower(fn),'session',''));
+    t = datetime(rawTime/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    fprintf(fid,'%s %s\n',t,fn);
+end
+fclose(fid)
+return; 
 for f = 1:size(fdirs,1)
     [pn,fn,ext] = fileparts(fdirs{f});
     rawTime = str2num(strrep(fn,'Session',''));

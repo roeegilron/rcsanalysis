@@ -13,7 +13,11 @@ end
 %% load files 
 filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json'}; 
 for j = 1:length(filesLoad)
-    ff = findFilesBVQX(dirname,filesLoad{j});
+    if ismac || isunix
+        ff = findFilesBVQX(dirname,filesLoad{j});
+    elseif ispc
+        ff = fullfile(dirname,filesLoad{j});
+    end
     checkForErrors(ff);
     [fileExists, fn] = checkIfMatExists(ff{1});
     if fileExists
@@ -71,8 +75,8 @@ for j = 1:length(filesLoad)
                 save(fullfile(pn,[fnm '.mat']),'eventTable');
             case 'RawDataPower.json'
                 fileload = fullfile(dirname,'RawDataPower.json');
-                powerTable = loadPowerData(fileload);
-                save(fullfile(dirname,['RawDataPower' '.mat']),'powerTable');
+                [powerTable, powerBandInHz] = loadPowerData(fileload);
+                save(fullfile(dirname,['RawDataPower' '.mat']),'powerTable','powerBandInHz');
         end
         
     end

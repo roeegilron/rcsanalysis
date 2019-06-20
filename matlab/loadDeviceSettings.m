@@ -11,6 +11,21 @@ for f = 1:length(DeviceSettings)
             curStr.SensingConfig.timeDomainChannels
             tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
         end
+        if  isfield(curStr.SensingConfig,'fftConfig')
+            fftConfig = curStr.SensingConfig.fftConfig; 
+        end
+        if isfield(curStr.SensingConfig,'powerChannels')
+             powerChannels = curStr.SensingConfig.powerChannels; 
+        end
+    end
+    if isfield(curStr,'SensingConfig')
+        if isfield(curStr.SensingConfig,'fftConfig')
+            fftConfig = curStr.SensingConfig.fftConfig;
+        end
+        if isfield(curStr.SensingConfig,'powerChannels')
+            powerChannels = curStr.SensingConfig.powerChannels; 
+        end
+        
     end
     if isfield(curStr,'StreamState')
         if ~inRecord
@@ -21,6 +36,8 @@ for f = 1:length(DeviceSettings)
                 outRec(recNum).timeStart = t;
                 outRec(recNum).unixtimeStart  = timenum;
                 outRec(recNum).tdData = tdData;
+                outRec(recNum).powerChannels = powerChannels;
+                outRec(recNum).fftConfig = fftConfig;
                 inRecord = 1;
             end
         end
@@ -40,6 +57,8 @@ end
 if ~exist('outRec','var') % if no data exists create empty 'outRec' structure 
     outRec = []; 
 end
+
+%%
 
 % loop on structures and construct table of files that exist
 [pn,fnm,ext ] = fileparts(fn);
