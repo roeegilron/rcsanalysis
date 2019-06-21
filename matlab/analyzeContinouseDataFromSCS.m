@@ -1,22 +1,22 @@
-function analyzeContinouseDataFromSCS()
+function analyzeContinouseDataFromSCS(TDDATAFILE)
 params.overlap = 15; % overlap in seconds - time to jump for fft
 params.datasize = 30; % time in second to run fft on
 params.maxGapFactor   = 2; % max gap factor to allow. So 1/sampleRate * maxGap Factor.
 params.maxGap   = 0.2; % max gap to allow in data before throwing it out - seconds
 params.tdSR     = 250; % only use 250hz sampling rate
 params.accSR    = 32; % only user 64 hz sampling rate
-% data location:
-rootdir  = '/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L';
+% % data location:
+% rootdir  = '/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L';
+% 
+% ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
+% tdfile  = findFilesBVQX(rootdir,'DeviceSettings.mat');
+% acfile  = findFilesBVQX(rootdir,'RawDataAccel.mat');
+% 
+% tdProcDat = struct();
+% accProcDat = struct();
+% clc;
 
-ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
-tdfile  = findFilesBVQX(rootdir,'DeviceSettings.mat');
-acfile  = findFilesBVQX(rootdir,'RawDataAccel.mat');
-
-tdProcDat = struct();
-accProcDat = struct();
-clc;
-
-%% check issue with yaers 
+%% check issue with years 
 
 % check for problems with year times  and copy those direcotries over to
 % share with medtronic
@@ -60,13 +60,13 @@ if ~skipthis
     fclose(fid);
 end
 %%
-fid = fopen(fullfile(rootdir,'fileProcessigLog.txt'),'w+');
+% fid = fopen(fullfile(rootdir,'fileProcessigLog.txt'),'w+');
 
-for f = 1:length(ffiles)
+% for f = 1:length(ffiles)
     % load all the data
-    [datadir,fn,ext] = fileparts(ffiles{f});
+    [datadir,fn,ext] = fileparts(TDDATAFILE);
     % load td data
-    load(ffiles{f},'outdatcomplete');
+    load(TDDATAFILE,'outdatcomplete');
     td = outdatcomplete;
     clear outdatcomplete;
     if ~isempty(td)
@@ -86,36 +86,38 @@ for f = 1:length(ffiles)
             
             % process and analyze time domain data
             processedData = processTimeDomainData(td,params);
-            if isempty(fieldnames(tdProcDat))
-                tdProcDat = processedData;
-            else
-                if ~isempty(processedData)
-                    tdProcDat = [tdProcDat processedData];
-                end
-            end
+            save(fullfile(datadir,'processedTDdata.mat'),'processedData'); 
+%             if isempty(fieldnames(tdProcDat))
+%                 tdProcDat = processedData;
+%             else
+%                 if ~isempty(processedData)
+%                     tdProcDat = [tdProcDat processedData];
+%                 end
+%             end
             
             % process and analyze acc data
             accData = processActigraphyData(accTable,params);
-            if isempty(fieldnames(accProcDat))
-                accProcDat = accData;
-            else
-                if ~isempty(accData)
-                    accProcDat = [accProcDat accData];
-                end
-            end
+            save(fullfile(datadir,'processedAccData.mat'),'processedData'); 
+%             if isempty(fieldnames(accProcDat))
+%                 accProcDat = accData;
+%             else
+%                 if ~isempty(accData)
+%                     accProcDat = [accProcDat accData];
+%                 end
+%             end
             
             % process and analyze actigraphy data
             %             processedData = processTimeDomainData(td,params);
         end
-        fprintf(fid,'file %d out of %d file length is %.2f minutes - doee in %.2f seconds\n',...
-            f,length(ffiles),minutes(fileDuration),toc(start));
-        fprintf('file %d out of %d file length is %.2f minutes - doee in %.2f seconds\n',...
-            f,length(ffiles),minutes(fileDuration),toc(start));
+%         fprintf(fid,'file %d out of %d file length is %.2f minutes - doee in %.2f seconds\n',...
+%             f,length(ffiles),minutes(fileDuration),toc(start));
+%         fprintf('file %d out of %d file length is %.2f minutes - doee in %.2f seconds\n',...
+%             f,length(ffiles),minutes(fileDuration),toc(start));
     end
     
-end
-save( fullfile(rootdir,'processedData.mat'),'params','tdProcDat','accProcDat','-v7.3')
-fclose(fid);
+% end
+% save( fullfile(rootdir,'processedData.mat'),'params','tdProcDat','accProcDat','-v7.3')
+% fclose(fid);
 end
 
 function processedData = processTimeDomainData(td,params)
