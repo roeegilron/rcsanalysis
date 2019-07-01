@@ -16,7 +16,7 @@ for j = 1:length(filesLoad)
     if ismac || isunix
         ff = findFilesBVQX(dirname,filesLoad{j});
     elseif ispc
-        ff = fullfile(dirname,filesLoad{j});
+        ff = {fullfile(dirname,filesLoad{j})};
     end
     checkForErrors(ff);
     [fileExists, fn] = checkIfMatExists(ff{1});
