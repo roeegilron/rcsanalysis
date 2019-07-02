@@ -10,7 +10,14 @@ if nargin>=2 % check if there is a params argument
 else
     params = []; 
 end
+% initialize return variables as empty matrices 
+outdatcomplete = table(); 
+outRec = struct(); 
+eventTable = table(); 
+outdatcompleteAcc = table();  
+powerTable = table();
 %% load files 
+
 filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json'}; 
 for j = 1:length(filesLoad)
     if ismac || isunix
@@ -40,7 +47,12 @@ for j = 1:length(filesLoad)
                     % PC/MAC
                     if params.jsononly 
                         jsonojb = deserializeJSON(fileload); 
-                        save(fullfile(dirname,['RawDataTD' '_json_only_.mat']),'jsonojb');
+                        varinfo=whos('jsonojb');
+                        if varinfo.bytes >= 2^31
+                            save(fullfile(dirname,['RawDataTD' '_json_only_.mat']),'jsonojb' ,'-v7.3','-nocompression');
+                        else
+                            save(fullfile(dirname,['RawDataTD' '_json_only_.mat']),'jsonojb');
+                        end
                     else 
                         [outdatcomplete, srates, unqsrates] = MAIN(fileload);
                     end

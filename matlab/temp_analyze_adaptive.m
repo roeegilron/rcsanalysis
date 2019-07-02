@@ -12,6 +12,7 @@ params.rcsDvcStFn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v
 params.drivingTm  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v10-3-month/delsys_driving/driving_start_stop_times_off_stim.csv';
 
 diruse            = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v18_adaptive_month5/all_rcs_data/Session1553549911973/DeviceNPC700395H/';
+diruse            = '/Volumes/Samsung_T5/RCS02/v10_02_month/RCS_DATA/SCBS/RCS02L/Session1561746867608/DeviceNPC700398H';
 fnAdaptive = fullfile(diruse,'AdaptiveLog.json'); 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(diruse);
 res = readAdaptiveJson(fnAdaptive); 

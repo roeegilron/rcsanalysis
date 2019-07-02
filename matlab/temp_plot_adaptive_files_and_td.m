@@ -9,7 +9,9 @@ params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adap
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H/';
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
+params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
+
 %% load data 
 fnAdaptive = fullfile([params.dir 'AdaptiveLog.json']); 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(params.dir);
@@ -153,7 +155,13 @@ timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0
 uxtimes = datetime(res.timing.PacketGenTime/1000,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 % 
-idxuse = 2:length(uxtimes); 
+% find idx of event 
+idxevent = ...
+    strcmp(eventTable.EventSubType,'Now on continuous DBS. Induce dyskinesia and see if it self terminates or not.'); 
+timeStart = eventTable.UnixOnsetTime(idxevent); 
+timeEnd   = timeStart+ minutes(22); 
+idxuse = uxtimes > timeStart & uxtimes < timeEnd;
+
 curUse = cur(idxuse); 
 timeUse = uxtimes(idxuse); 
 
@@ -201,12 +209,26 @@ hplt2.Color = [0.8 0.8 0 0.2];
 ylim([-1 4]);
 legend([hplt1 hplt2],{'state','current'}); 
 set(gca,'FontSize',24)
+
+
 % spetral rep of data 
 hsub(3) = subplot(3,1,3); 
 win = barthannwin(500); 
 nfft = 500; 
 overlap = 480; 
-y = outdatcomplete.key2; 
+% find out what times to use 
+allTimes = outdatcomplete.derivedTimes; 
+idxuseTimeDomain  = allTimes > timeStart & allTimes < timeEnd;
+
+outDatChunk = outdatcomplete(idxuseTimeDomain,:); 
+y = outDatChunk.key3; 
+
+
+idxpacketGenTime = find(outDatChunk.PacketGenTime~=0);
+packetGenTime = outDatChunk.PacketGenTime( idxpacketGenTime(1) ); 
+packTimeFormated = datetime(packetGenTime/1000,...
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+insTime = outDatChunk.derivedTimes(idxpacketGenTime(1)); 
 
 c = 3; 
 
@@ -229,7 +251,7 @@ linkaxes(hsub,'x');
 
 idxIpad = cellfun(@(x) any(strfind(lower(x),'ipad')),eventTable.EventType);
 xlimsuse = eventTable.UnixOffsetTime(idxIpad);
-set(hsub(1),'XLim',xlimsuse);
+% set(hsub(1),'XLim',xlimsuse);
 %%
 % zoom into spcecici range 
 xlimsuse = [datetime('26-Mar-2019 12:31:52.542')   datetime('26-Mar-2019 12:33:15.119')]; 

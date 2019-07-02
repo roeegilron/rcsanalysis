@@ -41,6 +41,10 @@ for p = 1:size(datasizes,1)
     varnames{nchan+1} = 'systemTick'; 
     outdat(packetidx,nchan+2) = TDdat.AccelData(p).Header.timestamp.seconds; 
     varnames{nchan+2} = 'timestamp'; 
+    outdat(packetidx,nchan+3) = TDdat.AccelData(p).PacketGenTime;
+    varnames{nchan+3} = 'PacketGenTime'; 
+    outdat(packetidx,nchan+4) = TDdat.AccelData(p).PacketRxUnixTime;
+    varnames{nchan+4} = 'PacketRxUnixTime'; 
 end
 %%
 fprintf('finished unpacking into matrix in %.2f seconds\n',toc(start));

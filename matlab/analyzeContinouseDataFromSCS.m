@@ -86,7 +86,7 @@ end
             
             % process and analyze time domain data
             processedData = processTimeDomainData(td,params);
-            save(fullfile(datadir,'processedTDdata.mat'),'processedData'); 
+            save(fullfile(datadir,'processedTDdata.mat'),'processedData','params'); 
 %             if isempty(fieldnames(tdProcDat))
 %                 tdProcDat = processedData;
 %             else
@@ -97,7 +97,7 @@ end
             
             % process and analyze acc data
             accData = processActigraphyData(accTable,params);
-            save(fullfile(datadir,'processedAccData.mat'),'processedData'); 
+            save(fullfile(datadir,'processedAccData.mat'),'accData','params'); 
 %             if isempty(fieldnames(accProcDat))
 %                 accProcDat = accData;
 %             else

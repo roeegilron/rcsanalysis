@@ -57,6 +57,7 @@ plot(t,z-mean(z));
 figure;
 cntplt = 1;
 hsb(cntplt) = subplot(4,1,cntplt); cntplt = cntplt +1; 
+pkgTable.DateTime.TimeZone = 'America/Los_Angeles';
 hp = plot(pkgTable.DateTime,pkgTable.DK);
 hp.Color = [0 0.8 0 0.7];
 hp.LineWidth = 3; 
@@ -79,15 +80,16 @@ title('acc rc+s');
 set(gca,'FontSize',16);
 
 
+
 uxtimes = datetime(ptOut.PacketRxUnixTime/1000,...
-    'ConvertFrom','posixTime','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 
 
 zscores = zscore(ptOut.Band7); 
 idxkeep = abs(zscores)<4; 
 hsb(cntplt) = subplot(4,1,cntplt); cntplt = cntplt +1; 
 plot(uxtimes(idxkeep),ptOut.Band7(idxkeep)); 
-title('acc rc+s');
+title('power data');
 set(gca,'FontSize',16);
 
 linkaxes(hsb,'x'); 
