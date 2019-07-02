@@ -1,5 +1,7 @@
 function [powerTable, pbOut]  = loadPowerData(fn)
 powerLog = jsondecode(fixMalformedJson(fileread(fn),'EventLog'));
+powerTable = table();
+pbOut = struct();
 [pn,fnm,ext ] = fileparts(fn);
 if isempty(powerLog) | isempty(powerLog.PowerDomainData)
     fprintf('power data  is empty\n');
