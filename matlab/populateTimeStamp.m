@@ -21,6 +21,69 @@ medTimeExpanded = zeros(size(outdat,1),1);
 packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+%% attemp at vectorization 
+% % 1.0 get rid of first packet 
+% % 1.5 only deal with gaps that are smaller than 6.553 seconds 
+%   % if gap is smaller than 6.55 seconds verify packet time with systemTick clock 
+%   % and increment from last end time
+%   idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)];
+%   % find out what value to give based on
+%   % packet count
+%   idxInNums = find(idxsmaller==1);
+%   preIdxInNums = idxInNums-1;
+% 
+%   
+%   
+%   difftime = outdat.systemTick(idxpackets(idxInNums))-outdat.systemTick(idxpackets(preIdxInNums));
+%   % XXXX PLACE WHERE STOPPEPD XXXXXX 
+%   packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
+%   packTimes(p) = packtime;
+%   
+%   if (packtime - numpoints/srate) <= isi
+%       secondsToAdd = seconds(packtime ) ;
+%       % cast to microseconds
+%       endTime = endTimes(p-1) + secondsToAdd;
+%       endTimes(p) = endTime;
+%   else
+%       % we lost some some time, use systemTick to find out how much data was lost.
+%       pctlen(pctlost)  = abs(packtime - numpoints/srate);
+%       % increment time use by difference between packtime and
+%       % numpoints / srate
+%       pctlost = pctlost + 1;
+%       secondsToAdd =  seconds(packtime );
+%       % cast to microseconds
+%       endTime = endTimes(p-1) + secondsToAdd;
+%       endTimes(p) = endTime;
+%   end
+%  
+% % 2. find gaps larger than 6.553 seconds and populate- this has to come
+% % after all the easy stuff 
+% idxlarger = [0 ; diff(timestamps) > seconds(2^16/1e4)];
+% % find out what value to give based on
+% % packet count
+% idxInNums = find(idxlarger==1); 
+% preIdxInNums = idxInNums-1; 
+% gapLenInSeconds = timestamps(idxInNums)-timestamps(preIdxInNums);
+% numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
+% systemTickPreviousPacket = outdat.systemTick(idxpackets(preIdxInNums));
+% systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
+% exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
+%     systemTickPreviousPacket/1e4 + ...
+%     systemTickCurrentPacket/1e4);
+% 
+% timeuse = outdat.timestamp(idxpackets(idxInNums));
+% tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
+% % cast to microseconds
+% tmptime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+% endTime = tmptime;
+% 
+% endTimes(idxInNums) = endTime;
+% %
+% endTime = endTimes(preIdxInNums) + exactGapTime;
+% endTimes(p) = endTime;
+
+
+%%
 
 for p = 1:length(idxpackets)
     srate = srates(p); 
@@ -95,7 +158,7 @@ for p = 1:length(idxpackets)
     end
    
     % populate each sample with a time stamp 
-    outdat.samplerate(idxpopulate) = srates(p);
+    outdat.samplerate(idxpopulate,1) = repmat(srates(p),1,size(idxpopulate,2));
     timevec = endTime: - seconds(1/srate): (endTime- seconds((numpoints-1)/srate)); 
     medTimeExpanded(idxpopulate) = datenum(timevec); % use Matlab datenum, at end cast back to str 
 end

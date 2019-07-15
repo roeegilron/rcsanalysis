@@ -9,6 +9,7 @@ params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adap
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H/';
 params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
+params.dir = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
 

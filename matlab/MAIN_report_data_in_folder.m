@@ -9,9 +9,9 @@ tblout = getDataBaseRCSdata(dirname);
 fid = fopen(fullfile(dirname,'recordingReport.txt'),'w+');
 
 for t = 1:size(tblout)
-    if ~isempty(tblout.startTime{t})
-        fprintf(fid,'%s (Duration)\n\t\t%s\t\t%s\n',...
-            tblout.duration{t},tblout.startTime{t},tblout.endTime{t});
+    if ~isempty(tblout.startTime(t))
+        fprintf(fid,'%s (Duration)\n\t\t%s\t\t%s\t\t%s\n',...
+            tblout.duration(t),tblout.startTime(t),tblout.endTime(t),tblout.sessname{t});
         et = tblout.eventData{t};
         if ~isempty(et)
             idxuse = ~cellfun(@(x) any(strfind(x, 'BatteryLevel')),et.EventType);
@@ -27,7 +27,7 @@ for t = 1:size(tblout)
     end
 end
 
-toSum = [tblout.duration{~cellfun(@(x) isempty(x),tblout.duration)}];
+toSum = [tblout.duration(~cellfun(@(x) isempty(x),tblout.duration))];
 totalDuration = sum(toSum(toSum > duration(seconds(0))));
 fnmsave = fullfile(dirname,'database.mat');
 save(fnmsave,'tblout','totalDuration'); 

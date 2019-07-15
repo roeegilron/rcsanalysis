@@ -62,14 +62,16 @@ for c = 1:4 % loop on channels
         ylims = get(gca,'YLim');
         hold on;
         t = eventTable.UnixOffsetTime(eventIdxs) + timeDiff;% bcs clock time may be off compared to INS time
-        hplt = plot([t t],ylims);
+        tevents = repmat(t,1,2); 
+        yevents = repmat(ylims,size(tevents,1),1);
+        hplt = plot(tevents',yevents');
         for p = 1:length(hplt)
             hplt(p).Color = [colrsUse(e,:) 0.6];
             hplt(p).LineWidth = 3;
         end
         hplts(1,e) = hplt(1); 
     end
-    legend(hplts,events');
+%     legend(hplts,events');
     
      % plot annotations 
    

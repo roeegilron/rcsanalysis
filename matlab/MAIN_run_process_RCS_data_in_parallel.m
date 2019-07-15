@@ -9,9 +9,11 @@ else isunix
     curdir = pwd; 
 end
 ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
+ffiles = findFilesBVQX(rootdir,'RawDataAccel.mat');
+
 clc;
 
-for f = 1:5%length(ffiles)
+for f = 1:length(ffiles)
     try 
         analyzeContinouseDataFromSCS(ffiles{f});
         fprintf('success %d \n',f);

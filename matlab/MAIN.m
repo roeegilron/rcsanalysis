@@ -50,6 +50,8 @@ if ~isempty(strfind(filename,'RawDataAccel'))
             outtable = table();
             srates = [];
         end
+        %check clean the data from packets that have bad years 
+        x =2;
     else
         outtable = table();
         srates = [];

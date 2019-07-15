@@ -6,6 +6,28 @@ function [outtable, srates] = unravelDataACC(TDdat)
 % in this folder 
 %% unravel data 
 
+% check for bad packets 
+unixtimes = [TDdat.AccelData.PacketRxUnixTime];
+uxtimes = datetime(unixtimes'/1000,...
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+temp  = [TDdat.AccelData.Header];
+temp2 = [temp.timestamp];
+uxseconds = [temp2.seconds];
+startTimeDt = datetime(datevec(uxseconds./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
+
+
+yearMode = mode(year(startTimeDt)); 
+
+% check for packets with funky year 
+badPackets = year(startTimeDt)~=yearMode;  % sometimes the seconds is ab ad msseaurment 
+% check for packets in the future 
+badPackets2 = uxtimes(1:end-1) >= uxtimes(2:end) ;
+badPackets2 = [badPackets2; 0];
+
+idxBadPackets = badPackets | badPackets2;
+
+TDdat.AccelData = TDdat.AccelData(~idxBadPackets);
 
 
 %% deduce sampling rate 
