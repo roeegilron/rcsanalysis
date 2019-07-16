@@ -3,7 +3,7 @@ function MAIN_load_rcsdata_from_folders(varargin)
 
 
 %% set params
-params.jsononly = 1; % only loads .json data 
+params.jsononly = 0; % only loads .json data 
 %% function load rcs data from a folder 
 if isempty(varargin)
     [dirname] = uigetdir(pwd,'choose a dir with rcs session folders');
@@ -29,7 +29,7 @@ for f = 1:size(tbluse,1)
         [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(foldername{1},params);
         fprintf('folder %d/%d done in %.2f secs\n',f,size(tbluse,1),toc(start));
     catch
-        fprintf('\t\tXXXXX\t error in foler %s\n', foldernames{f});
+        fprintf('\t\tXXXXX\t error in foler %s\n', foldername{1});
     end
 end
 

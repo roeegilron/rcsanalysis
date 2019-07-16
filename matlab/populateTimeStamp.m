@@ -21,66 +21,93 @@ medTimeExpanded = zeros(size(outdat,1),1);
 packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-%% attemp at vectorization 
-% % 1.0 get rid of first packet 
-% % 1.5 only deal with gaps that are smaller than 6.553 seconds 
-%   % if gap is smaller than 6.55 seconds verify packet time with systemTick clock 
-%   % and increment from last end time
-%   idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)];
-%   % find out what value to give based on
-%   % packet count
-%   idxInNums = find(idxsmaller==1);
-%   preIdxInNums = idxInNums-1;
-% 
-%   
-%   
-%   difftime = outdat.systemTick(idxpackets(idxInNums))-outdat.systemTick(idxpackets(preIdxInNums));
-%   % XXXX PLACE WHERE STOPPEPD XXXXXX 
-%   packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
-%   packTimes(p) = packtime;
-%   
-%   if (packtime - numpoints/srate) <= isi
-%       secondsToAdd = seconds(packtime ) ;
-%       % cast to microseconds
-%       endTime = endTimes(p-1) + secondsToAdd;
-%       endTimes(p) = endTime;
-%   else
-%       % we lost some some time, use systemTick to find out how much data was lost.
-%       pctlen(pctlost)  = abs(packtime - numpoints/srate);
-%       % increment time use by difference between packtime and
-%       % numpoints / srate
-%       pctlost = pctlost + 1;
-%       secondsToAdd =  seconds(packtime );
-%       % cast to microseconds
-%       endTime = endTimes(p-1) + secondsToAdd;
-%       endTimes(p) = endTime;
-%   end
-%  
-% % 2. find gaps larger than 6.553 seconds and populate- this has to come
-% % after all the easy stuff 
-% idxlarger = [0 ; diff(timestamps) > seconds(2^16/1e4)];
-% % find out what value to give based on
-% % packet count
-% idxInNums = find(idxlarger==1); 
-% preIdxInNums = idxInNums-1; 
-% gapLenInSeconds = timestamps(idxInNums)-timestamps(preIdxInNums);
-% numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
-% systemTickPreviousPacket = outdat.systemTick(idxpackets(preIdxInNums));
-% systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
-% exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
-%     systemTickPreviousPacket/1e4 + ...
-%     systemTickCurrentPacket/1e4);
-% 
-% timeuse = outdat.timestamp(idxpackets(idxInNums));
-% tmptime = datetime(datevec(timeuse./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
-% % cast to microseconds
-% tmptime.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
-% endTime = tmptime;
-% 
-% endTimes(idxInNums) = endTime;
-% %
-% endTime = endTimes(preIdxInNums) + exactGapTime;
-% endTimes(p) = endTime;
+usevector = 1; 
+if usevector
+%% attempt at vectorization 
+%  set up a duration array 
+endTimes  = NaT(size(timestamps,1), 1) - NaT(1);
+endTimes.Format = 'hh:mm:ss.SSS'; % add microseconds 
+% 1 figure out different isis 
+isis = 1./srates;
+
+% 1.5 start with gaps that are smaller than 6.553 seconds 
+% if gap is smaller than 6.55 seconds verify packet time with systemTick clock
+% and increment from last end time
+idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)]; % add zero at start since using diff
+% find out what value to give based on
+% packet count
+idxInNums = find(idxsmaller==1);
+preIdxInNums = idxInNums-1;
+difftime = outdat.systemTick(idxpackets(idxInNums))-outdat.systemTick(idxpackets(preIdxInNums));
+packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
+secondsToAdd = seconds(packtime ) ;
+endTimes(idxInNums) = secondsToAdd;   
+ 
+% 2. find gaps larger than 6.553 seconds and populate- this has to come
+% after all the easy stuff 
+idxlarger = [0 ; diff(timestamps) > seconds(2^16/1e4)];
+% find out what value to give based on
+% packet count
+idxInNums = find(idxlarger==1); 
+preIdxInNums = idxInNums-1; 
+gapLenInSeconds = timestamps(idxInNums)-timestamps(preIdxInNums);
+numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
+systemTickPreviousPacket = outdat.systemTick(idxpackets(preIdxInNums));
+systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
+exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
+    systemTickPreviousPacket/1e4 + ...
+    systemTickCurrentPacket/1e4);
+endTimes(idxInNums) = exactGapTime;
+% get rid of the first packet;  
+idxStartWithOutFirstPacket = find(outdat.packetsizes~=0,1)+1; 
+outdat = outdat(idxStartWithOutFirstPacket:end,:); 
+endTimes = endTimes(2:end); 
+isis     = isis(2:end); 
+srates   = srates(2:end); 
+% set starting point based on computer time 
+firstTimeIdx = find(outdat.PacketGenTime~=0,1);
+timeOfLastSampleInFirstPacket = datetime(outdat.PacketRxUnixTime(firstTimeIdx)/1000,...
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+startTime = timeOfLastSampleInFirstPacket - endTimes(1); 
+endTimesDate = startTime + cumsum(endTimes); 
+%% my vectorization fails here - but almost all the way there
+
+% populate each sample with a time stamp
+derivedTimes = NaT(size(outdat,1),1); 
+idxpackets   = find(outdat.packetsizes~=0);
+numtpoints   = outdat.packetsizes(idxpackets); 
+increments   = -seconds(1./srates); 
+packstarts   = endTimesDate- seconds( (numtpoints-1)./srates );
+derivedTimes.TimeZone = endTimesDate.TimeZone; 
+derivedTimes.Format = endTimesDate.Format; 
+
+
+% tic; 
+% for p = 1:size(endTimesDate,1)
+%     idxuse = idxpackets(p) : -1 : idxpackets(p) - (numtpoints(p)-1);
+%     derivedTimes(idxuse) = endTimesDate(p) : increments(p) : packstarts(p);
+% end
+% toc; 
+% try posix times 
+posTimesOut = posixtime(derivedTimes);
+endTimesPosTomes = posixtime(endTimesDate); 
+packstartsPosTime = posixtime(packstarts); 
+secsDouble  = seconds(increments); 
+tic; 
+for p = 1:size(endTimesDate,1)
+    idxuse = idxpackets(p) : -1 : idxpackets(p) - (numtpoints(p)-1);
+    posTimesOut(idxuse) = endTimesPosTomes(p) : secsDouble(p) : packstartsPosTime(p);
+end
+derivedTimes = datetime(posTimesOut,...
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+
+ncol = size(outdat,2);
+outdat.derivedTimes = derivedTimes;
+outdat.Properties.VariableDescriptions{ncol+1} = 'derived time stamps from systemTick and timestamp variables'; 
+fprintf('finished deriving time in %.2f\n',toc(start));
+return ;
+end
 
 
 %%

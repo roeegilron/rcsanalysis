@@ -67,6 +67,8 @@ for p = 1:size(datasizes,1)
     varnames{nchan+3} = 'PacketGenTime'; 
     outdat(packetidx,nchan+4) = TDdat.AccelData(p).PacketRxUnixTime;
     varnames{nchan+4} = 'PacketRxUnixTime'; 
+    outdat(packetidx,nchan+5) = packetsizes(p);
+    varnames{nchan+5} = 'packetsizes'; 
 end
 %%
 fprintf('finished unpacking into matrix in %.2f seconds\n',toc(start));

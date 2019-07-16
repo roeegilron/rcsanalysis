@@ -81,6 +81,9 @@ for p = 1:size(datasizes,1)
     
     outdat(packetidx,maxnchans+5) =  TDdat.TimeDomainData(p).PacketRxUnixTime; 
     varnames{maxnchans+5} = 'PacketRxUnixTime'; 
+    
+    outdat(packetidx,maxnchans+6) =  packetsizes(p); 
+    varnames{maxnchans+6} = 'packetsizes'; 
 end
 
 
