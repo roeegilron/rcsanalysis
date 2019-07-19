@@ -140,7 +140,8 @@ end
 while timeEnd < td.derivedTimes(end)
     idxuse = td.derivedTimes >= timeStart & td.derivedTimes <= timeEnd;
     times = td.derivedTimes(idxuse);
-    srates = unique(td.samplerate);
+    sratesIdx = td.samplerate~=0;
+    srates = unique(td.samplerate(sratesIdx));
     reject = 0;
     % check if sapmpling rates are the same
     if length(srates)>1

@@ -93,13 +93,20 @@ posTimesOut = posixtime(derivedTimes);
 endTimesPosTomes = posixtime(endTimesDate); 
 packstartsPosTime = posixtime(packstarts); 
 secsDouble  = seconds(increments); 
+sratesout = zeros(size(posTimesOut,1),1);
+
 tic; 
 for p = 1:size(endTimesDate,1)
     idxuse = idxpackets(p) : -1 : idxpackets(p) - (numtpoints(p)-1);
     posTimesOut(idxuse) = endTimesPosTomes(p) : secsDouble(p) : packstartsPosTime(p);
+    sratesout(idxuse) = repmat(srates(p),size(idxuse,2),1);
 end
 derivedTimes = datetime(posTimesOut,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+% fix smaple rate thing 
+outdat.samplerate = sratesout;
+
+
 
 
 ncol = size(outdat,2);

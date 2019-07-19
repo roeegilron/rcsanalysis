@@ -1,6 +1,6 @@
 function concatenate_and_plot_TD_data()
 if ismac 
-    rootdir  = '/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L';
+    rootdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v13_home_data_stim/rcs_data/RCS02L';
 else isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
 end
@@ -10,9 +10,11 @@ ff = findFilesBVQX(rootdir,'proc*TD*.mat');
 tdProcDat = struct();
 for f = 1:length(ff)
     
-    load(ff{f},'processedData');
+    load(ff{f},'processedData','params');
     if isempty(fieldnames(tdProcDat))
-        tdProcDat = processedData;
+        if isstruct(processedData)
+            tdProcDat = processedData;
+        end
     else
         if ~isempty(processedData)
             tdProcDat = [tdProcDat processedData];
@@ -20,7 +22,7 @@ for f = 1:length(ff)
     end
     clear processedData
 end
-save( fullfile(rootdir,'processedData.mat'),'params','accProcDat','-v7.3')
+save( fullfile(rootdir,'processedData.mat'),'tdProcDat','params','-v7.3')
 
 % save acc 
 ffAcc = findFilesBVQX(rootdir,'processedAccData.mat');
@@ -59,7 +61,7 @@ for i = 1:length(tdProcDatSep)
     timeStarts(i) = times(1); 
     timeEnds(i) = times(end); 
 end
-allTimes = sortrows([timeStarts',timeEnds'],1);
+allTimes = sortrows([fftResultsTd.timeStart',fftResultsTd.timeEnd'],1);
 % split up recordings that are not in the samy day 
 idxNotSameDay = day(allTimes(:,1)) ~= day(allTimes(:,2));
 allTimesSameDay = allTimes(~idxNotSameDay,:); 
@@ -86,15 +88,16 @@ hax = subplot(1,1,1);
 plot(timeofday( allTimesNew' ),[yValue' yValue']',...
     'LineWidth',10,...
     'Color',[0.8 0 0 0.7]);
-yticks(1:length(daysUse))
+unqDays = unique(daysUse); 
+yticks(1:length(unqDays))
 ylabelsUse = {}; 
-for d = 1:length(daysUse)
-    ylabelsUse{d,1} = sprintf('May %d',daysUse(d));
+for d = 1:length(unqDays)
+    ylabelsUse{d,1} = sprintf('May %d',unqDays(d));
 end
 hax.YTickLabel = ylabelsUse;
 
 set(gca,'FontSize',16); 
-ttluse = sprintf('Continous Chronic Recording at Home (%.2f hours)',hours(totalHours)); 
+ttluse = sprintf('Continous Chronic Recording at Home (%s hours)',sum(fftResultsTd.timeEnd-fftResultsTd.timeStart)/2); 
 title(ttluse);
 figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v06_home_data/figures';
 figname = 'continous recording.fig';
@@ -153,21 +156,7 @@ fftResultsTd.timeEnd = [tdProcDat.timeEnd];
 save( fullfile(rootdir,'psdResults.mat'),'params','fftResultsTd')
 
 %% plot the data 
-for c = 1:4
-    start = tic;
-    fn = sprintf('key%d',c-1);
-    dat = [tdProcDat.(fn)];
-    sr = 250; 
-    [fftOut,ff]   = pwelch(dat,sr,sr/2,0:1:sr/2,sr,'psd');
-    fftResultsTd.([fn 'fftOut']) = log10(fftOut); 
-    fprintf('chanel %d done in %.2f\n',c,toc(start))
-end
-fftResultsTd.ff = ff; 
-fftResultsTd.timeStart = [tdProcDat.timeStart];
-fftResultsTd.timeEnd = [tdProcDat.timeEnd];
-
-save( fullfile(rootdir,'psdResults.mat'),'params','fftResultsTd')
-
+,
 %% get td data + pkg data + acc data - correct place 
 % get idx to plot 
 % load('/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02R/psdResults.mat');
@@ -322,13 +311,19 @@ end
 
 
 
-
+% plot all data spectral 
 figure;
 ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'}; 
 for c = 1:4 
     hsub(c) = subplot(4,1,c); 
     fn = sprintf('key%dfftOut',c-1); 
     C = fftResultsTd.(fn)(:,idxkeep);
+    
+    Cmed = median(C,2);
+    CDev = repmat(Cmed,1,sum(idxkeep));
+    Cplot = C./CDev;
+    
+    zscored = zscore(C,0,2); 
     
     y = fftResultsTd.ff;
     imagesc(C);
@@ -337,22 +332,27 @@ for c = 1:4
     ylabel('Frequency (Hz)');
     set(gca,'FontSize',20); 
 end
-sgtitle('90 hours of data -30 sec chunks - RCS02L','FontSize',30)
+dataKeep = sum(fftResultsTd.timeEnd(idxkeep) - fftResultsTd.timeStart(idxkeep));
+ttluse = sprintf('%s hours of data, %d 30 sec chunks',dataKeep,sum(idxkeep));
+sgtitle(ttluse,'FontSize',30)
 linkaxes(hsub,'x');
 
 % cortex - gamma - 75-79; 
 % beta - stn - 19-24 
 
 figure;
-powerBeta = mean(fftResultsTd.key0fftOut(19:24,idxkeep)); 
-powerGama = mean(fftResultsTd.key2fftOut(75:79,idxkeep)); 
+powerBeta = mean(fftResultsTd.key0fftOut(17:19,idxkeep)); 
+powerGama = mean(fftResultsTd.key3fftOut(65:68,idxkeep)); 
 x = fftResultsTd.timeEnd(idxkeep); 
 
 hold on; 
-scatter(x,rescale(  powerBeta, 0, 0.45) );
-scatter(x,rescale(  powerGama, 0.5, 1) );
+scatter(x,rescale(  powerBeta, 0, 0.45),20, [0 0 0.9],'filled','MarkerFaceAlpha',0.5);
+scatter(x,rescale(  powerGama, 0.5, 1) ,20,[0.8 0 0],'filled','MarkerFaceAlpha',0.5);
 legend('Beta','Gamma');
-title('beta vs gamma rescaled - time of day'); 
+title('beta (stn) & gamma (m1) extracted from TD data'); 
+ylabel('Beta + Gamma - rescaled - a.u.'); 
+set(gca,'FontSize',16); 
+
 
 figure; 
 hold on; 

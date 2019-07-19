@@ -15,13 +15,16 @@ end
 
 % check if you have a preloaded / converted json and load that 
 % this is mainly so you can batch covnert many files at once on server 
+%% XXXX TURN THIS FUNCTION OFF FOR NOW 
 [pn,fn,ext] = fileparts(filename);
-if exist(fullfile(pn,[fn '_json_only_.mat' ]),'file') == 2
-    load(fullfile(pn,[fn '_json_only_.mat' ]),'jsonojb');
-    jsonobj = jsonojb; % consider fixing this type in next versions... XXXXXX
-else
-    jsonobj = deserializeJSON(filename);
-end
+% if exist(fullfile(pn,[fn '_json_only_.mat' ]),'file') == 2
+%     load(fullfile(pn,[fn '_json_only_.mat' ]),'jsonojb');
+%     jsonobj = jsonojb; % consider fixing this type in next versions... XXXXXX
+% else
+%     jsonobj = deserializeJSON(filename);
+% end
+jsonobj = deserializeJSON(filename);
+%% XXXX TURN THIS FUNCTION OFF FOR NOW 
 
 
 

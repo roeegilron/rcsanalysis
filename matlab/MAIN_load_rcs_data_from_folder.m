@@ -27,9 +27,6 @@ for j = 1:length(filesLoad)
     end
     checkForErrors(ff);
     [fileExists, fn] = checkIfMatExists(ff{1});
-    %% XXXX 
-    fileExists = 0;
-    %% XXXX 
     if fileExists
         if strcmp(filesLoad{j},'RawDataAccel.json') % if acc file rename it 
             a = load(fn); 
