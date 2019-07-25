@@ -32,15 +32,18 @@ for f = 1:length(ffAcc)
     load(ffAcc{f},'accData');
     
     if isempty(fieldnames(accProcDat))
-        accProcDat = accData;
+        if isstruct(accData)
+            accProcDat = accData;
+        end
     else
         if ~isempty(accData)
             accProcDat = [accProcDat accData];
         end
     end
+    fprintf('acc file %d/%d done\n',f,length(ffAcc));
     clear accData;
 end
-save( fullfile(rootdir,'processedData.mat'),'params','tdProcDat','accProcDat','-v7.3')
+save( fullfile(rootdir,'processedData.mat'),'accProcDat','-v7.3')
 
 %% create a large file that has overlapping data for PKG, ACC, TD data 
 load('/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L/processedDataSepFiles.mat');
@@ -156,29 +159,43 @@ fftResultsTd.timeEnd = [tdProcDat.timeEnd];
 save( fullfile(rootdir,'psdResults.mat'),'params','fftResultsTd')
 
 %% plot the data 
-,
+
 %% get td data + pkg data + acc data - correct place 
 % get idx to plot 
 % load('/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02R/psdResults.mat');
-load('/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L/psdResults.mat') % left hand 
+load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v08_all_home_data_before_stim/RCS02_all_home_data_processed/RCS02L/psdResults.mat') % left hand 
 
 % read pkg 
 % first set of pkg data 
-fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v07_3_week/pkg/scores_20190515_124018.csv'; % left hand 
-fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v07_3_week/pkg/scores_20190515_124531.csv'; % right hand 
+fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/UCSF_Scores_17_July_2019/scores_20190515_124018.csv'; % left hand f
+fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/UCSF_Scores_17_July_2019/scores_20190515_124531.csv'; % right hand 
+% fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v07_3_week/pkg/scores_20190515_124531.csv'; % right hand 
 pkgTable1 = readtable(fn); 
-fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v08_1_month_initial_programming/pkg_data/scores_20190523_125035.csv'; % left hand 
-fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v08_1_month_initial_programming/pkg_data/scores_20190523_124728.csv'; % right hand 
+fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/UCSF_Scores_17_July_2019/scores_20190523_125035.csv'; % left hand 
+fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/UCSF_Scores_17_July_2019/scores_20190523_124728.csv'; % right hand 
+
+% fn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v08_1_month_initial_programming/pkg_data/scores_20190523_124728.csv'; % right hand 
 pkgTable2 = readtable(fn); 
 pkgTable = [pkgTable1; pkgTable2]; 
+
 figure; 
 hsb(1) = subplot(2,1,1); 
-plot(pkgTable.DateTime,pkgTable.BK,'LineWidth',1,'Color',[0 0.8 0 0.5]); 
+plot(pkgTable.Date_Time,pkgTable.BK,'LineWidth',1,'Color',[0 0.8 0 0.5]); 
 title('bk'); 
 hsb(2) = subplot(2,1,2); 
-plot(pkgTable.DateTime,pkgTable.DK,'LineWidth',1,'Color',[0 0 0.8 0.5]); 
+plot(pkgTable.Date_Time,log10(pkgTable.DK),'LineWidth',1,'Color',[0 0 0.8 0.5]); 
 title('dk'); 
 linkaxes(hsb,'x'); 
+%plot bk vs DK 
+figure;
+scatter(log10(pkgTable.DK),pkgTable.BK,10,'filled','MarkerFaceColor',[0.8 0 0],'MarkerEdgeAlpha',0.5);
+title('Log DK vs BK vals')
+xlabel('log DK vals');
+ylabel('BK vals');
+grid on 
+axis normal 
+set(gcf,'Color','w'); 
+set(gca,'FontSize',20); 
 
 figure;
 idxWhisker = []; 
@@ -207,7 +224,7 @@ for c = 1:4
 end
 
 % get the pkg data 
-timesPKG = pkgTable.DateTime; 
+timesPKG = pkgTable.Date_Time; 
 timesPKG.TimeZone = 'America/Los_Angeles';
 idxLoop = find(idxkeep==1); 
 cnt = 1; 
@@ -224,15 +241,236 @@ for i = 1:length(idxLoop)
 end
 
 % make a table with pkg values and td results 
+allDataPkgRcsAcc = struct();
 allDataPkgRcsAcc.key0fftOut = fftResultsTd.key0fftOut(:,idxThatHasPKGVals)';
 allDataPkgRcsAcc.key1fftOut = fftResultsTd.key1fftOut(:,idxThatHasPKGVals)';
 allDataPkgRcsAcc.key2fftOut = fftResultsTd.key2fftOut(:,idxThatHasPKGVals)';
 allDataPkgRcsAcc.key3fftOut = fftResultsTd.key3fftOut(:,idxThatHasPKGVals)';
 allDataPkgRcsAcc.timeStart  = fftResultsTd.timeStart(idxThatHasPKGVals)';
-allDataPkgRcsAcc.timeEnd  = fftResultsTd.timeStart(idxThatHasPKGVals)';
+allDataPkgRcsAcc.timeEnd  = fftResultsTd.timeEnd(idxThatHasPKGVals)';
 allDataPkgRcsAcc.dkVals = dkVals';
 allDataPkgRcsAcc.bkVals = bkVals';
 allDatTable = struct2table(allDataPkgRcsAcc); 
+
+% plot histogrma correlate with pkg 
+betaIdxUse  = 23:25; 
+gamaIdxUse  = 74:76; 
+powerBeta13  = mean(allDataPkgRcsAcc.key1fftOut(:,betaIdxUse),2); 
+powerGama810 = mean(allDataPkgRcsAcc.key3fftOut(:,gamaIdxUse),2); 
+powerGamma = mean(allDataPkgRcsAcc.key3fftOut(:,betaIdxUse),2); 
+pkgOffMeds  = allDataPkgRcsAcc.bkVals > -120 & allDataPkgRcsAcc.bkVals < -60; 
+pkgOnMeds   = allDataPkgRcsAcc.bkVals > -60 & allDataPkgRcsAcc.bkVals < -10; 
+
+pkgOffMeds  = allDataPkgRcsAcc.dkVals > 0 & allDataPkgRcsAcc.dkVals < 30; 
+pkgOnMeds   = allDataPkgRcsAcc.dkVals >= 30 & allDataPkgRcsAcc.dkVals < 300; 
+
+bksabs = abs(allDataPkgRcsAcc.bkVals); 
+% pkgOffMeds  = bksabs > 32 & bksabs < 80; 
+% pkgOnMeds   = bksabs <= 20 & bksabs > 0; 
+%{
+We use BKS>26<40 (BKS=26 =UPDRS III~30)as a marker of 
+?OFF? and >32<40 as (BKS=32 =UPDRS III~45)marker of very OFF
+We use DKS>7 as a marker of dyskinesia and > 16 as significant dyskinesia
+Generally when BKS>26, DKS will be low.
+
+We don?t usually use the terminology of OFF/On/dyskinesia use in diaries
+because they are categorical states compared to a continuous variable. 
+If I can ask you the same question for UPDRS and AIMS score 
+what cut-off would you like to use to indicate those 
+same states and then I can give you approximate numbers for the BKS DKS.
+We have good evidence thatTreatable bradykinesia 
+(i.e. presumable OFF according to a clinician) is when the
+ BKS>26 (or <-26 as per the csv files)
+Good control (i.e. neither OFF nor ON) is when BKS <26 AND DKS<7
+Dyskinesia is when DKS>7 and BKS <26.
+
+However you should not use single epochs alone.  
+We tend to use the 4/7 or 3/5 rule ? 
+that is use take the first 7 epochs of BKS (or DKS), 
+then the middle epoch will be ?OFF? if 4/7 of the epochs >26. 
+Slide along one and apply the rule again etc.  
+Mal Horne
+Wed 7/24/2019 7:12 PM email 
+%}
+
+figure;
+subplot(1,2,1); 
+shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.96},'lineprops',{'r','markerfacecolor','r','LineWidth',2});
+shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.96},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
+legend({'off meds - PKG estimate','on meds - PKG estimate'}); 
+xlim([3 100]); 
+xlabel('Frequency (Hz)');
+ylabel('Power (log_1_0\muV^2/Hz)');
+title('STN'); 
+set(gca,'FontSize',20);
+
+
+subplot(1,2,2); 
+shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.96},'lineprops',{'r','markerfacecolor','k','LineWidth',2});
+shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.96},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
+legend({'off meds - PKG estimate','on meds - PKG estimate'}); 
+xlim([3 100]); 
+xlabel('Frequency (Hz)');
+ylabel('Power (log_1_0\muV^2/Hz)');
+title('M1'); 
+set(gca,'FontSize',20);
+set(gcf,'Color','w'); 
+
+
+
+figure;
+subplot(2,2,1); 
+hold on; 
+histogram(powerBeta13(pkgOffMeds),'Normalization','probability','BinWidth',0.1); 
+histogram(powerBeta13(pkgOnMeds),'Normalization','probability','BinWidth',0.1); 
+legend({'off (PKG estimate)','on (PKG estimate)'}); 
+ylabel('Probability (%)');
+xlabel('Beta power');
+ttluse = sprintf('Beta (%d-%dHz) on/off(PKG) - STN',betaIdxUse(1),betaIdxUse(end));
+title(ttluse); 
+set(gcf,'Color','w')
+set(gca,'FontSize',20)
+
+subplot(2,2,2); 
+hold on; 
+histogram(powerGama810(pkgOffMeds),'Normalization','probability','BinWidth',0.1); 
+histogram(powerGama810(pkgOnMeds),'Normalization','probability','BinWidth',0.1); 
+legend({'off (PKG estimate)','on (PKG estimate)'}); 
+xlabel('Gamma power');
+ylabel('Probability (%)');
+ttluse = sprintf('Gama (%d-%dHz) on/off(PKG) - M1',gamaIdxUse(1),gamaIdxUse(end));
+title(ttluse); 
+set(gcf,'Color','w')
+set(gca,'FontSize',20)
+
+subplot(2,2,3); 
+hold on; 
+scatter(powerGama810(pkgOffMeds), powerBeta13(pkgOffMeds),4,'filled','MarkerFaceColor',[0.8 0 0],'MarkerFaceAlpha',0.5)
+scatter(powerGama810(pkgOnMeds), powerBeta13(pkgOnMeds),4,'filled','MarkerFaceColor',[0 0 0.8],'MarkerFaceAlpha',0.5)
+legend({'off (PKG estimate)','on (PKG estimate)'}); 
+title ('Beta (STN) vs Gamma (M1) power'); 
+xlabel('Power Gamma M1');
+ylabel('Power Beta STN'); 
+set(gcf,'Color','w')
+set(gca,'FontSize',20)
+
+
+
+% compute roc
+subplot(2,2,4); 
+hold on; 
+
+tbl = table();
+tbl.powerBeta = powerBeta13;
+tbl.powerGamma = powerGama810; 
+
+labels     = zeros(size(powerBeta13,1),1);
+labels(pkgOnMeds) = 1; 
+labels(pkgOffMeds) = 2;
+
+idxkeepROC = labels~=0; 
+labels = labels(idxkeepROC); 
+labels(labels==1) = 0;
+labels(labels==2) = 1;
+dat    = [tbl.powerBeta(idxkeepROC),tbl.powerGamma(idxkeepROC)];
+
+% beta 
+[X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,1),1);
+hplt = plot(X,Y);
+hplt.LineWidth = 3;
+hplt.Color = [0 0 0.8 0.7];
+lgndTtls{1}  = sprintf('%s (AUC %.2f)','stn beta',AUC);
+% gama 
+[X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,2),0);
+hplt = plot(X,Y);
+hplt.LineWidth = 3;
+hplt.Color = [0.8 0 0 0.7];
+lgndTtls{2}  = sprintf('%s (AUC %.2f)','m1 gamma',AUC);
+% both 
+mdl = fitglm(dat,labels,'Distribution','binomial','Link','logit');
+score_log = mdl.Fitted.Probability; % Probability estimates
+[Xlog,Ylog,Tlog,AUClog] = perfcurve(logical(labels),score_log,'true');
+hplt = plot(Xlog,Ylog);
+hplt.LineWidth = 3;
+hplt.Color = [0 0.7 0 0.7];
+lgndTtls{3}  = sprintf('%s (AUC %.2f)','Beta + Gama',AUClog);
+
+
+xlabel('False positive rate')
+ylabel('True positive rate')
+legend(lgndTtls);
+title('ROC curves - beta, gamma, both');
+set(gca,'FontSize',20);
+
+
+
+
+% plot correlation 
+figure;
+% stn dk
+subplot(2,2,1);
+x = powerBeta13;
+y = allDataPkgRcsAcc.dkVals; 
+[r,pp] = corrcoef(x,y,'Rows','complete');
+s1 = scatter(x,log10(y),20,[0 0 0.9],'filled','MarkerFaceAlpha',0.5);
+xlabel('STN Beta');
+ylabel('PKG DK');
+ttluse = sprintf('STN corr between %s and %s is %.2f',...
+    'STN Beta','PKG DK (log)',r(1,2));
+title(ttluse);
+hline = refline(gca);
+hline.LineWidth = 3;
+hline.Color = [hline.Color 0.5];
+set(gca,'FontSize',16);
+% stn bk
+subplot(2,2,2);
+x = powerBeta13;
+y = allDataPkgRcsAcc.bkVals; 
+[r,pp] = corrcoef(x,y,'Rows','complete');
+s1 = scatter(x,y,20,[0 0 0.9],'filled','MarkerFaceAlpha',0.5);
+xlabel('STN Beta');
+ylabel('PKG BK');
+ttluse = sprintf('STN - corr between %s and %s is %.2f',...
+    'STN Beta','PKG BK',r(1,2));
+title(ttluse);
+hline = refline(gca);
+hline.LineWidth = 3;
+hline.Color = [hline.Color 0.5];
+set(gca,'FontSize',16);
+
+% m1 dk
+subplot(2,2,3);
+x = powerGama810;
+y = allDataPkgRcsAcc.dkVals; 
+[r,pp] = corrcoef(x,y,'Rows','complete');
+s1 = scatter(x,log10(y),20,[0 0 0.9],'filled','MarkerFaceAlpha',0.5);
+xlabel('M1 Gamma');
+ylabel('PKG DK');
+ttluse = sprintf('M1 corr between %s and %s is %.2f',...
+    'M1 Beta','PKG DK (log)',r(1,2));
+title(ttluse);
+hline = refline(gca);
+hline.LineWidth = 3;
+hline.Color = [hline.Color 0.5];
+set(gca,'FontSize',16);
+% m1 bk
+subplot(2,2,4);
+x = powerGama810;
+y = allDataPkgRcsAcc.bkVals; 
+[r,pp] = corrcoef(x,y,'Rows','complete');
+s1 = scatter(x,y,20,[0 0 0.9],'filled','MarkerFaceAlpha',0.5);
+xlabel('M1 Beta');
+ylabel('PKG BK');
+ttluse = sprintf('M1 - corr between %s and %s is %.2f',...
+    'M1 Beta','PKG BK',r(1,2));
+title(ttluse);
+hline = refline(gca);
+hline.LineWidth = 3;
+hline.Color = [hline.Color 0.5];
+set(gca,'FontSize',16);
+
+set(gcf,'Color','w');
+
 
 % compute correlations 
 % pkg values 
@@ -242,7 +480,7 @@ bkVals = allDataPkgRcsAcc.bkVals;
 idxBk  = allDataPkgRcsAcc.bkVals >= -80 &  allDataPkgRcsAcc.bkVals <= -1;
 % power vals 
 powerBeta02 = mean(allDataPkgRcsAcc.key0fftOut(:,16:29),2); 
-powerBeta13 = mean(allDataPkgRcsAcc.key0fftOut(:,14:30),2); 
+powerBeta13 = mean(allDataPkgRcsAcc.key1fftOut(:,14:30),2); 
 powerGama810 = mean(allDataPkgRcsAcc.key2fftOut(:,71:84),2); 
 powerGama911 = mean(allDataPkgRcsAcc.key3fftOut(:,70:84),2); 
 powerBeta810 = mean(allDataPkgRcsAcc.key2fftOut(:,18:30),2); 
