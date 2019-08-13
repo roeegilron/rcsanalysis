@@ -4,6 +4,7 @@ if isempty(varargin)
 else
     dirname  = varargin{1};
 end
+% testy testy %
 tblout = getDataBaseRCSdata(dirname);
 % print out details about this to a text file in this directory 
 fid = fopen(fullfile(dirname,'recordingReport.txt'),'w+');
