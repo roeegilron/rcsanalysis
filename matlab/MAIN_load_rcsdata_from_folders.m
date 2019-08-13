@@ -15,9 +15,18 @@ end
 % MAIN_report_data_in_folder(dirname); 
 % now only choose folders that are above a certain duration 
 load(fullfile(dirname,'database.mat'),'tblout'); 
-idxnotEmpty = cellfun(@(x) ~isempty(x),tblout.duration); 
+if iscell(tblout.duration)
+    idxnotEmpty = cellfun(@(x) ~isempty(x),tblout.duration); 
+else
+    idxnotEmpty = tblout.duration > seconds(0); 
+end
+
 tbluse = tblout(idxnotEmpty,:);
-idxRecordingsOver30Seconds = cellfun(@(x) x > seconds(30), tbluse.duration); 
+if iscell(tblout.duration)
+    idxRecordingsOver30Seconds = cellfun(@(x) x > seconds(30), tbluse.duration);
+else
+    idxRecordingsOver30Seconds = tblout.duration > seconds(30); 
+end
 tbluse = tbluse(idxRecordingsOver30Seconds,:); 
 
 for f = 1:size(tbluse,1)
