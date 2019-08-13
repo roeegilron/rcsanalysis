@@ -2,7 +2,7 @@ function MAIN_run_process_RCS_data_in_parallel()
 
 % data location:
 if ismac 
-    rootdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v13_home_data_stim/rcs_data/RCS02R';
+    rootdir  = '/Volumes/Samsung_T5/RCS05/v2week_stream_data_Aug12_2019_bnc/SummitContinuousBilateralStreaming';
     curdir = pwd; 
 else isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
@@ -12,7 +12,7 @@ ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
 
 clc;
 
-for f = 3:length(ffiles)
+for f = 1:length(ffiles)
     try 
         analyzeContinouseDataFromSCS(ffiles{f});
         fprintf('success %d \n',f);

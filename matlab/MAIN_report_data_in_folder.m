@@ -8,7 +8,7 @@ tblout = getDataBaseRCSdata(dirname);
 % print out details about this to a text file in this directory 
 fid = fopen(fullfile(dirname,'recordingReport.txt'),'w+');
 
-for t = 1:size(tblout)
+for t = 1:size(tblout,1)
     if ~isempty(tblout.startTime(t))        
         fprintf(fid,'%s (Duration)\n\t\t%s\t\t%s\t\t%s\n',...
             tblout.duration{t},tblout.startTime{t},tblout.endTime{t},tblout.sessname{t});
