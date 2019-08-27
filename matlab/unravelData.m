@@ -21,11 +21,17 @@ startTimeDt = datetime(datevec(uxseconds./86400 + datenum(2000,3,1,0,0,0))); % m
 yearMode = mode(year(startTimeDt)); 
 % check for packets with funky year 
 badPackets = year(startTimeDt)~=yearMode;  % sometimes the seconds is ab ad msseaurment 
+% evidnetly year is not hte only problem, make sure most packets within a
+% week of median (to take care of cases in which reconnecitons happen
+% throughout days) 
+medianTime = median(startTimeDt);
+badPackets3 = startTimeDt > (medianTime + hours(24)*7);
+badPackets4= startTimeDt < (medianTime - hours(24)*7);
 % check for packets in the future 
 badPackets2 = uxtimes(1:end-1) >= uxtimes(2:end) ;
 badPackets2 = [badPackets2; 0];
 
-idxBadPackets = badPackets | badPackets2;
+idxBadPackets = badPackets | badPackets2 | badPackets3 | badPackets4;
 
 TDdat.TimeDomainData = TDdat.TimeDomainData(~idxBadPackets);
 

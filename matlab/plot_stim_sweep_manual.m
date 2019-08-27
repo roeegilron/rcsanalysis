@@ -1,11 +1,10 @@
-function plot_stim_sweep_manual()
+function plot_stim_sweep_manual(datadir,figdir)
+% input: string of data directory with a stim sweep session, string of
+% figure directoy where you want figures to be output 
+% output: figure of stim sweep results 
 
-params.datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2month/rcs_data/AdaptiveSCS/RCS02L/Session1561747818076/DeviceNPC700398H'; 
-% params.datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2month/rcs_data/AdaptiveSCS/RCS02R/Session1561747195376/DeviceNPC700404H';
-params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2month/figures/left_side';
-
-params.datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v20_back_from_italy_stim_sweep/rcs_data/Session1562789458575/DeviceNPC700395H';
-params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v20_back_from_italy_stim_sweep/figures';
+params.datadir = datadir;
+params.outdir  = figdir;
 
 % params to print the figures 
 prfig.plotwidth           = 25;

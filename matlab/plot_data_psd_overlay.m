@@ -1,6 +1,6 @@
 function plot_data_psd_overlay(dirname)
 %% set params
-params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v02_or_day/figures';
+params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS03/noise_floor/figures';
 params.figtype = '-dpdf';
 params.resolution = 300;
 params.closeafterprint = 1; 
@@ -28,12 +28,10 @@ include = {'dysk_start','before_dysk'};
 include = {'dysk_start','before_dysk'};
 include = {'noise_floor_in_inc','noise_floor_no_incubator'};
 include = {'in_incubator','outside_incubator'};
-include = {'sedated','awake'};
 % include = {'off-stim-on-meds','on-stim-on-meds'};
 
-% these are the channels you choose from STN/GPi and M1
 cns = 1:4;
-cns = [2 4];
+cns = [1 3];
 %% plot psd
 lgaxesLFP = [];
 lgttlsLFP = {};
@@ -82,7 +80,7 @@ for i = 1:length(include);
             hplt(nmplt).LineWidth = 2;
             %hplt.Color = [0 0 0.8 0.7];
             hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
-            xlim([0 100]);
+            xlim([0 500]);
             xlabel('Frequency (Hz)');
             ylabel('Power  (log_1_0\muV^2/Hz)');
             set(gca,'FontSize',20);
