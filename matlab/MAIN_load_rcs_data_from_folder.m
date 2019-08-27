@@ -10,6 +10,7 @@ if nargin>=2 % check if there is a params argument
 else
     params = []; 
 end
+
 % initialize return variables as empty matrices 
 outdatcomplete = table(); 
 outRec = struct(); 

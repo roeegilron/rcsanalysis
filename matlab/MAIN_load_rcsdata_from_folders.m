@@ -10,9 +10,11 @@ if isempty(varargin)
 else
     dirname  = varargin{1};
 end
+% check if a database folder exists, if not run  the MAIN_repot function:
+if ~exist(fullfile(dirname,'database.mat'),'file')
+    MAIN_report_data_in_folder(dirname);
+end
 
-% first load the data in the folder 
-% MAIN_report_data_in_folder(dirname); 
 % now only choose folders that are above a certain duration 
 load(fullfile(dirname,'database.mat'),'tblout'); 
 if iscell(tblout.duration)

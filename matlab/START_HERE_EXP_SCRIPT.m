@@ -91,6 +91,13 @@ head(powerTable);
 % doesn't have power data so it will be empty. 
 % upon request can give some power data to explore 
 
+%% How to open a large folder full of session folders? 
+dirname = fullfile('..','data','sample_data','data_folder','RCS04L');
+MAIN_report_data_in_folder(dirname); % creates a database file you need
+MAIN_load_rcsdata_from_folders(dirname); % opens al the data. make sure line 
+
+
+
 %% Other functions to know of / about 
 % this will rapidly plot all the data in a direcotry
 dirname = fullfile('..','data','sample_data','data_folder','RCS04L','Session1562088293641','DeviceNPC700418H');
