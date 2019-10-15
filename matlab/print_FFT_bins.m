@@ -1,8 +1,8 @@
 function print_FFT_bins()
 clc;
 %% params to change 
-FFTSize = 256; % can be 64  256  1024
-sampleRate = 500; % can be 250,500,1000
+FFTSize = 1024; % can be 64  256  1024
+sampleRate = 1000; % can be 250,500,1000
 %% 
 numberOfBins = FFTSize/2; 
 binWidth = sampleRate/2/numberOfBins; 
