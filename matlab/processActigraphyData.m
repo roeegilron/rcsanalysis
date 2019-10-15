@@ -5,6 +5,7 @@ function rescaledData = processActigraphyData(data,sr)
 
 % what function does to data
 % remove mean
+% smooth by a 1 second moving window 
 % square each channel
 % add each squared channel to each other
 % normalize between 0 and 1

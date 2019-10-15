@@ -2,6 +2,9 @@
 close all; 
 clear all;
 clc; 
+pathChronux = genpath('/Users/roee/Downloads/chronux_2_11');
+addpath(pathChronux);
+
 params.delsysFn   = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/delsys/RCS01_recording_8_Plot_and_Store_Rep_2.1.csv.mat'; 
 params.vidFn      = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/vids/MVI_0200.MP4'; 
 params.rcsTdFn    = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v06-home-visit-3-week/rc+s_data/rcs_comp/Session1541438482992/DeviceNPC700395H/RawDataTD.mat';
@@ -332,3 +335,4 @@ while ~atEnd
     cnt = cnt + 1; 
 end
 close(v); 
+rmpath(pathChronux); 

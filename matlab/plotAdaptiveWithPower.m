@@ -3,6 +3,7 @@ function plotAdaptiveWithPower()
 diruse = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/adaptive_example/3_6_19/Session1551920127934/DeviceNPC700239H/';
 diruse = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/adaptive_scs_test/VerificationData/Session1553285473069_showsSCSWhenAdaptiveIsOnButInGroupA/DeviceNPC700239H';
 diruse = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v18_adaptive_month5/all_rcs_data/Session1553549911973/DeviceNPC700395H';
+diruse = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v14_adaptive_before_sending_home/RCS02L/Session1570743801551/DeviceNPC700398H';
 fnAdaptive = fullfile(diruse,'AdaptiveLog.json'); 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(diruse);
 res = readAdaptiveJson(fnAdaptive); 
@@ -41,6 +42,7 @@ for f = 1:length(fnmsPlot)
 end
 ylabel('power (a.u.)'); 
 fnmsPlot = {'CurrentAdaptiveState','CurrentProgramAmplitudesInMilliamps','LD0_output','Ld0DetectionStatus'};
+fnmsPlot = {'CurrentProgramAmplitudesInMilliamps','LD0_output'};
 nrows = length(fnmsPlot); 
 for f = 1:length(fnmsPlot)
     yyaxis('right');

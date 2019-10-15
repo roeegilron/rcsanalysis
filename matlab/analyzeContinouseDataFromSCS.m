@@ -4,7 +4,7 @@ params.datasize = 30; % time in second to run fft on
 params.maxGapFactor   = 2; % max gap factor to allow. So 1/sampleRate * maxGap Factor.
 params.maxGap   = 0.2; % max gap to allow in data before throwing it out - seconds
 params.tdSR     = 250; % only use 250hz sampling rate
-params.accSR    = 32; % only user 64 hz sampling rate
+params.accSR    = 64; % only user 64 hz sampling rate
 % % data location:
 % rootdir  = '/Volumes/Samsung_T5/RCS02/RCS02_all_home_data_processed/data/RCS02L';
 % 
@@ -75,18 +75,22 @@ end
         if fileDuration > minutes(1)
             % load device settings
             load(fullfile(datadir,'DeviceSettings.mat'),'outRec');
+            
             % load power data
             [powerTable, pbOut] = loadPowerData(fullfile(datadir,'RawDataPower.json'));
+            
             % load actigraphy
             load(fullfile(datadir,'RawDataAccel.mat'),'outdatcomplete');
             accTable = outdatcomplete;
             clear outdatcomplete;
+            
             % load events
             load(fullfile(datadir,'EventLog.mat'),'eventTable');
             
             % process and analyze time domain data
             processedData = processTimeDomainData(td,params);
             save(fullfile(datadir,'processedTDdata.mat'),'processedData','params'); 
+            
 %             if isempty(fieldnames(tdProcDat))
 %                 tdProcDat = processedData;
 %             else

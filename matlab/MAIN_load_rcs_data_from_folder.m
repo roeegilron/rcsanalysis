@@ -1,4 +1,4 @@
-function [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(varargin)
+function [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(varargin)
 %% function load rcs data from a folder 
 if isempty(varargin)
     [dirname] = uigetdir(pwd,'choose a dir with rcs .json data');
@@ -19,7 +19,7 @@ outdatcompleteAcc = table();
 powerTable = table();
 %% load files 
 
-filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json'}; 
+filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json','AdaptiveLog.json'}; 
 for j = 1:length(filesLoad)
     if ismac || isunix
         ff = findFilesBVQX(dirname,filesLoad{j});
@@ -34,6 +34,10 @@ for j = 1:length(filesLoad)
             outdatcompleteAcc = a.outdatcomplete; 
             sratesAcc = a.srates; 
             unqsratesAcc = a.unqsrates;
+        elseif strcmp(filesLoad{j},'RawDataPower.json') % if power file load bands and table and return that
+                load(fn,'powerTable','powerBandInHz');
+                powerOut.powerTable = powerTable;
+                powerOut.bands      = powerBandInHz;
         else
             load(fn);
         end
@@ -90,6 +94,27 @@ for j = 1:length(filesLoad)
                 fileload = fullfile(dirname,'RawDataPower.json');
                 [powerTable, powerBandInHz] = loadPowerData(fileload);
                 save(fullfile(dirname,['RawDataPower' '.mat']),'powerTable','powerBandInHz');
+                powerOut.powerTable = powerTable;
+                powerOut.bands      = powerBandInHz;
+            case 'AdaptiveLog.json'
+                fileload = fullfile(dirname,'AdaptiveLog.json');
+                res = readAdaptiveJson(fileload); 
+                adaptiveTable = table();
+                % load timing info 
+                fn = fieldnames(res.timing);
+                for f = 1:length(fn)
+                    adaptiveTable.(fn{f}) = res.timing.(fn{f})(:);
+                end
+                % load adaptive info 
+                fna = fieldnames(res.adaptive);
+                for f = 1:length(fna)
+                    if size(res.adaptive.(fna{f}),1)==1
+                        adaptiveTable.(fna{f}) = res.adaptive.(fna{f})(:);
+                    elseif size(res.adaptive.(fna{f}),1)==4
+                        adaptiveTable.(fna{f}) = res.adaptive.(fna{f})';
+                    end
+                end
+                save(fullfile(dirname,['AdaptiveLog' '.mat']),'adaptiveTable');
         end
         
     end

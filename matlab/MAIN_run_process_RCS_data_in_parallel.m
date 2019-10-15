@@ -1,8 +1,8 @@
-function MAIN_run_process_RCS_data_in_parallel()
+function MAIN_run_process_RCS_data_in_parallel(dirname)
 
 % data location:
 if ismac 
-    rootdir  = '/Volumes/Samsung_T5/RCS05/v2week_stream_data_Aug12_2019_bnc/SummitContinuousBilateralStreaming';
+    rootdir  = dirname;
     curdir = pwd; 
 else isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
@@ -14,8 +14,14 @@ clc;
 
 for f = 1:length(ffiles)
     try 
-        analyzeContinouseDataFromSCS(ffiles{f});
-        fprintf('success %d \n',f);
+        % first check to see if this foler has been analyzed already 
+        [pnn,fnn] = fileparts(ffiles{f});
+        if exist(fullfile(pnn,'processedTDdata.mat'),'file')
+            fprintf('file %d already exists, skipping \n',f);
+        else
+            analyzeContinouseDataFromSCS(ffiles{f});
+            fprintf('success %d \n',f);
+        end
     catch 
         fprintf('failed %d \n',f);
     end

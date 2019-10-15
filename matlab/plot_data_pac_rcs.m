@@ -2,14 +2,14 @@ function plot_data_pac_rcs(dirname)
 %% pac path
 addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/PAC'));
 %% set params
-params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v05-home-visit/figures';
+params.figdir  = dirname;
 params.figtype = '-djpeg';
 params.resolution = 300;
 params.closeafterprint = 1;
 
 %% pac params
 pacparams.PhaseFreqVector      = 5:2:50;
-pacparams.AmpFreqVector        = 10:5:200;
+pacparams.AmpFreqVector        = 10:5:90;
 
 pacparams.PhaseFreq_BandWidth  = 4;
 pacparams.AmpFreq_BandWidth    = 10;
@@ -24,17 +24,23 @@ ff = findFilesBVQX(dirname,'*.mat');
 include = {'standing'}; %{'rest walking ipad standing
 include = {'standing'}; %{'rest walking ipad standing
 include = {'rest-off-meds','rest-on-meds'};
-idxOutRec = [3, 1];
+include = {'anesthesiaL','awakeL'};
+include = {'anesthesiaR','awakeR'};
+include = {'on_home','off_home_tremor','off_home_tremor_night'};
+
+
+idxOutRec = [1 1 1];
 cns = 1:4;
+% cns = [2 3];
 % cns = [1 3];
 %% plot pac
+addpath(genpath(fullfile('..','..','PAC')));
 
-
-for i = 1:length(include);
+for i = 1:length(include)
     hfig = figure;
-    idxuse = cellfun(@(x) any(strfind(x,include{i})),ff);
-    if sum(idxuse) >= 1
-        load(ff{idxuse});
+    fileload = findFilesBVQX(dirname,[include{i} '.mat']);
+    if ~isempty(fileload)
+        load(fileload{1});
         outdatcomplete = outdatachunk;
         times = outdatcomplete.derivedTimes;
         srate = unique( outdatcomplete.samplerate );

@@ -3,15 +3,21 @@ function temp_plot_adaptive_files_and_td()
 clear all; close all; clc; 
 %%
 %% set up params
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553574501259/DeviceNPC700395H'; 
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553618614674/DeviceNPC700395H'; 
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H/';
-params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
-params.dir = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553574501259/DeviceNPC700395H'; % this is 9 hour
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553549911973/DeviceNPC700395H'; % this is 1 hour in clinic 
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553537185603/DeviceNPC700395H'; % this is 1 hour 2 ; 
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553618614674/DeviceNPC700395H'; % this is 1 hour 3;
+params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v14_adaptive_before_sending_home/RCS02L/Session1570743801551/DeviceNPC700398H'; % adaptive dbs testing oct 10th 
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553618614674/DeviceNPC700395H'; 
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/rcs_data/Session1553628169628/DeviceNPC700395H'; 
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H/';
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
+% params.dir = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
+% params.dir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/from_dropbox/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
+params.outdir = '/Volumes/Samsung_T5/1_RCS02_adaptive/day1_/dump3/figures';
 
 %% load data 
 fnAdaptive = fullfile([params.dir 'AdaptiveLog.json']); 
@@ -44,6 +50,7 @@ uxtimes = uxtimes(2:end);
 adaptiveState = adaptiveState(2:end); 
 unqStates     = unique(adaptiveState);
 % XXXXXXXXXXX
+unqStates     = [0  1 2]; 
 unqStates     = [0  1 2]; 
 % XXXXXXXXXXX
 % 
@@ -100,6 +107,11 @@ lbls = {'state 0 (3.5ma) ','state 1 (2.5ma) ', 'state 2 (2ma) '};
 set(gca,'XTickLabel',lbls)
 title('Time spent in each state'); 
 
+%% XX 
+dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v19_adaptive_month5_day2/results'
+savename = 'durationPerState1Hour3_RCS01.mat'; 
+save(fullfile(dirsave,savename),'durationsPerState'); 
+%% XX 
 % pie chart of relative time in each state 
 axes(hsubPie);
 hPie = pie(hsubPie,durPerState./(sum(durPerState)),[1 1 1 ]); 

@@ -4,9 +4,10 @@ function plot_embedded_adaptive_data()
 clear all; close all; clc; 
 %%
 %% set up params
-params.dir    = '/Volumes/Samsung_T5/RCS02/v10_02_month/RCS_DATA/SCBS/RCS02L/Session1561746867608/DeviceNPC700398H';
-params.dir    = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
-params.dir    = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562006038752/DeviceNPC700404H';
+params.dir    = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2month/rcs_data/SCBS/RCS02L/Session1561746867608/DeviceNPC700398H';
+% params.dir    = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562082614728/DeviceNPC700404H';
+% params.dir    = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R/Session1562006038752/DeviceNPC700404H';
+params.dir   = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
 
 %% load data 
@@ -38,7 +39,7 @@ res = readAdaptiveJson(fnAdaptive);
 
 %% plower adaptive + current + power 
 hfig = figure; 
-nrows = 3; 
+nrows = 4; 
 for i = 1:nrows
     hsb(i) = subplot(nrows,1,i); 
     hold(hsb(i),'on'); 
@@ -105,6 +106,15 @@ hp = plot(hsb(3),insTimesToUse, avgMovePercent);
 hp.LineWidth = 3; 
 hp.Color = [0 0 0.8 0.8];
 title('Internal accelrometer'); 
+
+% plot current 
+current = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,idxKeepYear);
+
+hp = plot(hsb(4),timesUseDetector, current); 
+hp.LineWidth = 2; 
+hp.Color = [0 0.8 0.8 0.8];
+title('current'); 
+
 
 linkaxes(hsb,'x');
 

@@ -1,11 +1,11 @@
-function plot_data_psd_overlay(dirname)
+function plot_data_coherence_overlay(dirname)
 %% set params
 close all;
 params.figdir  = dirname;
 params.figtype = '-djpeg';
 params.resolution = 300;
 params.closeafterprint = 1; 
-params.figname = 'on_vs_off_data_at_home_rcs07R_1-3-10-8';
+params.figname = 'on_vs_off_data_at_home_coherence';
 params.plotwidth = 17;
 params.plotheight = 12;
 %% set params norm 
@@ -40,6 +40,7 @@ include = {'on_home','off_home_tremor','off_home_tremor_night'};
 cns = 1:4;
 cns = [1 3];
 cns = [2 3];
+
 %% plot psd
 lgaxesLFP = [];
 lgttlsLFP = {};
@@ -48,8 +49,23 @@ lgaxesECOG = [];
 lgttlsECOG = {};
 hfig = figure;
 % set up subplots 
-hsub(1) = subplot(1,2,1);
-hsub(2) = subplot(1,2,2);
+
+hsub(1) = subplot(2,3,1);
+hsub(2) = subplot(2,3,4);
+hsub(3) = subplot(2,3,2);
+hsub(4) = subplot(2,3,5);
+hsub(5) = subplot(2,3,3);
+hsub(6) = subplot(2,3,6);
+
+cnPairs = [1 2;... % stn stn 
+           3 4;... % m1 m1 
+           1 3;... % m1 m1 
+           1 4;... 
+           2 3;...
+           2 4];
+           
+
+
 
 for i = 1:length(include)
     fileload = findFilesBVQX(dirname,[include{i} '.mat']);
@@ -59,60 +75,55 @@ for i = 1:length(include)
         times = outdatcomplete.derivedTimes;
         srate = unique( outdatcomplete.samplerate );
         nmplt = 1; 
-        for c = cns
-            if c > 2
-                nmpltuse = 2;
-                ttlstr = 'M1';
-            else
-                nmpltuse = 1;
-                ttlstr = 'STN';
-            end
-            axes(hsub(nmpltuse)); %only set up for 2 plots
+        for c = 1:size(cnPairs,1)
+            axes(hsub(c)); 
             hold on;
-            fnm = sprintf('key%d',c-1);
-            y = outdatcomplete.(fnm);
-            y = y - mean(y);
-            if pnorm.zscore 
-                y = zscore(y);
-            end
-            yout(:,c) = y';
-            [fftOut,f]   = pwelch(y,srate,srate/2,0:1:srate/2,srate,'psd');
-            if pnorm.norm 
-                idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
-                divBy = std(fftOut(idxnorm)); 
-                fftOut = fftOut./divBy; 
-            end
-            if pnorm.mean
-                idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
-                divBy = mean(fftOut(idxnorm));
-                fftOut = fftOut./divBy;
-
-            end
-            hplt(nmplt) = plot(f,log10(fftOut));
-            hplt(nmplt).LineWidth = 2;
+            % first channel 
+            cIdx1 = cnPairs(c,1);
+            fnm = sprintf('key%d',cIdx1-1);
+            y1 = outdatcomplete.(fnm);
+            y1 = y1 - mean(y1);
+            
+            cIdx2 = cnPairs(c,2);
+            fnm = sprintf('key%d',cIdx2-1);
+            y2 = outdatcomplete.(fnm);
+            y2 = y2 - mean(y2);
+            
+            %% plot cohenece
+            Fs = unique(outdatcomplete.samplerate);
+            [Cxy,F] = mscohere(y1',y2',...
+                2^(nextpow2(Fs)),...
+                2^(nextpow2(Fs/2)),...
+                2^(nextpow2(Fs)),...
+                Fs);
+            idxplot = F > 0 & F < 100;
+            hplot = plot(F(idxplot),Cxy(idxplot));
+            xlabel('Freq (Hz)');
+            ylabel('MS Coherence');
+            
+            hplt(i,nmplt) = plot(F(idxplot),Cxy(idxplot));
+            hplt(i,nmplt).LineWidth = 2;
             %hplt.Color = [0 0 0.8 0.7];
-            hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
+            hplt(i,nmplt).Color = [hplt(i,nmplt).Color 0.75];
             xlim([0 100]);
-            xlabel('Frequency (Hz)');
-            ylabel('Power  (log_1_0\muV^2/Hz)');
+            ttlGraph = sprintf('C between %s and %s',... 
+                outRec(1).tdData(cIdx1).chanOut,...
+                outRec(1).tdData(cIdx2).chanOut);
             set(gca,'FontSize',20);
-            ttl(nmplt) = title(ttlstr,'FontSize',30);
-            clear y yout;   
-            ttlout{nmplt} = [strrep( include{i}, '_',' ') outRec(1).tdData(c).chanOut];
-            % add legends
-            if c > 2
-                lgaxesECOG = [lgaxesECOG hplt(nmplt)];
-                lgttlsECOG = [lgttlsECOG ttlout(nmplt)];
-            else
-                lgaxesLFP = [lgaxesLFP hplt(nmplt)];
-                lgttlsLFP = [lgttlsLFP ttlout(nmplt)];
-            end
+            
+            title(ttlGraph,'FontSize',20);
+            clear y1 y2 cIdx1 cIdx2;
+
             nmplt = nmplt + 1;
         end
     end
 end
-legend(lgaxesLFP,lgttlsLFP,'FontSize',20);
-legend(lgaxesECOG,lgttlsECOG,'FontSize',20);
+% make legend just on the top right graph 
+for i = 1:length(include)
+    lgdttils{i} = strrep(include{i},'_',' ');
+end
+axes(hsub(5));
+legend(hplt(:,3),lgdttils,'Location','best')
 hfig.Color = 'w';
 plot_hfig(hfig,params)
 end

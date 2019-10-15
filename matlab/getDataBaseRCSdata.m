@@ -15,6 +15,11 @@ ptadd = genpath(fullfile(pwd,'toolboxes','turtle_json'));
 addpath(ptadd); 
 
 dirsdata = findFilesBVQX(dirname,'Sess*',struct('dirs',1,'depth',1));
+
+% find out if a database file was already created in this folder 
+% if so, just an update is needed no need to recrate the whole 
+% database
+
 % extract times and .mat status 
 dbout = []; 
 for d = 1:length(dirsdata)

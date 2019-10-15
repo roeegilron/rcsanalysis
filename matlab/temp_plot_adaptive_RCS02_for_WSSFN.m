@@ -6,8 +6,8 @@ clear all; close all; clc;
 %% set up params
 params.dir =  '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/surfacebook/RCS02R/Session1559769597879/DeviceNPC700404H';
-params.dir    = '/Volumes/Samsung_T5/RCS02/v10_02_month/RCS_DATA/SCBS/RCS02L/Session1561746867608/DeviceNPC700398H';
-params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
+% params.dir    = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2month/rcs_data/SCBS/RCS02L/Session1561746867608/DeviceNPC700398H';
+% params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
 
 %% load data 
 fnAdaptive = fullfile([params.dir 'AdaptiveLog.json']); 
@@ -110,14 +110,29 @@ srate = unique(outdatcomplete.samplerate);
 SNR = -300;
 y = y-mean(y); 
 % [s,f,t,p] = spectrogram(y,2000,850,128*5,srate,'MinThreshold',SNR ,'yaxis');
-spectrogram(y,1000,850,128*5,srate,'MinThreshold',SNR ,'yaxis');
+% spectrogram(y,1000,850,128*5,srate,'MinThreshold',SNR ,'yaxis');
+% axis tight
+% shading interp
+% ylim([5 100]);
+% colorbar off; 
+% title('M1'); 
+% xlabel('');
+% set(gca,'FontSize',24)
+
+[OutS,t,f] = plot_spectogram_normalized(y,srate,[18 32; 61 68],0,1);
+secs = minutes(minutes(seconds(t)));
+surf(secs, f, OutS, 'EdgeColor', 'none');
+view(2); 
 axis tight
 shading interp
 ylim([5 100]);
 colorbar off; 
 title('M1'); 
 xlabel('');
+caxis([0.5 1.8])
 set(gca,'FontSize',24)
+
+
 
 % plot acceleration 
 hsub(3) = subplot(3,1,1); 
@@ -173,13 +188,13 @@ hp.Color = [0 0 0.8 0.8];
 title('Internal accelrometer'); 
 set(gca,'FontSize',24)
 % link axes 
-linkaxes(hsub,'x'); 
+% linkaxes(hsub,'x'); 
 xlim([0.5 7]); 
 
-pfig.plotwidth           = (450/10)/2.24;
-pfig.plotheight          = (211/10)/2.24;
+pfig.plotwidth           = 15;
+pfig.plotheight          = 10;
 pfig.figdir              = '/Users/roee/Starr_Lab_Folder/Presenting/Posters/Gilron_WSSFN_2019/figures';
-pfig.figname             = 'adaptive_dyskinesia'; 
+pfig.figname             = 'adaptive_dyskinesia rcs02 new normalize'; 
 pfig.figtype             = '-dpdf';
 pfig.closeafterprint     = 1;
 pfig.resolution          = 600;

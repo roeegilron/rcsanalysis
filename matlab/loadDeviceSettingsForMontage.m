@@ -8,7 +8,6 @@ for f = 1:length(DeviceSettings)
     curStr = DeviceSettings{f};
     if isfield(curStr,'SensingConfig')
         if isfield(curStr.SensingConfig,'timeDomainChannels')
-            curStr.SensingConfig.timeDomainChannels
             tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
             recNum = recNum + 1;
             timenum = curStr.RecordInfo.HostUnixTime;

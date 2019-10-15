@@ -10,9 +10,14 @@ params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v
 params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05R/Session1563909455247/DeviceNPC700415H';
 % left 
 params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05L/Session1563909759970/DeviceNPC700414H';
-params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v20_back_from_italy_stim_sweep/figures';
-params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/figures';
-params.side    = 'L';
+
+% off meds left 
+params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/off_meds/RCS07R/Session1569436056338/DeviceNPC700403H';
+% on meds left 
+params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/on_meds_without_dykinesia/RCS07R/Session1569346542818/DeviceNPC700403H';
+params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
+params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
+params.side    = 'R';
 
 % params to print the figures
 prfig.plotwidth           = 25;
@@ -125,7 +130,7 @@ for d = 1:length(params.datadir)
         end
     end
     prfig.figname             = 'all_raw_data_with_events';
-%     plot_hfig(hfig,prfig);
+    plot_hfig(hfig,prfig);
 end
 
 % plot med on med off;
@@ -152,5 +157,7 @@ for c = 1:length(chanNames)
         set(gca,'FontSize',18); 
         set(gcf,'Color','w'); 
     end
+    prfig.figname             = sprintf('%s',chanNames{c}); 
+    plot_hfig(hfig,prfig);
 end
 x =2 ;

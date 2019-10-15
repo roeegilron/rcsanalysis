@@ -1,5 +1,6 @@
 function stimTable = loadStimSettings(fn)
 stimRaw = jsondecode(fixMalformedJson(fileread(fn),'StimSettings'));
+
 for s = 1 % this needs way more work ...
     % rec info 
     fnms = {'ApiVer','DeviceId',...
@@ -39,19 +40,28 @@ for s = 1 % this needs way more work ...
     end
 end
 % broken here 
+cntStim = 1; 
 for s = 2:length(stimRaw)
-    fnms = fieldnames(stimRaw{s}); 
-    for f = 1:length(fnms)
-        while 
+    fnmsraw = fieldnames(stimRaw{s});
+    if ismember('TherapyConfigGroup0',fnmsraw) 
+        if isfield(stimRaw{s,1}.TherapyConfigGroup0,'RateInHz')
+        % stim info
+        stimChanges(cntStim).('RateInHz') = stimRaw{s,1}.TherapyConfigGroup0.RateInHz;
+        fnms = {'AmplitudeInMilliamps','PulseWidthInMicroseconds'};
+        prog0info = stimRaw{s,1}.TherapyConfigGroup0.program0;
+        for f = 1:length(fnms)
+            stimChanges(cntStim).(fnms{f}) = [prog0info.(fnms{f})];
+        end
+        % rec info
+        fnms = {'ApiVer','DeviceId',...
+            'HostUnixTime','SessionId'};
+        recInfo = stimRaw{s,1}.RecordInfo;
+        for f = 1:length(fnms)
+            stimChanges(cntStim).(fnms{f}) = [recInfo.(fnms{f})];
+        end
+        cntStim = cntStim + 1;
+        end
     end
-     % rec info 
-    fnms = {'ApiVer','DeviceId',...
-        'HostUnixTime','SessionId'};
-    recInfo = stimRaw{s}.RecordInfo;
-    for f = 1:length(fnms)
-        stimChanges(s-1).(fnms{f}) = [recInfo.(fnms{f})];
-    end
-    
-    
 end
+stimTable = struct2table(stimChanges);
 end
