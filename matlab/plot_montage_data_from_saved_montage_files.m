@@ -8,7 +8,9 @@ mkdir(figdir);
 
 for f = 1:length(ff)
     load(ff{f});
-    plot_pac_montage_data_within(montageData,figdir,ff{f});
+%     plot_pac_montage_data_within(montageData,figdir,ff{f});
+    [pn,fn] = fileparts(ff{f});
+    plot_montage_data(pn);
 end
 end
 
@@ -35,23 +37,27 @@ pacparams.regionnames          = {'STN','M1'};
 
 cntplt = 1;
 if length(montageData.M1) == 8
-    % 12 PAC plots 
-    ncols  = 3; 
-    nrows  = 4; 
+    % 12 PAC plots
+    ncols  = 3;
+    nrows  = 4;
 elseif length(montageData.M1) == 6
-    ncols  = 3; 
-    nrows  = 4; 
+    ncols  = 3;
+    nrows  = 4;
 elseif length(montageData.M1) == 7
-    % 14 PAC plots 
-    ncols  = 4; 
-    nrows  = 4; 
+    % 14 PAC plots
+    ncols  = 4;
+    nrows  = 4;
+elseif length(montageData.M1) == 12
+    % 14 PAC plots
+    ncols  = 6;
+    nrows  = 4;
 else
-    ncols  = 4; 
-    nrows  = 4; 
+    ncols  = 4;
+    nrows  = 4;
 end
-needToSavePacResults = 1; 
+needToSavePacResults = 1;
 listOfVariables = who('-file', origfile);
-if ismember('pac_results', listOfVariables) 
+if ismember('pac_results', listOfVariables)
     load(origfile,'pac_results');
     needToSavePacResults = 0;
 end
@@ -59,13 +65,13 @@ load(origfile,'pac_results')
 
 
 
-fldnms = {'LFP','M1'}; 
+fldnms = {'LFP','M1'};
 hfig = figure;
 for a = 1:2 % loop on area
     for n = 1:length(montageData.(fldnms{a}))
         subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
         dat = montageData.(fldnms{a})(n);
-        if dat.sr == 250 
+        if dat.sr == 250
             pacparams.AmpFreqVector        = 10:5:80;
         elseif dat.sr == 500
             pacparams.AmpFreqVector        = 10:5:200;
@@ -107,5 +113,78 @@ prfig.resolution          = 300;
 prfig.figname             = fnsave;
 plot_hfig(hfig,prfig);
 close all;
+
+end
+
+function plot_coherence_montage_data(montageData,figdir,origfile)
+results = [];
+% set up subplots
+app.hfig = figure;
+hsub(1) = subplot(2,3,1,'Parent',app.hfig);
+hsub(2) = subplot(2,3,4,'Parent',app.hfig);
+hsub(3) = subplot(2,3,2,'Parent',app.hfig);
+hsub(4) = subplot(2,3,5,'Parent',app.hfig);
+hsub(5) = subplot(2,3,3,'Parent',app.hfig);
+hsub(6) = subplot(2,3,6,'Parent',app.hfig);
+app.hsubCoherence = gobjects(6,1);
+for i = 1:6
+    app.hsubCoherence(i) = hsub(i);
+end
+
+cnPairs = [1 2;... % stn stn
+    3 4;... % m1 m1
+    1 3;... % m1 m1
+    1 4;...
+    2 3;...
+    2 4];
+idxMontage = find(strcmp(app.hCoherenceMontageSelecor.Value,app.hCoherenceMontageSelecor.Items)==1);
+
+outdatcomplete = app.(sprintf('outDataChunks%d',idxMontage));
+outRec = app.outRec(idxMontage);
+times = outdatcomplete.derivedTimes;
+srate = unique( outdatcomplete.samplerate );
+nmplt = 1;
+i = 1;
+for c = 1:size(cnPairs,1)
+    axes(hsub(c));
+    hold on;
+    % first channel
+    cIdx1 = cnPairs(c,1);
+    fnm = sprintf('key%d',cIdx1-1);
+    y1 = outdatcomplete.(fnm);
+    y1 = y1 - mean(y1);
+    
+    cIdx2 = cnPairs(c,2);
+    fnm = sprintf('key%d',cIdx2-1);
+    y2 = outdatcomplete.(fnm);
+    y2 = y2 - mean(y2);
+    
+    %% plot cohenece
+    Fs = unique(outdatcomplete.samplerate);
+    [Cxy,F] = mscohere(y1',y2',...
+        2^(nextpow2(Fs)),...
+        2^(nextpow2(Fs/2)),...
+        2^(nextpow2(Fs)),...
+        Fs);
+    idxplot = F > 0 & F < 100;
+    hplot = plot(F(idxplot),Cxy(idxplot),'Parent',hsub(c));
+    xlabel(hsub(c),'Freq (Hz)');
+    ylabel(hsub(c),'MS Coherence');
+    
+    xlim([0 100]);
+    ttlGraph = sprintf('C between %s and %s',...
+        outRec(1).tdData(cIdx1).chanOut,...
+        outRec(1).tdData(cIdx2).chanOut);
+    set(hsub(c),'FontSize',10);
+    
+    title(hsub(c),ttlGraph,'FontSize',10);
+    clear y1 y2 cIdx1 cIdx2;
+    ylims(c,:) = hsub(c).YLim;
+    nmplt = nmplt + 1;
+end
+ylimsUse = [min(ylims(:,1)) max(ylims(:,2))];
+for c = 1:6
+    set(hsub(c),'Ylim',ylimsUse);
+end
 
 end

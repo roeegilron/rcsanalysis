@@ -100,21 +100,23 @@ for j = 1:length(filesLoad)
                 fileload = fullfile(dirname,'AdaptiveLog.json');
                 res = readAdaptiveJson(fileload); 
                 adaptiveTable = table();
-                % load timing info 
-                fn = fieldnames(res.timing);
-                for f = 1:length(fn)
-                    adaptiveTable.(fn{f}) = res.timing.(fn{f})(:);
-                end
-                % load adaptive info 
-                fna = fieldnames(res.adaptive);
-                for f = 1:length(fna)
-                    if size(res.adaptive.(fna{f}),1)==1
-                        adaptiveTable.(fna{f}) = res.adaptive.(fna{f})(:);
-                    elseif size(res.adaptive.(fna{f}),1)==4
-                        adaptiveTable.(fna{f}) = res.adaptive.(fna{f})';
+                if ~isempty(res)
+                    % load timing info
+                    fn = fieldnames(res.timing);
+                    for f = 1:length(fn)
+                        adaptiveTable.(fn{f}) = res.timing.(fn{f})(:);
                     end
+                    % load adaptive info
+                    fna = fieldnames(res.adaptive);
+                    for f = 1:length(fna)
+                        if size(res.adaptive.(fna{f}),1)==1
+                            adaptiveTable.(fna{f}) = res.adaptive.(fna{f})(:);
+                        elseif size(res.adaptive.(fna{f}),1)==4
+                            adaptiveTable.(fna{f}) = res.adaptive.(fna{f})';
+                        end
+                    end
+                    save(fullfile(dirname,['AdaptiveLog' '.mat']),'adaptiveTable');
                 end
-                save(fullfile(dirname,['AdaptiveLog' '.mat']),'adaptiveTable');
         end
         
     end

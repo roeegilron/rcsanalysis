@@ -57,17 +57,29 @@ medEvents.medTimes = dates;
 onEventIdx = cellfun(@(x) any(strfind(x,'Feeling ''on'' ')),eventOut.EventType(:)); 
 onEvents   = eventOut(onEventIdx,:); 
 
+% on events with dyskinesia 
+onEventIdxWithDykinesia = cellfun(@(x) any(strfind(x,'Feeling ''on'' ')),eventOut.EventType(:)) & ...
+                          cellfun(@(x) any(strfind(x,'Dyskinesia')),eventOut.EventType(:)); 
+onEventsWithDykinesia   = eventOut(onEventIdxWithDykinesia,:); 
+% on events without dyskinesia 
+onEventIdxWithOutDykinesia = cellfun(@(x) strcmp(x,'Feeling ''on'' little / no symptoms, '),eventOut.EventType(:));
+onEventsWithOutDykinesia   = eventOut(onEventIdxWithOutDykinesia,:); 
+
 % off events 
-offEventIdx = ~(strcmp(eventOut.EventType,'Feeling ''on'' little / no symptoms, ') | ...
-               strcmp(eventOut.EventType,'') | ...
-               strcmp(eventOut.EventType,'medication') );
+offEventIdx = ~cellfun(@(x) any(strfind(x,'Feeling ''on'' ')),eventOut.EventType(:)) & ...
+               (strcmp(eventOut.EventType,'') | ...
+               ~strcmp(eventOut.EventType,'medication') );
 offEvents   = eventOut(offEventIdx,:); 
 
+% off events with including all off's but without dyskinesia 
+
 % export data     
-allEvents.eventOut  = eventOut;  
-allEvents.medEvents = medEvents;
-allEvents.onEvents  = onEvents;
-allEvents.offEvents = offEvents;
+allEvents.eventOut                 = eventOut;  
+allEvents.medEvents                = medEvents;
+allEvents.onEvents                 = onEvents;
+allEvents.offEvents                = offEvents;
+allEvents.onEventsWithDykinesia    = onEventsWithDykinesia;
+allEvents.onEventsWithOutDykinesia = onEventsWithOutDykinesia;
 
 save(fullfile(dirname,'allEvents.mat'),'allEvents'); 
 

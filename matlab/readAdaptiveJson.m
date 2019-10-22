@@ -10,6 +10,13 @@ adpObj = deserializeJSON(fn);
 % put timing info in timing structure / table 
 % put adaptive data in adaptive sructure / table 
 %% record info 
+if isempty(adpObj)
+    badfile = 1; 
+end
+if badfile ==1 
+    res = [];
+    return; 
+end
 RecordInfo = [adpObj.RecordInfo]; 
 timing.HostUnixTime = [RecordInfo.HostUnixTime]; 
 

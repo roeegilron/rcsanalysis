@@ -1,7 +1,7 @@
 function analyzeContinouseDataFromSCS(TDDATAFILE)
-params.overlap = 15; % overlap in seconds - time to jump for fft
+params.overlap = 15; % overlap in seconds - time to jump for fft - make equal to datasize if no overlap wanted 
 params.datasize = 30; % time in second to run fft on
-params.maxGapFactor   = 2; % max gap factor to allow. So 1/sampleRate * maxGap Factor.
+params.maxGapFactor   = 2.5; % max gap factor to allow. So 1/sampleRate * maxGap Factor.
 params.maxGap   = 0.2; % max gap to allow in data before throwing it out - seconds
 params.tdSR     = 250; % only use 250hz sampling rate
 params.accSR    = 64; % only user 64 hz sampling rate
@@ -281,5 +281,54 @@ while timeEnd < accTable.derivedTimes(end)
 end
 
 end
+
+function processedData = processTimeDomainData_TEMP_VECTOR(td,params)
+% reshape data (no overlap) - this will be faster 
+% since using vectorization to check for issues with bad files etc. 
+
+% check for uniform sample rates
+samplerate = unique(td.samplerate); 
+if length( unique(td.samplerate) ) == 1
+    reject = 0; 
+end
+
+% check if sampling rate matches
+
+if ~reject
+    datapoints = (params.datasize-1) * samplerate;
+    totalNumPoints = size(td.key0,1); 
+    leaveout = mod(totalNumPoints,datapoints);
+    idxuseTotalData   = leaveout+1:1:totalNumPoints;
+    % reshape times 
+    times = td.derivedTimes(idxuseTotalData);
+    totalPointsTrimmed = size(times,1);
+    
+    reshapedTimes = reshape(times,datapoints,totalPointsTrimmed/datapoints)';
+    % check times and max gap
+    secDiffs = seconds(diff(reshapedTimes,1,2));
+    idxmaxgapFactor = max(secDiffs,[],2) <= (1/samplerate)* params.maxGapFactor;
+    % chek for max gap 
+    idxmaxgap = max(secDiffs,[],2) <= params.maxGap;
+    idxuse = idxmaxgapFactor & idxmaxgap;
+end
+timeStart = reshapedTimes(:,1);
+timeEnd = reshapedTimes(:,end);
+
+processedData.timeStart = timeStart;
+processedData.timeEnd = timeEnd;
+for c = 1:4
+    fn = sprintf('key%d',c-1);
+    x = td.(fn)(idxuseTotalData);
+    reshapedData = reshape(x,datapoints,totalPointsTrimmed/datapoints)';
+    reshapedData = reshapedData - mean(reshapedData,2);
+    reshapedData = reshapedData(idxuse,:);
+    processedData.(fn) = reshapedData;
+    
+end
+processedData.alltimes = reshapedTimes(idxuse,:);
+
+
+end
+
 
 
