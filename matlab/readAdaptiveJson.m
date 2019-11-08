@@ -10,6 +10,7 @@ adpObj = deserializeJSON(fn);
 % put timing info in timing structure / table 
 % put adaptive data in adaptive sructure / table 
 %% record info 
+badfile = 0;
 if isempty(adpObj)
     badfile = 1; 
 end

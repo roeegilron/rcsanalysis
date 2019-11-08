@@ -48,6 +48,7 @@ else
     
     ffAcc = findFilesBVQX(rootdir,'processedAccData.mat');
     accProcDat = struct();
+    accFileDur = [];
     for f = 1:length(ffAcc)
         %     process and analyze acc data
         load(ffAcc{f},'accData');
@@ -131,6 +132,15 @@ prfig.figname  = 'continous recording report';
 plot_hfig(hfig,prfig); 
 
 %% do fft but on sep recordings  
+for i = 1:length( tdProcDat )
+    for c = 1:4
+        fn = sprintf('key%d',c-1);
+        if size(tdProcDat(i).(fn),1) < size(tdProcDat(i).(fn),2)
+            tdProcDat(i).(fn) = tdProcDat(i).(fn)';
+        end
+    end
+end
+
 for c = 1:4
     start = tic;
     fn = sprintf('key%d',c-1);
@@ -165,35 +175,37 @@ close(hfig)
 save( fullfile(rootdir,'psdResults.mat'),'params','fftResultsTd','idxkeep')
 
 %% process actigraphy data 
-for a = 1:size(accProcDat,2)
-    start = tic;
-    dat = []; 
-    dat(:,1) = accProcDat(a).XSamples;
-    dat(:,2) = accProcDat(a).YSamples;
-    dat(:,3) = accProcDat(a).ZSamples;
-    datOut = processActigraphyData(dat,64); 
-    accMean  = mean(datOut); 
-    accVari  = mean(var(dat)); 
-    accResults(a).('accMean') = accMean;
-    accResults(a).('accVari') = accVari;
-    accResults(a).('timeStart') = accProcDat(a).timeStart;
-    accResults(a).('timeEnd') = accProcDat(a).timeEnd;
+if ~isempty(fieldnames( accProcDat))
+    for a = 1:size(accProcDat,2)
+        start = tic;
+        dat = [];
+        dat(:,1) = accProcDat(a).XSamples;
+        dat(:,2) = accProcDat(a).YSamples;
+        dat(:,3) = accProcDat(a).ZSamples;
+        datOut = processActigraphyData(dat,64);
+        accMean  = mean(datOut);
+        accVari  = mean(var(dat));
+        accResults(a).('accMean') = accMean;
+        accResults(a).('accVari') = accVari;
+        accResults(a).('timeStart') = accProcDat(a).timeStart;
+        accResults(a).('timeEnd') = accProcDat(a).timeEnd;
+    end
+    
+    % check for outliers
+    hfig = figure;
+    idxWhisker = [];
+    boxplot([accResults.accMean]);
+    q75_test=quantile(meanVals,0.75);
+    q25_test=quantile(meanVals,0.25);
+    w=2.0;
+    wUpper(1) = w*(q75_test-q25_test)+q75_test;
+    idxWhisker(:,1) = meanVals' < wUpper(c);
+    idxkeepAcc = idxWhisker;
+    close(hfig)
+    
+    
+    save( fullfile(rootdir,'accResults.mat'),'params','accResults','idxkeepAcc')
 end
-
-% check for outliers 
-hfig = figure;
-idxWhisker = [];
-boxplot([accResults.accMean]);
-q75_test=quantile(meanVals,0.75);
-q25_test=quantile(meanVals,0.25);
-w=2.0;
-wUpper(1) = w*(q75_test-q25_test)+q75_test;
-idxWhisker(:,1) = meanVals' < wUpper(c);
-idxkeepAcc = idxWhisker; 
-close(hfig)
-
-
-save( fullfile(rootdir,'accResults.mat'),'params','accResults','idxkeepAcc')
 
 %% process percentile data 
 return 

@@ -37,8 +37,15 @@ for f = 1:size(tbluse,1)
         foldername = findFilesBVQX(ff{1},'Device*',struct('dirs',1)); 
 
         start = tic;
-        [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(foldername{1},params);
-        fprintf('folder %d/%d done in %.2f secs\n',f,size(tbluse,1),toc(start));
+        ftd = findFilesBVQX(foldername{1},'RawDataTD.mat');
+        if ~isempty(ftd)
+            fprintf('this folder was opened before, skippinn\n'); 
+            fprintf('folder %d/%d done in %.2f secs\n',f,size(tbluse,1),toc(start));
+        else
+            [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(foldername{1},params);
+            fprintf('folder %d/%d done in %.2f secs\n',f,size(tbluse,1),toc(start));
+        end
+        
     catch
         fprintf('\t\tXXXXX\t error in foler %s\n', foldername{1});
     end

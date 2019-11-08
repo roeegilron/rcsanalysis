@@ -18,7 +18,15 @@ for f = 1:length(ffiles)
         % first check to see if this foler has been analyzed already 
         [pnn,fnn] = fileparts(ffiles{f});
         if exist(fullfile(pnn,'processedTDdata.mat'),'file')
-            fprintf('file %d already exists, skipping \n',f);
+            matFileObj = matfile(fullfile(pnn,'processedTDdata.mat'));
+            pd = matFileObj.processedData;
+            if isfield(pd,'alltimes')
+                fprintf('file %d already exists in new vector versoin, skipping \n',f);
+                
+            else
+                fprintf('file %d needs to be resaved in vector version \n',f);
+                analyzeContinouseDataFromSCS(ffiles{f});
+            end
         else
             analyzeContinouseDataFromSCS(ffiles{f});
             fprintf('success %d \n',f);

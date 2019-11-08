@@ -88,7 +88,7 @@ end
             load(fullfile(datadir,'EventLog.mat'),'eventTable');
             
             % process and analyze time domain data
-            processedData = processTimeDomainData(td,params);
+            processedData = processTimeDomainData_TEMP_VECTOR(td,params);
             save(fullfile(datadir,'processedTDdata.mat'),'processedData','params'); 
             
 %             if isempty(fieldnames(tdProcDat))
@@ -100,8 +100,8 @@ end
 %             end
             
             % process and analyze acc data
-            accData = processActigraphyData(accTable,params);
-            save(fullfile(datadir,'processedAccData.mat'),'accData','params'); 
+%             accData = processActigraphyData(accTable,params);
+%             save(fullfile(datadir,'processedAccData.mat'),'accData','params'); 
 %             if isempty(fieldnames(accProcDat))
 %                 accProcDat = accData;
 %             else
@@ -285,6 +285,8 @@ end
 function processedData = processTimeDomainData_TEMP_VECTOR(td,params)
 % reshape data (no overlap) - this will be faster 
 % since using vectorization to check for issues with bad files etc. 
+fprintf('reshaping data in vector format\n'); 
+start = tic; 
 
 % check for uniform sample rates
 samplerate = unique(td.samplerate); 
@@ -314,18 +316,30 @@ end
 timeStart = reshapedTimes(:,1);
 timeEnd = reshapedTimes(:,end);
 
-processedData.timeStart = timeStart;
-processedData.timeEnd = timeEnd;
+RawprocessedData.timeStart = timeStart(idxuse);
+RawprocessedData.timeEnd = timeEnd(idxuse);
 for c = 1:4
     fn = sprintf('key%d',c-1);
     x = td.(fn)(idxuseTotalData);
     reshapedData = reshape(x,datapoints,totalPointsTrimmed/datapoints)';
     reshapedData = reshapedData - mean(reshapedData,2);
     reshapedData = reshapedData(idxuse,:);
-    processedData.(fn) = reshapedData;
-    
+    RawprocessedData.(fn) = reshapedData; 
 end
-processedData.alltimes = reshapedTimes(idxuse,:);
+
+processedData = struct();
+for p = 1:length(RawprocessedData.timeStart)
+    processedData(p).timeStart = RawprocessedData.timeStart(p); 
+    processedData(p).timeEnd   = RawprocessedData.timeEnd(p); 
+    processedData(p).key0      = RawprocessedData.key0(p,:); 
+    processedData(p).key1      = RawprocessedData.key1(p,:); 
+    processedData(p).key2      = RawprocessedData.key2(p,:); 
+    processedData(p).key3      = RawprocessedData.key3(p,:); 
+end
+dur = processedData(end).timeStart - processedData(1).timeStart;
+fprintf('data duration %s reshaped in %.2f seconds\n',dur,toc(start));
+    
+% processedData.alltimes = reshapedTimes(idxuse,:);
 
 
 end

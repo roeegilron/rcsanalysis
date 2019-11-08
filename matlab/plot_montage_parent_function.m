@@ -84,7 +84,111 @@ figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS06/v10_day/figu
 %%
 
 
+%% RCS 06 3 week visit 
+addpath(genpath(fullfile('..','..','PAC')));
+% left side
+
+% off meds
+data{1,1} = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/rcs_data/RCS06L/Session1572885795402/DeviceNPC700424H/rawMontageData.mat';
+% on meds
+data{2,1} = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/rcs_data/RCS06L/Session1572900871716/DeviceNPC700424H/rawMontageData.mat';
+
+% right side
+
+% off meds
+data{1,2} = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/rcs_data/RCS06R/Session1572888110541/DeviceNPC700425H/rawMontageData.mat';
+% on meds
+data{2,2} = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/rcs_data/RCS06R/Session1572900834135/DeviceNPC700425H/rawMontageData.mat';
+
+figdir = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/figures';
+
+plot_montage_on_off_meds_saved_data(data,figdir);
+%%
+
+
+%% RCS 06 3 week visit - 1000hz 
+addpath(genpath(fullfile('..','..','PAC')));
+% left side
+
+
+dirname = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/rcs_data/';
+montageFilesFound = findFilesBVQX(dirname,'rawMontageData.mat')
+fprintf('\n'); 
+outMontages = table(); 
+for m = 1:length(montageFilesFound)
+    [pn,fn] = fileparts(montageFilesFound{m}); 
+    ff = findFilesBVQX(pn,'EventLog.mat'); 
+    [pn,fn] = fileparts(pn);
+    [pn,fn] = fileparts(pn);
+    outMontages.session{m} = fn;
+    [pn,patientraw] = fileparts(pn);
+    outMontages.patient{m} = patientraw(1:end-1);
+    outMontages.side{m} = patientraw(end);
+
+    load(ff{1}); 
+    montageEvents = eventTable(cellfun(@(x) any(strfind(x,': config')),eventTable.EventType) , :);
+    startTime = montageEvents.UnixOffsetTime(1);
+    startTime.Format = 'dd-MMM-yyyy HH:mm:ss';
+    outMontages.startTime(m) = startTime; 
+    endTime = montageEvents.UnixOffsetTime(end);
+    endTime.Format = 'dd-MMM-yyyy HH:mm:ss';
+    outMontages.endTime(m) = endTime; 
+    lastEventRaw = regexp(montageEvents.EventType(end),'[0-9]+','match');
+    numMontageFiles = str2num(lastEventRaw{1}{1}); 
+    outMontages.numFiles(m) = numMontageFiles;
+
+    dur = endTime-startTime; 
+    outMontages.dur{m} = dur;
+end
+numFiles = 5; % 5 - default , 9 - all pairs, 12 - 1000hz 
+timeCompare = outMontages.startTime; 
+[y,m,d] = ymd(timeCompare);
+dateArray = datetime(y,m,d);
+dateUse = datetime('04-Nov-2019');
+idxuse = (dateArray == dateUse) & outMontages.numFiles == numFiles; 
+
+tableUse = outMontages(idxuse,:); 
+
+% left side 
+
+% off meds
+dataRaw{1,1} = 'Session1572885795402';
+% on meds
+dataRaw{2,1} = 'Session1572900871716';
+
+% right side
+
+% off meds
+dataRaw{1,2} = 'Session1572888110541';
+% on meds
+dataRaw{2,2} = 'Session1572900834135';
+
+for i = 1:size(dataRaw,1)
+    for j = 1:size(dataRaw,2)
+        ff = findFilesBVQX(dirname,dataRaw{i,j},struct('dirs',1)); 
+        ff = findFilesBVQX(ff{1},'rawMontageData.mat'); 
+        data{i,j} = ff{1};
+    end
+end
+
+figdir = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/figures1000hz';
+
+
+plot_montage_on_off_meds_saved_data(data,figdir);
+
+    % plot the montage gui's 
+    for i = 1:size(dataRaw,1)
+        for j = 1:size(dataRaw,2)
+            [pn,fn] = fileparts(data{i,j});
+            plot_montage_data(pn); 
+        end
+    end
+%%
+
+
+
+
+
 
 %%  plot
 
-plot_montage_on_off_meds_saved_data(data,figdir);

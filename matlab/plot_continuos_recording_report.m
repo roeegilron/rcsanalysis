@@ -11,12 +11,15 @@ prfig.figtype             = '-djpeg';
 prfig.closeafterprint     = 0;
 prfig.resolution          = 300;
 
-if exist(fullfile(dirname,'processedData.mat'),'file')
-    load(fullfile(dirname,'processedData.mat'),'timeDomainFileDur');
+if exist(fullfile(dirname,'database.mat'),'file')
+    load(fullfile(dirname,'database.mat'),'tblout');
 else
-    error('file processedData.mat doesn''t exist need to create it with concatenate_and_plot_TD_data_SCS.m');
+    error('file database.mat doesn''t exist need to create it with MAIN_report_data_in_folder.m');
 end
 
+tblNonEmpty = tblout(~cellfun(@(x) isempty(x),tblout.startTime),:);
+timeDomainFileDur(:,1) = cellfun(@(x) datetime(x),tblNonEmpty.startTime);
+timeDomainFileDur(:,2) = cellfun(@(x) datetime(x),tblNonEmpty.endTime);
 idxNotSameDay = day(timeDomainFileDur(:,1)) ~= day(timeDomainFileDur(:,2));
 allTimesSameDay = timeDomainFileDur(~idxNotSameDay,:); 
 allTimesDiffDay = timeDomainFileDur(idxNotSameDay,:); 

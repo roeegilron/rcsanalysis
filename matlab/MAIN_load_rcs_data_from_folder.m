@@ -19,7 +19,7 @@ outdatcompleteAcc = table();
 powerTable = table();
 %% load files 
 
-filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json','AdaptiveLog.json'}; 
+filesLoad = {'RawDataTD.json','DeviceSettings.json','EventLog.json','RawDataAccel.json','RawDataPower.json','AdaptiveLog.json','StimLog.json'}; 
 for j = 1:length(filesLoad)
     if ismac || isunix
         ff = findFilesBVQX(dirname,filesLoad{j});
@@ -117,6 +117,8 @@ for j = 1:length(filesLoad)
                     end
                     save(fullfile(dirname,['AdaptiveLog' '.mat']),'adaptiveTable');
                 end
+            case 'StimLog.json'
+                loadStimSettings(fullfile(dirname,'StimLog.json'));
         end
         
     end

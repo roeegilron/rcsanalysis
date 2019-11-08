@@ -5,9 +5,9 @@ try
     powerTable = table();
     pbOut = struct();
     [pn,fnm,ext ] = fileparts(fn);
-    if isempty(powerLog) | isempty(powerLog.PowerDomainData)
+    if isempty(powerLog) || isempty(powerLog.PowerDomainData)
         fprintf('power data  is empty\n');
-        fprintf('creating dummy event table\n');
+        ffprintf('creating dummy event table\n');
         powerTable  = [];
         pbOut = [];
     else
@@ -74,6 +74,8 @@ try
             
             % power data
             % notes to compute bins
+            
+            %%
             numBins = fftSize/2;
             binWidth = (sampleRate/2)/numBins;
             i = 0;
@@ -83,11 +85,35 @@ try
                 i =  i + 1;
             end
             
-            powerChannelsIdxs = powerChannelsIdxs + 1; % since Matlab is 0 indexed and C# is 1 indexed.
+            
+            FFTSize = fftSize; % can be 64  256  1024
+            sampleRate = sampleRate; % can be 250,500,1000
+            
+            numberOfBins = FFTSize/2;
+            binWidth = sampleRate/2/numberOfBins;
+            
+            for i = 0:(numberOfBins-1)
+                fftBins(i+1) = i*binWidth;
+                %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+            end
+            
+            lower(1) = 0;
+            for i = 2:length(fftBins)
+                valInHz = fftBins(i)-fftBins(2)/2;
+                lower(i) = valInHz;
+            end
+            
+            for i = 1:length(fftBins)
+                valInHz = fftBins(i)+fftBins(2)/2;
+                upper(i) = valInHz;
+            end
+            
+            %%
+            powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
             powerBandInHz = {};
             for pc = 1:size(powerChannelsIdxs,1)
                 powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
-                    bins(powerChannelsIdxs(pc,1)),bins(powerChannelsIdxs(pc,2)));
+                    lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
             end
             pbOut(oo).powerBandInHz = powerBandInHz;
             pbOut(oo).powerChannelsIdxs = powerChannelsIdxs;

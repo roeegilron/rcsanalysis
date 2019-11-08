@@ -10,7 +10,8 @@ for f = 1:length(ff)
     load(ff{f});
 %     plot_pac_montage_data_within(montageData,figdir,ff{f});
     [pn,fn] = fileparts(ff{f});
-    plot_montage_data(pn);
+%     plot_montage_data(pn);
+    rcsDataChopper(pn); 
 end
 end
 
@@ -38,7 +39,7 @@ pacparams.regionnames          = {'STN','M1'};
 cntplt = 1;
 if length(montageData.M1) == 8
     % 12 PAC plots
-    ncols  = 3;
+    ncols  = 5;
     nrows  = 4;
 elseif length(montageData.M1) == 6
     ncols  = 3;

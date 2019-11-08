@@ -1,7 +1,7 @@
 function print_FFT_bins()
 clc;
 %% params to change 
-FFTSize = 1024; % can be 64  256  1024
+FFTSize = 256; % can be 64  256  1024
 sampleRate = 1000; % can be 250,500,1000
 %% 
 numberOfBins = FFTSize/2; 
@@ -13,7 +13,7 @@ for i = 0:(numberOfBins-1)
 end
 
 lower(1) = 0; 
-for i = 2:length(fftBins)
+for i = 2:length(fftBins)   
     valInHz = fftBins(i)-fftBins(2)/2;
     lower(i) = valInHz;
 %     fprintf('lower value in hz %.2f\n',lower(i)); 
