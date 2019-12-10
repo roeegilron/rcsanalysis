@@ -5,7 +5,7 @@ params.figdir  = dirname;
 params.figtype = '-djpeg';
 params.resolution = 300;
 params.closeafterprint = 1; 
-params.figname = 'on_vs_off_data_at_home_rcs07R_1-3-10-8';
+params.figname = 'dyskinesia_rcs06_stim_rate_rate_titrate_2_4';
 params.plotwidth = 17;
 params.plotheight = 12;
 %% set params norm 
@@ -36,10 +36,16 @@ include = {'anesthesiaR','awakeR'};
 include = {'stim 0.8ma A','stim off ','stim 1.1ma A'};
 include = {'anesthesiaR','awakeR'};
 include = {'on_home','off_home_tremor','off_home_tremor_night'};
+include = {'dyskinesia_130hz_0.1ma','dyskinesia_130hz_0.5ma',...
+    'dyskinesia_130hz_stim_off'};
+
+include = {'dyskinesia_150hz_0.5ma','dyskinesia_130hz_0.5ma',...
+    'dyskinesia_180hz_0.5ma'};
+
 
 cns = 1:4;
 cns = [1 3];
-cns = [2 3];
+cns = [2 4];
 %% plot psd
 lgaxesLFP = [];
 lgttlsLFP = {};
@@ -50,6 +56,7 @@ hfig = figure;
 % set up subplots 
 hsub(1) = subplot(1,2,1);
 hsub(2) = subplot(1,2,2);
+
 
 for i = 1:length(include)
     fileload = findFilesBVQX(dirname,[include{i} '.mat']);
@@ -92,7 +99,7 @@ for i = 1:length(include)
             hplt(nmplt).LineWidth = 2;
             %hplt.Color = [0 0 0.8 0.7];
             hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
-            xlim([0 100]);
+            xlim([0 150]);
             xlabel('Frequency (Hz)');
             ylabel('Power  (log_1_0\muV^2/Hz)');
             set(gca,'FontSize',20);

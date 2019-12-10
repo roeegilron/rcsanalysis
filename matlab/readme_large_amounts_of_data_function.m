@@ -8,10 +8,15 @@ MAIN_load_rcsdata_from_folders % opens al the data. make sure line
 % on first use 
 
 MAIN_run_process_RCS_data_in_parallel() % processes data into 30 second chunks 
-analyzeContinouseDataFromSCS % call this function inside 
+analyzeContinouseDataFromSCS % call this function inside to analyze TD data 
+analyzeContinouseDataFromSCS_ACC_actigraphy % call this function inside to analyze actigrpahy data 
 
 concatenate_and_plot_TD_data_SCS % does a few things:
 % 1. processed all the fft data creating an fft from each data chunk  
 % 2. concatenates all the data for easy analysis and lines eveythign up with PKG 
+
+% alternate methods to PSD: 
+
+compute_cv_beta_home_data()
 
 

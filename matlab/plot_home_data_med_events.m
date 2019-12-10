@@ -22,8 +22,9 @@ for e = 1:size(medEvents,1)
 end
 eventsUseForAnalysis = medEvents(medEvents.fftTimeDiff < minutes(5),:);
 
-peaks  = [19 19 28 28]; % RCS06L
+
 peaks  = [50 20 24 22]; % RCS07R
+peaks  = [19 19 28 28]; % RCS06L
 width  = 2.5;  
 [pn,fn] = fileparts(dirname); 
 

@@ -78,7 +78,7 @@ dataDir = params.dataDir;
 if exist(fullfile(dataDir,'ipad_allign_info.mat'),'file')
     load(fullfile(dataDir,'ipad_allign_info.mat'),'alligninfo','delsysForBeep');
 else
-    dbs5hzfieldname = 'DBS_5HZ_1_EMG1_IM_';
+    dbs5hzfieldname = 'DBS_5HZ_L_green2_EMG2_IM_';
     delsysForBeep.sound = dataraw.(dbs5hzfieldname);
     delsysForBeep.soundsrate = dataraw.srates.EMG;
     rcsraw.lfp = rcsDat.key0;
@@ -103,7 +103,7 @@ lenuse = size(dataraw.(dbs5hzfieldname),1) - 1; % since time starts at zero
 timeVecDelsys = seconds( (0:1:lenuse) ./ dataraw.srates.EMG); 
 timeSubDelsys = timeVecDelsys(alligninfo.eegsync(1));
 secUseDelsys = timeVecDelsys - timeSubDelsys; 
-plot(secUseDelsys,dataraw.DBS_5_Hz_EMG1_IM_);
+plot(secUseDelsys,dataraw.(dbs5hzfieldname));
 title('delsys 5hz artifact - emg'); 
 % plot rc+s acc 
 hs(nmplt) = subplot(4,1,nmplt); nmplt = nmplt + 1; 
@@ -115,17 +115,16 @@ plot(secUseRcsAcc,accDataRcs.YSamples - mean(accDataRcs.YSamples));
 plot(secUseRcsAcc,accDataRcs.ZSamples - mean(accDataRcs.ZSamples)); 
 legend({'X','Y','Z'}); 
 title('rc+s actigraphy'); 
-linkaxes(hs,'x');
 
-% plot delsys 5hz emg 
+% plot delsys 5hz acc  
 hs(nmplt) = subplot(4,1,nmplt); nmplt = nmplt + 1; 
 hold on; 
-lenuse = size(dataraw.DBS_5_Hz_ACCX1_IM_,1) - 1; % since time starts at zero
+lenuse = size(dataraw.DBS_5HZ_L_green2_ACCX2_IM_,1) - 1; % since time starts at zero
 timeVecDelsysAcc = seconds( (0:1:lenuse) ./ dataraw.srates.ACC);
 secUseDelsys = timeVecDelsysAcc - timeSubDelsys;
-plot(secUseDelsys,dataraw.DBS_5_Hz_ACCX1_IM_ - mean(dataraw.DBS_5_Hz_ACCX1_IM_));
-plot(secUseDelsys,dataraw.DBS_5_Hz_ACCY1_IM_ - mean(dataraw.DBS_5_Hz_ACCY1_IM_));
-plot(secUseDelsys,dataraw.DBS_5_Hz_ACCZ1_IM_ - mean(dataraw.DBS_5_Hz_ACCZ1_IM_));
+plot(secUseDelsys,dataraw.DBS_5HZ_L_green2_ACCX2_IM_ - mean(dataraw.DBS_5HZ_L_green2_ACCX2_IM_));
+plot(secUseDelsys,dataraw.DBS_5HZ_L_green2_ACCY2_IM_ - mean(dataraw.DBS_5HZ_L_green2_ACCY2_IM_));
+plot(secUseDelsys,dataraw.DBS_5HZ_L_green2_ACCZ2_IM_ - mean(dataraw.DBS_5HZ_L_green2_ACCZ2_IM_));
 legend({'X','Y','Z'}); 
 
 title('delsys actigraphy'); 
@@ -213,7 +212,11 @@ linkaxes(hs,'x');
 %% find beep indices in delsys time,convert to RC+S time and chop delsys + rc+s data to be equal 
 timeDat = readIpadJson(ipadFn);
 delsysForEvent.srate = dataraw.srates.trig;
-delsysForEvent.Erg1 = dataraw.Sound_EMG9_trig;
+fnmsDelsys = fieldnames(dataraw);
+fnmsSoundDelsys = fnmsDelsys(...
+cellfun(@(x) any(regexpi(x,'sound')), fnmsDelsys) ); 
+
+delsysForEvent.Erg1 = dataraw.(fnmsSoundDelsys{1});
 soundSecsDelsys = seconds(peakFinder(delsysForEvent)); % use peak finder to find sound in Delsys time. 
 soundSecsDelsysRcsSync = soundSecsDelsys - timeSubDelsys; % subtract "sync time" from delsys. 
 secsCut = [soundSecsDelsysRcsSync(1) - seconds(20)  soundSecsDelsysRcsSync(end) + seconds(20)];
@@ -266,7 +269,7 @@ end
 % data chunk this is a quality control step 
 
 delsysForEvent.srate = delsysIpad.srates.trig;
-delsysForEvent.Erg1 = delsysIpad.Sound_EMG9_trig;
+delsysForEvent.Erg1 = dataraw.(fnmsSoundDelsys{1});
 soundSecsDelsys = seconds(peakFinder(delsysForEvent)); % use peak finder to find sound in Delsys time. 
 % get events table in json time 
 eventsTable = transformJsonDatToEEGidx(timeDat, dataraw.srates.trig ,seconds(soundSecsDelsys)); 
@@ -345,7 +348,7 @@ linkaxes(hsub,'x');
 %% plot ipad data based on this alligmment 
 timeparams.start_epoch_at_this_time    = -3000;%-8000; % ms relative to event (before), these are set for whole analysis
 timeparams.stop_epoch_at_this_time     =  7000; % ms relative to event (after)
-timeparams.start_baseline_at_this_time = -2000;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
+timeparams.start_baseline_at_this_time = -1000;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
 timeparams.stop_baseline_at_this_time  = -500;%5-6000; % ms relative to event
 timeparams.extralines                  = 1; % plot extra line
 timeparams.extralinesec                = 3000; % extra line location in seconds

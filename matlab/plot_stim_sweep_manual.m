@@ -17,8 +17,10 @@ prfig.resolution          = 300;
 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(params.datadir);
 % get stim times 
-stimTable = loadStimSettings(fullfile(datadir,'StimLog.json'));
-stimTimes    =  datetime(stimTable.HostUnixTime/1000,...
+loadStimSettings(fullfile(datadir,'StimLog.json'));
+load(fullfile(datadir,'StimLog.mat'),'stimEvents','initialStimSettings','meta');
+
+stimTimes    =  datetime(stimEvents.HostUnixTime/1000,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 
 

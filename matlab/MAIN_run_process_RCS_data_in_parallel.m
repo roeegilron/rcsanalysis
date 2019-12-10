@@ -14,19 +14,19 @@ ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
 clc;
 
 for f = 1:length(ffiles)
-    try 
+    try % time domain data 
         % first check to see if this foler has been analyzed already 
         [pnn,fnn] = fileparts(ffiles{f});
         if exist(fullfile(pnn,'processedTDdata.mat'),'file')
-            matFileObj = matfile(fullfile(pnn,'processedTDdata.mat'));
-            pd = matFileObj.processedData;
-            if isfield(pd,'alltimes')
-                fprintf('file %d already exists in new vector versoin, skipping \n',f);
-                
-            else
-                fprintf('file %d needs to be resaved in vector version \n',f);
-                analyzeContinouseDataFromSCS(ffiles{f});
-            end
+%             matFileObj = matfile(fullfile(pnn,'processedTDdata.mat'));
+%             pd = matFileObj.processedData;
+%             if isfield(pd,'alltimes')
+%                 fprintf('file %d already exists in new vector versoin, skipping \n',f);
+%                 
+%             else
+%                 fprintf('file %d needs to be resaved in vector version \n',f);
+%                 analyzeContinouseDataFromSCS(ffiles{f});
+%             end
         else
             analyzeContinouseDataFromSCS(ffiles{f});
             fprintf('success %d \n',f);
@@ -34,6 +34,31 @@ for f = 1:length(ffiles)
     catch 
         fprintf('failed %d \n',f);
     end
+    
+    
+    
+    try % actigraphy data
+        % first check to see if this foler has been analyzed already
+        [pnn,fnn] = fileparts(ffiles{f});
+        if exist(fullfile(pnn,'processedAccData.mat'),'file')
+%             matFileObj = matfile(fullfile(pnn,'processedTDdata.mat'));
+%             pd = matFileObj.processedData;
+%             if isfield(pd,'alltimes')
+%                 fprintf('file %d already exists in new vector versoin, skipping \n',f);
+%                 
+%             else
+%                 fprintf('file %d needs to be resaved in vector version \n',f);
+%                 analyzeContinouseDataFromSCS_ACC_actigraphy(ffiles{f});
+%             end
+        else
+            analyzeContinouseDataFromSCS_ACC_actigraphy(ffiles{f});
+            fprintf('success %d \n',f);
+        end
+    catch
+        fprintf('failed %d \n',f);
+    end
+    
+    
     try
         % find device folder
          %% to run in parllel comment section above and uncomment section below:

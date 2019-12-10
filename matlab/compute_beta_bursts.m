@@ -67,6 +67,8 @@ if length(sr) == 1
     
     % plot coeeficient of variation in 30 second chunks 
     load /Volumes/Samsung_T5/RCS06/v12_home_data_dump/RCS06R/Session1570983975169/DeviceNPC700425H/processedTDdata.mat
+    params.freqs   = [17:21];
+    sr = 250;
     [b,a]        = butter(3,[params.freqs(1) params.freqs(end)] / (sr/2),'bandpass'); % user 3rd order butter filter
     times = [processedData.timeStart];
     

@@ -42,7 +42,7 @@ for c = 1:4
     hold on; 
     fn = sprintf('key%dfftOut',c-1); 
     C = fftResultsTd.(fn)(:,idxkeep);
-    for i = 1:10:98
+    for i = 1:2:98
         y = prctile(C,i,2); 
         x = fftResultsTd(1).ff; 
         plot(hsub(c),x,y,'Color',[0 0 0.8 0.3],'LineWidth',0.1); 
@@ -54,6 +54,7 @@ for c = 1:4
     xlim([0 100]); 
     set(gca,'FontSize',20);
 end
+dur = sum([fftResultsTd.timeEnd] - [fftResultsTd.timeStart])
 ttluse = sprintf('%s hours of data, %d 30 sec chunks',dur,sum(idxkeep));
 sgtitle(ttluse,'FontSize',30)
 linkaxes(hsub,'x');

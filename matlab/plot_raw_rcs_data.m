@@ -18,7 +18,7 @@ hfig.Units = 'normalized';
 btn = uicontrol();
 btn.Parent = hfig;
 btn.Style = 'pushbutton';
-btn.String = 'PSD + spect';
+btn.String =     'PSD + spect';
 btn.Units = 'normalized';
 btn.Position = [0.0170    0.9513    0.1045    0.0444];
 btn.Callback = @plot_psd_and_spect;
@@ -39,6 +39,8 @@ packtRxTime    =  datetime(packRxTimeRaw/1000,...
             'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 derivedTime    = outdatcomplete.derivedTimes(idxTimeCompare); 
 timeDiff       = derivedTime - packtRxTime;
+
+eventTable = allign_events_time_domain_time(eventTable,outdatcomplete);
 
 numplots = 5;
 for c = 1:4 % loop on channels
@@ -61,13 +63,16 @@ for c = 1:4 % loop on channels
         eventIdxs = strcmp(events(e),eventTable.EventType);
         ylims = get(gca,'YLim');
         hold on;
-        t = eventTable.UnixOffsetTime(eventIdxs) + timeDiff;% bcs clock time may be off compared to INS time
+%         t = eventTable.UnixOffsetTime(eventIdxs) + timeDiff;% bcs clock time may be off compared to INS time
+        t = eventTable.insTimes(eventIdxs);
         tevents = repmat(t,1,2); 
         yevents = repmat(ylims,size(tevents,1),1);
         hplt = plot(tevents',yevents');
+        eventIdxsUse = find(eventIdxs==1); 
         for p = 1:length(hplt)
             hplt(p).Color = [colrsUse(e,:) 0.6];
             hplt(p).LineWidth = 3;
+            hplt(p).UserData = eventTable(eventIdxsUse(p),:);
         end
         hplts(1,e) = hplt(1); 
     end
@@ -110,6 +115,27 @@ for h = 1:length(hsub)
     hsub(h).YLimMode = 'auto';
 end
 
+
+dcm_obj = datacursormode(hfig);
+dcm_obj.UpdateFcn = @myupdatefcn;
+dcm_obj.SnapToDataVertex = 'on';
+datacursormode on;
+
+
+end
+
+function [txt] = myupdatefcn(~,event_obj)
+% Customizes text of data tips
+str = event_obj.Target.UserData.EventType{1};
+strub = event_obj.Target.UserData.EventSubType;
+abstime = event_obj.Target.UserData.timeDiffVector;
+tim = event_obj.Target.UserData.insTimes(1);
+
+pos = get(event_obj,'Position');
+txt = {['Sub Report: ', strrep( str ,'_',' ')],...
+       ['Sub Report 2: ', strrep( strub{1} ,'_',' ') ],...
+       ['Time Diff: ', sprintf('%s',tim)]...
+       ['Time Of Day: ', sprintf('%s',abstime)]};
 end
 
 function plot_psd_and_spect(btn,event)

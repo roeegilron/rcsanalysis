@@ -5,6 +5,44 @@ else isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
 end
 
+fprintf('\n\n');
+% save acc 
+% check to see if file exists, if it does just 
+% load the file that exists 
+cnttime = 1; 
+if exist(fullfile(rootdir,'processedDataAcc.mat'),'file')
+    load( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur');
+else
+    
+    ffAcc = findFilesBVQX(rootdir,'processedAccData.mat');
+    accProcDat = struct();
+    accFileDur = NaT;
+    for f = 1:length(ffAcc)
+        %     process and analyze acc data
+        load(ffAcc{f},'accData');
+        
+        if isempty(fieldnames(accProcDat))
+            if isstruct(accData)
+                accProcDat = accData;
+                accFileDur.TimeZone = accData(1).timeStart.TimeZone;
+                accFileDur(cnttime,1) = accData(1).timeStart;
+                accFileDur(cnttime,2) = accData(end).timeStart;
+                cnttime = cnttime+1; 
+            end
+        else
+            if ~isempty(accData)
+                accProcDat = [accProcDat accData];
+                accFileDur(cnttime,1) = accData(1).timeStart;
+                accFileDur(cnttime,2) = accData(end).timeStart;
+                cnttime = cnttime+1;
+            end
+        end
+        fprintf('acc file %d/%d done\n',f,length(ffAcc));
+        clear accData;
+    end
+    save( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur','-v7.3')
+end
+
 % save td 
 % check to see if file exists, if it does just 
 % load the file that exists 
@@ -37,42 +75,7 @@ else
     end
     save( fullfile(rootdir,'processedData.mat'),'tdProcDat','params','timeDomainFileDur','-v7.3')
 end
-fprintf('\n\n');
-% save acc 
-% check to see if file exists, if it does just 
-% load the file that exists 
-cnttime = 1; 
-if exist(fullfile(rootdir,'processedDataAcc.mat'),'file')
-    load( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur');
-else
-    
-    ffAcc = findFilesBVQX(rootdir,'processedAccData.mat');
-    accProcDat = struct();
-    accFileDur = [];
-    for f = 1:length(ffAcc)
-        %     process and analyze acc data
-        load(ffAcc{f},'accData');
-        
-        if isempty(fieldnames(accProcDat))
-            if isstruct(accData)
-                accProcDat = accData;
-                accFileDur(cnttime,1) = accData(1).timeStart;
-                accFileDur(cnttime,2) = accData(end).timeStart;
-                cnttime = cnttime+1; 
-            end
-        else
-            if ~isempty(accData)
-                accProcDat = [accProcDat accData];
-                accFileDur(cnttime,1) = accData(1).timeStart;
-                accFileDur(cnttime,2) = accData(end).timeStart;
-                cnttime = cnttime+1;
-            end
-        end
-        fprintf('acc file %d/%d done\n',f,length(ffAcc));
-        clear accData;
-    end
-    save( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur','-v7.3')
-end
+ 
 
 %% plot recording duration to see how much data was recoded per day  
 % split up recordings that are not in the samy day 

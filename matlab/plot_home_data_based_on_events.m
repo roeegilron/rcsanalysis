@@ -1,4 +1,5 @@
 function plot_home_data_based_on_events(dirname)
+addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 close all;
 % this function relies on psdresults + all events existing in the .
 % directory
