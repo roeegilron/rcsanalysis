@@ -6,6 +6,7 @@ close all;
 load(fullfile(dirname,'allEvents.mat'));
 load(fullfile(dirname,'psdResults.mat'));
 
+plot_stim_events(allEvents,fftResultsTd)
 % create table with idx of fft results in all events and the time
 % difference
 t = [fftResultsTd.timeStart];
@@ -35,7 +36,7 @@ labelsAll{1,:} = {'off','on with dyskinesia','on with out dyskinesia'};
 labelsAll{2,:} = {'off'};
 labelsAll{3,:} = {'on with dyskinesia'};
 labelsAll{4,:} = {'on with out dyskinesia'};
-plot_events_with_shaded_error_bars(dirname,eventsUseForAnalysis,labelsAll{1,:},fftResultsTd )
+% plot_events_with_shaded_error_bars(dirname,eventsUseForAnalysis,labelsAll{1,:},fftResultsTd )
 
 for ff = 1:figureTypes
     
@@ -199,3 +200,97 @@ figureTitles{1} = 'all_home_data_with_events_shaded_error_bars';
 
     return;
 end
+
+function plot_stim_events(allEvents,fftResultsTd)
+ttls   = {'STN 0-2','STN 0-3','M1 8-10','M1 9-11'};
+hfig = figure;
+hfig.Color = 'w'; 
+for i = 1:4
+    hsub(i) = subplot(2,2,i); hold on;
+end
+
+eventTable = allEvents.condsAndStim;
+allY = {};
+for s = 1:size(eventTable,1)
+    for c = 1:4 % loop on all channels
+        axes(hsub(c));
+        fldnm = sprintf('key%dfftOut',c-1);
+        times = fftResultsTd.timeStart; 
+        ts = eventTable.startTime(s);
+        te = eventTable.endTime(s);
+        ts.TimeZone = fftResultsTd.timeStart.TimeZone;
+        te.TimeZone = fftResultsTd.timeStart.TimeZone;
+        fftIdx = [];
+        fftIdx = isbetween(times,ts,te);
+        y = [];
+        y = fftResultsTd.(fldnm)(:,fftIdx);
+        x = fftResultsTd.ff;
+        if ~isempty(y)
+            if eventTable.AmplitudeInMilliamps(s)>1.5
+                if eventTable.Dyskinesia(s)
+                    datout(s,c).onstim_off = y; 
+                else
+                    datout(s,c).onstim_on = y; 
+                end
+            else
+                if eventTable.Dyskinesia(s)
+                    datout(s,c).offstim_off = y; 
+                else
+                    datout(s,c).offstim_on = y; 
+                end
+            end
+        end
+    end
+end
+
+
+for c = 1:4 % loop on all channels
+    axes(hsub(c));
+    %                     hplt = plot(hsub(c),x,y,'LineWidth',1,'Color',[0.8 0 0 0.5],'LineStyle','-.');
+    try 
+    y = []; 
+    y = [datout(:,c).onstim_off];
+    hshadedError = shadedErrorBar(x',y',{@median,@(y) std(y)./sqrt(size(y,1))});
+    hshadedError.mainLine.Color = [0.8 0 0.2];
+    hshadedError.mainLine.LineWidth = 2;
+    hshadedError.patch.FaceColor = [0.8 0 0];
+    hshadedError.patch.FaceAlpha = 0.2;
+    end
+    
+    try 
+    y = [];
+    y = [datout(:,c).onstim_on];
+    hshadedError = shadedErrorBar(x',y',{@median,@(y) std(y)./sqrt(size(y,1))});
+    hshadedError.mainLine.Color = [0.7 0 0];
+    hshadedError.mainLine.LineWidth = 2;
+    hshadedError.patch.FaceColor = [0.8 0 0];
+    hshadedError.patch.FaceAlpha = 0.2;
+    end
+    
+    try
+        y = []; 
+    y = [datout(:,c).offstim_off];
+    hshadedError = shadedErrorBar(x',y',{@median,@(y) std(y)./sqrt(size(y,1))});
+    hshadedError.mainLine.Color = [0.9 0 0.9];
+    hshadedError.mainLine.LineWidth = 2;
+    hshadedError.patch.FaceColor = [0 0 0.8];
+    hshadedError.patch.FaceAlpha = 0.2;
+    end
+    
+    try
+        y = []; 
+    y = [datout(:,c).offstim_on];
+    hshadedError = shadedErrorBar(x',y',{@median,@(y) std(y)./sqrt(size(y,1))});
+    hshadedError.mainLine.Color = [0 0 0.9];
+    hshadedError.mainLine.LineWidth = 2;
+    hshadedError.patch.FaceColor = [0 0 0.9];
+    hshadedError.patch.FaceAlpha = 0.2;
+    end
+    title(hsub(c),ttls{c});
+%     xlim(hsub(c),[0 100]);
+    xlabel(hsub(c),'Freq (Hz)');
+    ylabel(hsub(c),'Power  (log_1_0\muV^2/Hz)');
+    set(hsub(c),'FontSize',18);
+end
+end
+

@@ -15,7 +15,7 @@ prfig.closeafterprint     = 0;
 prfig.resolution          = 300;
 
 
-[outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(params.datadir);
+[outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(params.datadir);
 % get stim times 
 loadStimSettings(fullfile(datadir,'StimLog.json'));
 load(fullfile(datadir,'StimLog.mat'),'stimEvents','initialStimSettings','meta');
@@ -41,12 +41,24 @@ packtRxTime    =  datetime(packRxTimeRaw/1000,...
 derivedTime    = outdatcomplete.derivedTimes(idxTimeCompare);
 timeDiff       = derivedTime - packtRxTime;
 
+eventTable = allign_events_time_domain_time(eventTable,outdatcomplete);
+
 
 secs = outdatcomplete.derivedTimes;
 app.subTime = secs(1);
-% find start events
-idxStart = cellfun(@(x) any(strfind(x,'Start')),eventTable.EventType);
-idxEnd = cellfun(@(x) any(strfind(x,'Stop')),eventTable.EventType);
+idxStimEvents  = cellfun(@(x) any(strfind(x,'Stim')),eventTable.EventType);
+stimEvens = eventTable(idxStimEvents,:);
+
+% insert event table markers and link them
+ets = stimEvens(1:end-1,:);
+ete = stimEvens(2:end,:);
+for e = 1:size(ets,1)
+    durations(e) = ete.insTimes(e) -  ets.insTimes(e);
+end
+idxkeep = durations > seconds(30);
+ets = ets(idxkeep,:); 
+ete = ete(idxkeep,:); 
+
 % plot data
 hfig = figure; 
 for c = 1:4
@@ -59,14 +71,11 @@ for c = 1:4
     title(cfnm,'Parent',hsub(c));
 end
 linkaxes(hsub,'x');
-% insert event table markers and link them
-ets = eventTable(idxStart,:);
-ete = eventTable(idxEnd,:);
-hpltStart = gobjects(sum(idxStart),4);
-hpltEnd = gobjects(sum(idxStart),4);
+hpltStart = gobjects(size(ets,1),4);
+hpltEnd = gobjects(size(ete,1),4);
 cntStn = 1;
 cntM1 = 1;
-for i = 1:sum(idxStart)
+for i = 1:size(ets,1)
     for c = 1:4
         hsubs = get(hsub(c));
         ylims = hsubs.YLim;
@@ -75,7 +84,7 @@ for i = 1:sum(idxStart)
         idxInOutDataCompleteUnits = idxnonzero(idxClosest); 
         xval = outdatcomplete.derivedTimes(idxInOutDataCompleteUnits); 
 %         xval = ets.UnixOffsetTime(i) + timeDiff;
-        startTime = xval;
+        startTime = ets.insTimes(i);
         hplt = plot([xval xval],ylims,'Parent',hsub(c),'Color',[0 0.8 0 0.7],'LineWidth',3);
         hpltStart(i,c) = hplt;
         % end
@@ -83,7 +92,7 @@ for i = 1:sum(idxStart)
         idxInOutDataCompleteUnits = idxnonzero(idxClosest); 
         xval = outdatcomplete.derivedTimes(idxInOutDataCompleteUnits); 
 %         xval = ete.UnixOffsetTime(i)+timeDiff;
-        endTime = xval;
+        endTime =  ete.insTimes(i);
         hplt = plot([xval xval],ylims,'Parent',hsub(c),'Color',[0.8 0 0 0.7],'LineWidth',3);
         hpltEnd(i,c) = hplt;
         
@@ -91,18 +100,26 @@ for i = 1:sum(idxStart)
         cfnm = sprintf('key%d',c-1);
         y = outdatcomplete.(cfnm);
         secsUse = secs;
-        idxuse = secsUse > (startTime - seconds(5)) & secsUse < (endTime + seconds(5));
+        idxuse = secsUse > (startTime + seconds(10)) & secsUse < (endTime - seconds(10));
         % get sample rate
         % xx - since this is stim sweep assume setting always
         % the same
         idxElectrodes = 1;
         sr = str2num(strrep(outRec(idxElectrodes).tdData(c).sampleRate,'Hz',''));
         % get the params of the stim sweep 
+        autostimsweep = 0;
+        if autostimsweep 
         rawStr = ets.EventType{i}; 
         % find stim amp 
         idxStrStart = strfind(rawStr,'Stim amp: ');
         idxStrEnd   = strfind(rawStr,'. Stim Rate:');
         stimAmp = str2double(strrep(strrep(rawStr(idxStrStart:idxStrEnd),'Stim amp: ',''),'mA.','')); 
+        else
+            rawStr = ets.EventType{i};
+            idxstr = strfind(rawStr,':');
+            stimAmp = str2double(rawStr(idxstr+1:end));
+            
+        end
         outIdxs(i).idxuse = idxuse; 
         outIdxs(i).stimAmp = stimAmp; 
         if c <=2
@@ -128,7 +145,8 @@ prfig.figname             = 'all_raw_data_with_events';
 plot_hfig(hfig,prfig);
 
 % plot raw data and spectrial analysis 
-
+plotthis = 0;
+if plotthis 
 for i = 1:length(outIdxs)
     hfig = figure;
     cntplt = 1;
@@ -163,7 +181,7 @@ for i = 1:length(outIdxs)
     plot_hfig(hfig,prfig);
 
 end
-
+end 
 % plot fft 
 areas = {'rawDatSTN','rawDatM1'}; 
 for a = 1:length(  areas )

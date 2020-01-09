@@ -1,6 +1,6 @@
 function reportEventLogInEachFolder()
 %% 
-rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/v20_data_from_greece';
+rootdir = '/Volumes/RCS_DATA/RCS05/all_data/RCS05L';
 ff = findFilesBVQX(rootdir,'EventLog.json'); 
 for f = 1:length(ff)
     el = loadEventLog(ff{f});

@@ -12,8 +12,8 @@ stop_epoch_at_this_time     = timeparams.stop_epoch_at_this_time; % ms relative 
 start_baseline_at_this_time = timeparams.start_baseline_at_this_time;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
 stop_baseline_at_this_time  = timeparams.stop_baseline_at_this_time;%5-6000; % ms relative to event
 start_window_at_this_time   = -500;
-minimum_frequency=5;%lowest freq to examine
-maximum_frequency=180;
+minimum_frequency=2;%lowest freq to examine
+maximum_frequency=200;
 number_of_frequencies = 180;
 minimum_frequency_step_size = .5;
 sampling_rate = ecogsr;
@@ -147,13 +147,13 @@ for ch_plot = 1:num_channels
                 'LineWidth',2,...
                 'Color',[0.2 0.2 0.2 0.7]);
         end
-        ylabel('power');
+        ylabel('Frequency (Hz)');
         hold on;
         ttlfnm = sprintf('chan%dTitle',ch_plot);
         title(ecog.(ttlfnm));
     end
 end
-
+hfig.Color = 'w';
 set(findall(hfig,'-property','FontSize'),'FontSize',12)
 baselineTtl = sprintf('baseline %d %d',timeparams.start_baseline_at_this_time,...
     timeparams.stop_baseline_at_this_time);
@@ -170,6 +170,12 @@ fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.jpeg',timeparams.start_ba
     timeparams.analysis,timeparams.filtertype);
 print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r600');
 % print(hfig,fullfile(figdir,fnmsv),'-dpdf');
+
+
+fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.pdf',timeparams.start_baseline_at_this_time,...
+    timeparams.stop_baseline_at_this_time,...
+    timeparams.analysis,timeparams.filtertype);
+print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r600');
 
 close(hfig);
 end

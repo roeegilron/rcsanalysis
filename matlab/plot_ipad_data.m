@@ -51,6 +51,7 @@ fnparams = fullfile(dataDir,'params-ipad-1.mat');
 save(fnparams,'params');
 
 %% load with params
+
 load(fnparams,'params'); 
 load(params.delsysFn)
 % load files 
@@ -269,12 +270,12 @@ end
 % data chunk this is a quality control step 
 
 delsysForEvent.srate = delsysIpad.srates.trig;
-delsysForEvent.Erg1 = dataraw.(fnmsSoundDelsys{1});
+delsysForEvent.Erg1 = delsysIpad.(fnmsSoundDelsys{1});
 soundSecsDelsys = seconds(peakFinder(delsysForEvent)); % use peak finder to find sound in Delsys time. 
 % get events table in json time 
 eventsTable = transformJsonDatToEEGidx(timeDat, dataraw.srates.trig ,seconds(soundSecsDelsys)); 
 
-save(fullfile(dataDir,'ipadDataOffMeds.mat'),...
+save(fullfile(dataDir,'ipadDataOnMeds.mat'),...
     'eventsTable','delsysForEvent',...
     'rcsIpadAccData','rcsIpadData',...
     'rcsSrate','accSrate','outRec',...
@@ -288,7 +289,7 @@ nmrows = 4;
 % plot delsys + sound 
 hsub(nmplt) = subplot(nmrows,1,nmplt); nmplt = nmplt + 1; 
 hold on; 
-fnms = {'R_Hand_ACCX2_IM_','R_Hand_ACCY2_IM_','R_Hand_ACCZ2_IM_'}; 
+fnms = {'R_hand_green3_ACCX3_IM_','R_hand_green3_ACCY3_IM_','R_hand_green3_ACCZ3_IM_'}; 
 for ff = 1:length(fnms)
     dat = delsysIpad.(fnms{ff}); 
     hplt = plot(secsOut.ACC, dat - mean(dat)); 
@@ -298,12 +299,16 @@ title('delsys right hand + sound');
 ylims = hsub(nmplt-1).YLim; 
 plot([soundSecsDelsys; soundSecsDelsys],repmat(ylims,size(soundSecsDelsys,2),1)',...
     'Color',[0.5 0.5 0.5 0.7],'LineWidth',2)
+% plot(secsOut.trig,delsysIpad.Sound_green9_pairSlot12__EMG12_trig,...
+%     'Color',[0.5 0.5 0.5 0.7],'LineWidth',2)
+
+
 legend({'x','y','z','beep'}); 
 set(gca,'FontSize',16); 
 % plot delsys acc 
 hsub(nmplt) = subplot(nmrows,1,nmplt); nmplt = nmplt + 1; 
 hold on; 
-fnms = {'DBS_5_Hz_ACCX1_IM_','DBS_5_Hz_ACCY1_IM_','DBS_5_Hz_ACCZ1_IM_'}; 
+fnms = {'DBS_5HZ_L_green2_ACCX2_IM_','DBS_5HZ_L_green2_ACCX2_IM_','DBS_5HZ_L_green2_ACCX2_IM_'}; 
 for ff = 1:length(fnms)
     dat = delsysIpad.(fnms{ff}); 
     hplt = plot(secsOut.ACC, dat - mean(dat)); 
@@ -349,7 +354,7 @@ linkaxes(hsub,'x');
 timeparams.start_epoch_at_this_time    = -3000;%-8000; % ms relative to event (before), these are set for whole analysis
 timeparams.stop_epoch_at_this_time     =  7000; % ms relative to event (after)
 timeparams.start_baseline_at_this_time = -1000;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
-timeparams.stop_baseline_at_this_time  = -500;%5-6000; % ms relative to event
+timeparams.stop_baseline_at_this_time  = -100;%5-6000; % ms relative to event
 timeparams.extralines                  = 1; % plot extra line
 timeparams.extralinesec                = 3000; % extra line location in seconds
 timeparams.analysis                    = 'hold_center';
@@ -434,9 +439,11 @@ linkaxes(hsub,'x');
 
 clear params
 
+hfig.Color = 'w';
 params.figname = 'rcs plot json movement related'; 
-params.figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS01/presentations/figures';
-params.figtype = '-djpeg';
+params.figdir = figdir;
+params.figtype = '-dpdf';
+params.resolution = 300;
 plot_hfig(hfig,params)
 
 

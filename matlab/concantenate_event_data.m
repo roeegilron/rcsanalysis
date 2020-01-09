@@ -1,10 +1,11 @@
 function concantenate_event_data(dirname)
-% firt resave all the event log evetns
+% find resave all the event log evetns
 ff = findFilesBVQX(dirname,'EventLog.json');
 for f = 1:length(ff)
     try
         eventTable  = loadEventLog(ff{f});
         [pn,fn,ext] = fileparts(ff{f});
+        loadStimSettings(fullfile(pn,'StimLog.json'));
         save(fullfile(pn,[fn '.mat']),'eventTable');
         fprintf('finished reloading event %d/%d\n',f,length(ff));
     catch
@@ -17,12 +18,25 @@ ff = findFilesBVQX(dirname,'EventLog.mat');
 
 eventOut = table(); 
 for f = 1:length(ff)
-    load(ff{f}); 
+    load(ff{f});
+    [pn,fn,ext] = fileparts(ff{f});
+    load(fullfile(pn,'StimLog.mat'));
+    
+    timeReport = report_start_end_time_td_file_rcs(fullfile(pn,'RawDataTD.json'));
+
+    stimEvents  = stimEvents(end,{'group','rate','AmplitudeInMilliamps','PulseWidthInMicroseconds','stimStatus'});
+    stimEvents.sesionID = eventTable.sessionid(1);
+    stimEvents.sessionTime = eventTable.sessionTime(1);
+    stimEvents.startTime = timeReport.startTime;
+    stimEvents.endTime = timeReport.endTime;
+    stimEvents.duration = timeReport.duration;
     if ~isempty(eventTable)
         if f == 1
             eventOut = eventTable;
+            stimEventsAll = stimEvents; 
         else
             eventOut = [eventOut; eventTable];
+            stimEventsAll(f,:) = stimEvents;
         end
     end
 end
@@ -43,6 +57,70 @@ allEvents.subInfo = eventOut(idxInfo,:);
 % for rest of analyis get rid of that 
 idxKeep = idxKeep & ~idxInfo; 
 eventOut = eventOut(idxKeep,:);
+
+% cond events 
+condEventIdx = strcmp(eventOut.EventType,'conditions'); 
+condEvents = eventOut(condEventIdx,:); 
+% seperate all conditions into all posisble conditions 
+allConds = {};
+for s = 1:size(condEvents,1)
+    condRaw = condEvents.EventSubType{s};
+    newstr = split(condRaw,',');
+    allConds = [allConds; newstr]; 
+end
+% clean up some spaced 
+cnt = 1; 
+condsPossUnique = {}; 
+for s = 1:size(allConds,1)
+    if ~strcmp(allConds{s},' ')
+        if strcmp(allConds{s}(1),' ')
+            condsPossUnique{cnt,1} = allConds{s}(2:end);
+            cnt = cnt + 1; 
+        else
+            condsPossUnique{cnt,1} = allConds{s};
+            cnt = cnt + 1;
+        end
+    end
+        
+end
+uniqueconds = unique(condsPossUnique); 
+uniquecondsVar = uniqueconds;
+uniquecondsVar = cellfun(@(x) strrep(x,' ',''),uniquecondsVar,'UniformOutput',false);
+uniquecondsVar = cellfun(@(x) strrep(x,'(',''),uniquecondsVar,'UniformOutput',false);
+uniquecondsVar = cellfun(@(x) strrep(x,')',''),uniquecondsVar,'UniformOutput',false);
+uniquecondsVar = cellfun(@(x) strrep(x,'/',''),uniquecondsVar,'UniformOutput',false);
+uniquecondsVar = cellfun(@(x) strrep(x,'''',''),uniquecondsVar,'UniformOutput',false);
+% loop on session id to create unique profile of stim / symptom per session
+condsAndStim = table();
+for s = 1:size(stimEventsAll,1)
+    condsAndStim.sessionTime(s) = stimEventsAll.sessionTime(s); 
+    condsAndStim.sesionID(s) = stimEventsAll.sesionID(s); 
+    condsAndStim.group(s) = stimEventsAll.group(s); 
+    condsAndStim.rate(s) = stimEventsAll.rate(s); 
+    condsAndStim.AmplitudeInMilliamps(s) = stimEventsAll.AmplitudeInMilliamps(s); 
+    condsAndStim.stimStatus(s) = stimEventsAll.stimStatus(s); 
+    condsAndStim.startTime(s) = stimEventsAll.startTime(s); 
+    condsAndStim.endTime(s) = stimEventsAll.endTime(s); 
+    condsAndStim.duration(s) = stimEventsAll.duration(s); 
+    % get conds in this session 
+    idxuse = strcmp(condEvents.sessionid,stimEventsAll.sesionID{s});
+    allconds = '';
+    allCondsRaw = condEvents.EventSubType(idxuse);
+    condsAndStim.rawConds{s} = allCondsRaw; 
+    for c = 1:size(allCondsRaw,1)
+        allconds = [allconds allCondsRaw{c}];
+    end
+    
+    for u = 1:length(uniqueconds)
+        if any(strfind(allconds,uniqueconds{u}))
+            condsAndStim.(uniquecondsVar{u})(s) = 1; 
+        else
+            condsAndStim.(uniquecondsVar{u})(s) = 0; 
+        end
+    end
+end
+
+
 
 % med events 
 medEventIdx = strcmp(eventOut.EventType,'medication'); 
@@ -80,6 +158,7 @@ allEvents.onEvents                 = onEvents;
 allEvents.offEvents                = offEvents;
 allEvents.onEventsWithDykinesia    = onEventsWithDykinesia;
 allEvents.onEventsWithOutDykinesia = onEventsWithOutDykinesia;
+allEvents.condsAndStim             = condsAndStim;
 
 save(fullfile(dirname,'allEvents.mat'),'allEvents'); 
 

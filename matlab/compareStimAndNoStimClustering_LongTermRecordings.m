@@ -1,5 +1,5 @@
 function compareStimAndNoStimClustering_LongTermRecordings()
-addpath(genpath(fullfile(pwd,'toolboxes/'))); 
+restoredefaultpath;
 %% after stim 
 close all; 
 clear all; 
@@ -25,7 +25,181 @@ prfig.plotheight          = 10;
 
 
 
+%% compare stim no stim no clustering - for paper - preivous analysis belwo 
+% avarege psds on 10 minute increments
+pruse.minaverage = 10; 
+pruse.maxgap = 120; % seconds 
 
+for dd = 1:length(dataLoc)
+    settings.rootdir = dataLoc{dd};
+    settings.file    = 'psdResults.mat';
+    load(fullfile(settings.rootdir, settings.file),'fftResultsTd')
+    
+    times = [fftResultsTd.timeStart];
+    curTime = times(1);
+    endTime = curTime + minutes(pruse.minaverage);
+    cntavg = 1;
+    psdResults = struct();
+    while endTime < times(end)
+        idxbetween = isbetween(times,curTime,endTime);
+        if max(diff(times(idxbetween))) < seconds(pruse.maxgap)
+            for c = 1:4
+                fn = sprintf('key%dfftOut',c-1);
+                psdResults.(fn)(cntavg,:) = mean(fftResultsTd.(fn)(:,idxbetween),2);
+            end
+            psdResults.timeStart(cntavg) = curTime;
+            psdResults.timeEnd(cntavg) = endTime;
+            psdResults.numberOfPsds(cntavg) = sum(idxbetween);
+            cntavg = cntavg + 1;
+        end
+        curTime = endTime;
+        endTime = curTime + minutes(pruse.minaverage);
+    end
+    psdResults.ff = fftResultsTd.ff;
+    % get rid of outliers
+    hfig = figure;
+    idxWhisker = [];
+    for c = 1:4
+        fn = sprintf('key%dfftOut',c-1);
+        hsub = subplot(2,2,c);
+        meanVals = mean(psdResults.(fn)(:,40:60),2);
+        boxplot(meanVals);
+        q75_test=quantile(meanVals,0.75);
+        q25_test=quantile(meanVals,0.25);
+        w=2.0;
+        wUpper(c) = w*(q75_test-q25_test)+q75_test;
+        idxWhisker(:,c) = meanVals < wUpper(c);
+    end
+    idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
+    sgtitle(sprintf('confriming outlier algo'),'FontSize',20);
+%     close(hfig);
+    
+    % confirm that this is a good way to get rid of outliers
+    hfig = figure;
+    ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+    for c = 1:4
+        fn = sprintf('key%dfftOut',c-1);
+        hsub = subplot(2,2,c);
+        plot(psdResults.ff,psdResults.(fn)(idxkeep,:),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
+        %             shadedErrorBar(psdResults.ff',psdResults.(fn)(:,idxkeep)',...
+        %                 {@median,@(x) std(x)*1.96},...
+        %                 'lineprops',{'r','markerfacecolor','r','LineWidth',2})
+    end
+    sgtitle(sprintf('confriming outlier algo psd '),'FontSize',20);
+%     close(hfig);
+    psdResults.idxkeep = idxkeep; 
+    psdResultsBoth(dd) = psdResults; 
+end
+dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/results/long_term_stim_on_stim_off'; 
+save(fullfile(dirsave,'psd_at_home_stim_on_vs_stim_off.mat'),'psdResultsBoth'); 
+
+%% plot stim on / stim off with shaded error bars 
+close all; clear all; clc; 
+dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/results/long_term_stim_on_stim_off'; 
+load(fullfile(dirsave,'psd_at_home_stim_on_vs_stim_off.mat'),'psdResultsBoth'); 
+load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/pkg_states RCS02 R pkg L _10_min_avgerage.mat')
+addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
+
+hfig = figure();
+hfig.Color = 'w'; 
+% on stim vs off stim 
+% d = 1 - 
+stimstate = {'off stim - mobile','off stim - imobile','on chronic stim'}; 
+statesuse = {'off','on'};
+colorsUse = [0.8 0 0;
+          0   0.8 0,
+          0   0   0.8];
+titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+for c = 1:4
+    hSub(c) = subplot(2,2,c); 
+    hold on; 
+    for d = 1:3
+        fn = sprintf('key%dfftOut',c-1);
+        if d >=3  % on stim 
+            psdResults = psdResultsBoth(2);
+            fftOut = psdResults.(fn)(psdResults.idxkeep,:);
+            ff = psdResults.ff;
+        else
+            fftOutRaw = allDataPkgRcsAcc.(fn); 
+            idxusestate = strcmp(allstates,statesuse{d});
+            fftOut = fftOutRaw(idxusestate,:); 
+            ff = psdResults.ff;
+        end
+        idxusefreq = ff >= 13 &  ff <= 30; 
+        meanbetafreq{c,d} = mean(fftOut(:,idxusefreq),2);
+        
+        idxusefreq = ff >= 65 &  ff <= 85;
+        meangammafreq{c,d} = mean(fftOut(:,idxusefreq),2);
+        
+        
+        hsb = shadedErrorBar(ff,fftOut,{@median,@(x) std(x)*2});
+        hsb.mainLine.Color = [colorsUse(d,:) 0.5];
+        hsb.mainLine.LineWidth = 2;
+        hsb.patch.MarkerFaceColor = colorsUse(d,:);
+        hsb.patch.FaceColor = colorsUse(d,:);
+        hsb.patch.EdgeColor = colorsUse(d,:);
+        hsb.edge(1).Color = [colorsUse(d,:) 0.1];
+        hsb.edge(2).Color = [colorsUse(d,:) 0.1];
+        hsb.patch.EdgeAlpha = 0.1;
+        hsb.patch.FaceAlpha = 0.1;
+        xlabel('Frequency (Hz)');
+        ylabel('Power (log_1_0\muV^2/Hz)');
+        title(titles{c}); 
+        set(gca,'FontSize',16); 
+        hlines(d) = hsb.mainLine;
+        xlim([0 100]);
+    end
+    legend(hlines,stimstate); 
+%     totalhours = (length(psdResults.timeStart(psdResults.idxkeep))*10)/60;
+%     fprintf('total hours %d %s\n',totalhours,stimstate{d});
+end
+sgtitle('RCS02 L','FontSize',25); 
+
+figname = sprintf('on stim vs off stim_ %s %s v2','RCS02','L');
+prfig.plotwidth           = 15;
+prfig.plotheight          = 10;
+prfig.figname             = figname;
+prfig.figdir              = dirsave;
+plot_hfig(hfig,prfig)
+
+%% plot violin plots 
+addpath(genpath(fullfile(pwd,'toolboxes','violin')));
+toplot{1,1} = meanbetafreq{2,1}; % off off stim 
+toplot{1,2} = meanbetafreq{2,2}; % off off stim 
+toplot{1,3} = meanbetafreq{2,3}; % on stim 
+
+hfig = figure;
+hsb = subplot(1,1,1); 
+hfig.Color = 'w'; 
+hviolin  = violin(toplot);
+hviolin(1).FaceColor = [0.8 0 0];
+hviolin(1).FaceAlpha = 0.3;
+
+hviolin(2).FaceColor = [0 0.8 0];
+hviolin(2).FaceAlpha = 0.3;
+
+hviolin(3).FaceColor = [0 0 0.8];
+hviolin(3).FaceAlpha = 0.3;
+
+ylabel('Average beta power'); 
+
+hsb.XTick = [ 1 2 3]; 
+hsb.XTickLabel  = {'off stim imobile', 'off stim mobile','on chornic stim'}; 
+hsb.XTickLabelRotation = 45;
+
+title('effect of chronic stim RCS02 L'); 
+
+set(gca,'FontSize',16); 
+
+figname = sprintf('on stim vs off stim_ %s %s violin','RCS02','L');
+prfig.plotwidth           = 5;
+prfig.plotheight          = 5;
+prfig.figname             = figname;
+prfig.figdir              = dirsave;
+plot_hfig(hfig,prfig)
+
+
+%% 
 
 for s = 1:2
     settings.rootdir = dataLoc{s};

@@ -25,6 +25,7 @@ for s = 1 % this needs way more work ...
     groupNames = {'GroupA_','GroupB_','GroupC_','GroupD_'};
     groupNamesInitialSettings = {'A','B','C','D'}; 
     progNames = {'prog0_','prog1_','prog2_','prog3_'};
+    cntrow = 1; 
     for g = 1:4
         fldnm = sprintf('TherapyConfigGroup%d',g-1); 
         
@@ -33,29 +34,31 @@ for s = 1 % this needs way more work ...
         stimSettings(s).(fnuse) = thrpConfigGroup.ratePeriod;
         fnuse = sprintf('%s_%s',groupNames{g},'RateInHz'); 
         stimSettings(s).(fnuse) = thrpConfigGroup.RateInHz;
-        initialStimSettings.group{g} = groupNamesInitialSettings{g}; 
-        initialStimSettings.rate(g) = thrpConfigGroup.RateInHz;
         % loop on program 
         for p = 1:4
+            initialStimSettings.group{cntrow} = groupNamesInitialSettings{g};
+            initialStimSettings.rate(cntrow) = thrpConfigGroup.RateInHz;
+
             progfn = sprintf('program%d',p-1);
             prog = thrpConfigGroup.(progfn); 
             progfnms = {'AmplitudeInMilliamps','PulseWidthInMicroseconds'};
             for pp = 1:length(progfnms)
                 fnmout = sprintf('%s%s%s',groupNames{g},progNames{p},progfnms{pp});
                 stimSettings(s).(fnmout) = prog.(progfnms{pp});
-                if p == 1 
-                    initialStimSettings.(progfnms{pp})(g) = prog.(progfnms{pp});
-                end
+                initialStimSettings.program(cntrow) = p; 
+                initialStimSettings.(progfnms{pp})(cntrow) = prog.(progfnms{pp});
             end
+            initialStimSettings.activeGroup(cntrow) = activeGroups(g); 
+            initialStimSettings.therapyStatus(cntrow) = therapyStas(g);
+            cntrow = cntrow + 1; 
         end
     end
 end
-initialStimSettings.activeGroup = activeGroups;
-initialStimSettings.therapyStatus = therapyStas;
 
 % initialize a table of stim events: 
 stimEvents = table(); 
-firstSettings = initialStimSettings( initialStimSettings.activeGroup==1,:);
+idxuseFirstSettings = (initialStimSettings.activeGroup==1) & (initialStimSettings.program==1);
+firstSettings = initialStimSettings( idxuseFirstSettings,:);
 % put the first records in from the initial stim settings structure 
 stimEvents.group = firstSettings.group;
 stimEvents.rate = firstSettings.rate;
