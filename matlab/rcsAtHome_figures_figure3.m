@@ -17,7 +17,11 @@ srate = unique( outdatcomplete.samplerate );
 hfig = figure;
 hfig.Color = 'w';
 
-hsb(1) = subplot(2,2,1);
+nrows = 4; 
+ncols = 1; 
+
+cntplt = 1; 
+hsb(cntplt) = subplot(nrows,ncols,cntplt); cntplt = cntplt + 1; 
 hold on;
 subtrac = datetime('23-May-2019 10:49:58.180');
 subtrac.TimeZone = outdatcomplete.derivedTimes.TimeZone;
@@ -35,7 +39,7 @@ hsb(1).YTick = [];
 hsb(1).Box = 'off';
 ylabel('\muV','FontName','Arial','FontSize',12);
 
-hsb(2) = subplot(2,2,2);
+hsb(cntplt) = subplot(nrows,ncols,cntplt); cntplt = cntplt + 1; 
 hold on;
 subtrac = datetime('23-May-2019 10:49:58.180');
 subtrac.TimeZone = outdatcomplete.derivedTimes.TimeZone;
@@ -48,38 +52,31 @@ y = y .* 1e3;
 plot(secsplot,y);
 
 title('STN 1-3','FontName','Arial','FontSize',12);
-hsb(1).XTick = [];
-hsb(1).YTick = [];
-hsb(1).Box = 'off';
+hsb(cntplt-1).XTick = [];
+hsb(cntplt-1).YTick = [];
+hsb(cntplt-1).Box = 'off';
 ylabel('\muV','FontName','Arial','FontSize',12);
 
 
 
-hsb(3) = subplot(2,2,3);
+hsb(cntplt) = subplot(nrows,ncols,cntplt); cntplt = cntplt + 1; 
 hold on;
 y = outdatcomplete.key2(idxchoose);
 y = y - mean(y);
 y = y .* 1e3;
 plot(secsplot,y);
-title('M1 9-11','FontName','Arial','FontSize',12);
+title('M1 8-10','FontName','Arial','FontSize',12);
 linkaxes(hsb,'x');
 linkaxes(hsb,'y');
-hsb(2).XTick = [];
-hsb(2).YTick = [];
-hsb(2).Box = 'off';
+hsb(cntplt-1).XTick = [];
+hsb(cntplt-1).YTick = [];
+hsb(cntplt-1).Box = 'off';
 ylabel('\muV','FontName','Arial','FontSize',12);
-% plot scale plot
-ylims = hsb(2).YLim;
-% vertical is 50 microvolts
-plot(seconds([8.1 8.1 ]),[(ylims(1)+10) (ylims(1)+10 + 50)],'LineWidth',2,'Color',[0.5 0.5 0.5 0.7])
-ylims = hsb(2).YLim;
-% horizontal is 0.1 second
-plot(seconds([8.1 8.2 ]),[(ylims(1)+10) (ylims(1)+10)],'LineWidth',2,'Color',[0.5 0.5 0.5 0.7])
 
 
 
 
-hsb(4) = subplot(2,2,4);
+hsb(cntplt) = subplot(nrows,ncols,cntplt); cntplt = cntplt + 1; 
 hold on;
 y = outdatcomplete.key3(idxchoose);
 y = y - mean(y);
@@ -88,22 +85,23 @@ plot(secsplot,y);
 title('M1 9-11','FontName','Arial','FontSize',12);
 linkaxes(hsb,'x');
 linkaxes(hsb,'y');
-hsb(2).XTick = [];
-hsb(2).YTick = [];
-hsb(2).Box = 'off';
+hsb(cntplt-1).XTick = [];
+hsb(cntplt-1).YTick = [];
+hsb(cntplt-1).Box = 'off';
 ylabel('\muV','FontName','Arial','FontSize',12);
+
 % plot scale plot
 ylims = hsb(2).YLim;
-% vertical is 50 microvolts
-plot(seconds([8.1 8.1 ]),[(ylims(1)+10) (ylims(1)+10 + 50)],'LineWidth',2,'Color',[0.5 0.5 0.5 0.7])
+% vertical is 100 microvolts
+plot(seconds([8.1 8.1 ]),[(ylims(1)+10) (ylims(1)+10 + 100)],'LineWidth',1,'Color',[0.5 0.5 0.5 0.7])
 ylims = hsb(2).YLim;
-% horizontal is 0.1 second
-plot(seconds([8.1 8.2 ]),[(ylims(1)+10) (ylims(1)+10)],'LineWidth',2,'Color',[0.5 0.5 0.5 0.7])
+% horizontal is 0.2 second
+plot(seconds([8.1 8.3 ]),[(ylims(1)+10) (ylims(1)+10)],'LineWidth',1,'Color',[0.5 0.5 0.5 0.7])
 
 
 linkaxes(hsb,'xy');
 
-xlim(seconds([8 9]));
+xlim(seconds([8 10]));
 
 prfig.plotwidth           = 3;
 prfig.plotheight          = 4;
@@ -115,6 +113,7 @@ close(hfig);
 %%
 %% panel B- psd in clinic - on off from one patient
 close all; clear all;
+addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 3; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures';
 load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientPSD_in_clinic.mat');
@@ -158,6 +157,108 @@ prfig.figname             = sprintf('Fig%d_panelB',fignum);
 prfig.figtype             = '-dpdf';
 plot_hfig(hfig,prfig)
 close(hfig);
+
+%% psd data at home - average acros patients and montages for STN 
+clc; close all; clear all;
+addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
+fignum = 3; 
+figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures';
+% original function:
+% plot_chopped_data_comparisons
+%plot normalized data across patients 
+dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
+fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
+load(fnmsave,'patientPSD_in_clinic');
+
+
+pdb = patientPSD_in_clinic;
+% plot 
+hfig = figure;
+hfig.Color = 'w'; 
+
+% stn 
+subplot(1,1,1);hold on; 
+% med on 
+idxkeep = (cellfun(@(x) (x==500),pdb.srate) & ...
+           strcmp(pdb.medstate,'on') );
+psds = cell2mat(pdb.fftOutNorm(idxkeep));
+ff = pdb.ff(idxkeep);
+ff = ff{1}; 
+% have issue with RCS02 - only recorded data at 250Hz. Need to include him
+% seperatly. 
+idxnorm = ff >=5 & ff <=90;
+psds = psds(:,idxnorm); 
+idxkeep = cellfun(@(x) (x==250),pdb.srate)  & ...
+           strcmp(pdb.medstate,'on');
+
+
+psds02 = cell2mat(pdb.fftOutNorm(idxkeep));
+ff = pdb.ff(idxkeep);
+ff = ff{1}; 
+idxnorm = ff >=5 & ff <=90;
+psds02 = psds02(:,idxnorm); 
+psds = [psds;psds02];
+ff = ff(idxnorm);
+
+
+% plot(ff,psds,'LineWidth',1,'Color',[0 0.8 0 0.3]);
+hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+hsbH.mainLine.Color = [0 0.8 0 0.5];
+hsbH.mainLine.LineWidth = 4;
+hsbH.patch.FaceAlpha = 0.1;
+hsbH.patch.FaceColor = [0 0.8 0]; 
+hsbH.edge(1).Color = [1 1 1];
+hsbH.edge(2).Color = [1 1 1];
+
+hLine(1) = hsbH.mainLine;
+
+% med off 
+idxkeep = cellfun(@(x) (x==500),pdb.srate)  & ...
+           strcmp(pdb.medstate,'off');
+psds = cell2mat(pdb.fftOutNorm(idxkeep));
+ff = pdb.ff(idxkeep);
+ff = ff{1}; 
+% have issue with RCS02 - only recorded data at 250Hz. Need to include him
+% seperatly. 
+idxnorm = ff >=5 & ff <=90;
+psds = psds(:,idxnorm); 
+idxkeep = cellfun(@(x) (x==250),pdb.srate) & ...
+           strcmp(pdb.medstate,'off');
+psds02 = cell2mat(pdb.fftOutNorm(idxkeep));
+ff = pdb.ff(idxkeep);
+ff = ff{1}; 
+idxnorm = ff >=5 & ff <=90;
+psds02 = psds02(:,idxnorm); 
+psds = [psds;psds02];
+ff = ff(idxnorm);
+
+
+% plot(ff,psds,'LineWidth',1,'Color',[0.8 0 0 0.3]);
+hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+hsbH.mainLine.Color = [0.8 0 0 0.5];
+hsbH.mainLine.LineWidth = 4;
+hsbH.patch.FaceAlpha = 0.1;
+hsbH.patch.FaceColor = [0.8 0 0]; 
+hsbH.edge(1).Color = [1 1 1];
+hsbH.edge(2).Color = [1 1 1];
+hLine(2) = hsbH.mainLine;
+
+hold on;
+set(gca,'XLim',[5 90])
+xlabel('Frequency (Hz)');
+ylabel('Norm. Freq');
+title('STN contacts','FontSize',16);
+legend(hLine,{'defined on','defined off'});
+
+prfig.plotwidth           = 4;
+prfig.plotheight          = 4;
+prfig.figdir             = figdirout;
+prfig.figname             = sprintf('Fig%d_panelD2',fignum);
+prfig.figtype             = '-dpdf';
+plot_hfig(hfig,prfig)
+close(hfig);
+
+%% 
 
 %% panel C - psd at home - all raw data 10 minute - across all states 
 % note that this is a moving 2 minute 10 minute average - since using the

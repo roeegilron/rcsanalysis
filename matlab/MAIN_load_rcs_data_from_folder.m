@@ -118,7 +118,11 @@ for j = 1:length(filesLoad)
                     save(fullfile(dirname,['AdaptiveLog' '.mat']),'adaptiveTable');
                 end
             case 'StimLog.json'
-                loadStimSettings(fullfile(dirname,'StimLog.json'));
+                try 
+                    loadStimSettings(fullfile(dirname,'StimLog.json'));
+                catch 
+                    warning('could not load stim settings');
+                end
         end
         
     end

@@ -12,6 +12,11 @@ end
 eventData = allEvents.eventOut;
 montageEvents = eventData(cellfun(@(x) any(strfind(x,': config')),eventData.EventType) , :);
 sessionIds    = unique(montageEvents.sessionid);
+if isempty(sessionIds) % new way of doing montages 
+    eventData = allEvents.eventOut;
+    montageEvents = eventData(cellfun(@(x) any(strfind(x,'Montage Sequence Begin')),eventData.EventType) , :);
+    sessionIds    = unique(montageEvents.sessionid);
+end
 
 %% loop on each montage session and save the data in a .mat file
 clc;
@@ -66,8 +71,8 @@ deltaUse = seconds(3);
 secs = outdatcomplete.derivedTimes;
 app.subTime = secs(1);
 % find start events
-idxStart = cellfun(@(x) any(strfind(x,'Start')),eventTable.EventType);
-idxEnd = cellfun(@(x) any(strfind(x,'Stop')),eventTable.EventType);
+idxStart = cellfun(@(x) any(strfind(x,'Start :')),eventTable.EventType);
+idxEnd = cellfun(@(x) any(strfind(x,'Stop :')),eventTable.EventType);
 
 % insert event table markers and link them
 app.ets = eventTable(idxStart,:);

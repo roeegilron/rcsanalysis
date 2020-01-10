@@ -58,6 +58,10 @@ for e = 1:length(startTimes)
     strOut{strline} = 'settings'; 
     strline = strline + 1; 
     
+    strOut{strline} =  sprintf('%s %s',startTimes(e),eventTable.sessionid{1});
+    strline = strline + 1;
+    
+    
     strOut{strline} = sprintf('%s\t power band: %s',...
         adaptiveInfo(e).tdChannelInfo,...
         adaptiveInfo(e).bandsUsed);    
@@ -81,6 +85,7 @@ for e = 1:length(startTimes)
     
     strOut{strline} = sprintf('%d ffts are averaged - %d ms of data before being input to LD',updateRate,ceil((fftsize/sr).*1000)*updateRate);    
     strline = strline + 1; 
+    
 
     strOut{strline} = sprintf('update rate %d onset %d termination %d state change blank %d',...
         adaptiveInfo(e).UpdateRate,...
@@ -94,7 +99,36 @@ for e = 1:length(startTimes)
         adaptiveInfo(e).rampUpRatePerSec,...
         adaptiveInfo(e).rampDownRatePerSec);
     strline = strline + 1;
+    
+    
+    % power vals 
+    secsPower = powerOut.powerTable.derivedTimes;
+    idxusePower = secsPower >= startTimes(e) & secsPower <= endTimes(e);
+    powerVals = powerOut.powerTable.(adaptiveInfo(e).bandsUsedName);
+    secsPower = secsPower(idxusePower);
+    powerVals = powerVals(idxusePower);
 
+    strOut{strline} = sprintf('B0 - %d B1 - %d (power vals: 0.25 (%d )0.5 (%d) 0.75 (%d)',...
+        adaptiveInfo(e).B0,adaptiveInfo(e).B1,...
+        prctile(powerVals,25),...
+        prctile(powerVals,50),...
+        prctile(powerVals,75));
+    strline = strline + 1;
+    
+    % detector 
+    secsAdaptive = adaptiveTable.derivedTimes;
+    idxuseAdaptive = secsAdaptive >= startTimes(e) & secsAdaptive <= endTimes(e);
+    secsAdaptive = secsAdaptive(idxuseAdaptive);
+    state = adaptiveTable.CurrentAdaptiveState(idxuseAdaptive);
+    detector = adaptiveTable.LD0_output(idxuseAdaptive);
+
+    strOut{strline} = sprintf('B0 - %d B1 - %d (detector vals: 0.25 (%d )0.5 (%d) 0.75 (%d)',...
+        adaptiveInfo(e).B0,adaptiveInfo(e).B1,...
+        prctile(detector,25),...
+        prctile(detector,50),...
+        prctile(detector,75));
+    strline = strline + 1;
+    
 
     a.String = strOut;
     a.EdgeColor = 'none'

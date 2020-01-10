@@ -2,7 +2,9 @@ function load_and_save_alligned_data_in_folder(dirname)
 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(dirname);
 
-
+% get rid of extra comments field 
+eventTable = eventTable(~strcmp(eventTable.EventType,'extra_comments'),:);
+eventTable = eventTable(~strcmp(eventTable.EventType,'conditions'),:);
 % get times for power data 
 timestamps   = powerOut.powerTable.timestamp;
 systemTicks  = powerOut.powerTable.systemTick;

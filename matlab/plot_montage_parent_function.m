@@ -105,6 +105,40 @@ figdir = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/figures';
 plot_montage_on_off_meds_saved_data(data,figdir);
 %%
 
+%% RCS 05 4 month visit 
+addpath(genpath(fullfile('..','..','PAC')));
+clc;
+dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/';
+montageFilesFound = findFilesBVQX(dirname,'rawMontageData.mat');
+for m = 1:size(montageFilesFound,1)
+    [pn,fn,ext] = fileparts(montageFilesFound{m}); 
+    load(fullfile(pn,'StimLog.mat'));
+    fprintf('\n\n\n'); 
+    fprintf('dirname :%s',pn);
+    stimEvents(end,:)
+end
+
+% stim on: 
+
+% left side
+
+% off meds
+data{1,1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/RCS05L/Session1578595475545/DeviceNPC700414H/rawMontageData.mat';
+% on meds
+data{2,1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/RCS05L/Session1578608358483/DeviceNPC700414H/rawMontageData.mat';
+
+% right side
+
+% off meds
+data{1,2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/RCS05R/Session1578595474851/DeviceNPC700415H/rawMontageData.mat';
+% on meds
+data{2,2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/RCS05R/Session1578608359980/DeviceNPC700415H/rawMontageData.mat';
+
+figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/SCBS/figures';
+
+plot_montage_on_off_meds_saved_data(data,figdir);
+%%
+
 
 %% RCS 06 3 week visit - 1000hz 
 addpath(genpath(fullfile('..','..','PAC')));

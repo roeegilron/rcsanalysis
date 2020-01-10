@@ -42,7 +42,7 @@ for p = 1 % 1:length(uniqePatients)
             
 %             title('bradykinesia score'); 
             ylabel('bradykinesia score (a.u.)'); 
-            set(gca,'FontSize',16); 
+            set(gca,'FontSize',12); 
 %             hp(1) = plot(xlims,[26 26],'LineWidth',2,'Color','r','LineStyle','-.');
 %             hp(2) = plot(xlims,[80 80],'LineWidth',2,'Color','k','LineStyle','-.');
 
@@ -60,7 +60,7 @@ for p = 1 % 1:length(uniqePatients)
 
 %             title('dyskinesia score'); 
             ylabel('dyskinesia score (a.u.)');
-            set(gca,'FontSize',16); 
+            set(gca,'FontSize',12); 
             
             hsb(2).XTick = [];
             hsb(2).XTickLabel = '';
@@ -147,13 +147,13 @@ for p = 1 % 1:length(uniqePatients)
             xlimsVec(:,4) = [4;0];
             xlimsNew = datetime(xlimsVec);
 
+            datetick('x','HH:MM');
             set(gca,'XLim',xlimsNew); 
             titluse = sprintf('%s %s day - %d',uniqePatients{p},uniqeSides{s},unqdays(d));
-            sgtitle(titluse,'FontSize',20); 
-            datetick('x','HH:MM'); 
+            sgtitle(titluse,'FontSize',12); 
             
-            prfig.plotwidth           = 15;
-            prfig.plotheight          = 10;
+            prfig.plotwidth           = 8.5;
+            prfig.plotheight          = 3.9;
             prfig.figdir             = figdirout;
             prfig.figname             = sprintf('%s %s day - %d.pdf',uniqePatients{p},uniqeSides{s},unqdays(d));
             plot_hfig(hfig,prfig)
