@@ -76,6 +76,12 @@ patient{cnt,2} = 'RCS02 L hand';
 
 cnt = cnt+1;
 
+%rcs 03 
+pkgChoose{cnt,1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/UCSF_Scores_17_July_2019/scores_20190620_104140.csv';
+patient{cnt,1}   = 'RCS03 R hand';
+
+cnt = cnt+1;
+
 plotscores = 0;
 if plotscores
     

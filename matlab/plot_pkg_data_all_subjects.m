@@ -113,7 +113,7 @@ cohResTbl = struct2table(cohResTbl);
 %% decide what to plot 
 plotComparisonRCS_ACC_PKG = 0;
 plotStates = 0;
-plost_states_base_on_coherence = 0;
+plost_states_base_on_coherence = 1;
 plotTremor = 0;
 plotBKDKcorr = 0;
 plot_roc_curves = 0; 
@@ -127,7 +127,7 @@ plot_AUC_vs_segement_length = 0;
 cntOut = 1;
 patientPSD_at_home = table();
 patientROC_at_home = table();
-for dd = 4:length(psdrFiles)
+for dd = 1:length(psdrFiles)
      
     %% get td data + pkg data + acc data - correct place
     fdir = findFilesBVQX(resultsdir,patient{dd}(1:5),struct('dirs',1,'depth',1));
@@ -495,15 +495,14 @@ for dd = 4:length(psdrFiles)
                 if ~isempty(matchingPsdTimes)
                     duration = matchingPsdTimes(end) - matchingPsdTimes(1);
                     maxGap   = max(diff(matchingPsdTimes));
-                    if duration >= minutes(5) & maxGap < minutes(1)
+                    if duration >= minutes(5) & maxGap < minutes(3)
                         for ccc = 1:4
-                            allDataPkgRcsAcc.(fieldnamesloop{ccc})(cnt,:)= ...
+                            allDataPkgRcsAcc.(fieldnamesloop{ccc})(i,:)= ...
                                 mean(cohResults.(fieldnamesloop{ccc})(:,idxMatch)',1);
                         end
-                        allDataPkgRcsAcc.NumberPSD_coh(cnt) = sum(idxMatch);
-                        allDataPkgRcsAcc.duration_coh(cnt) = duration;
-                        allDataPkgRcsAcc.maxgap_coh(cnt) = maxGap;
-
+                        allDataPkgRcsAcc.NumberPSD_coh(i) = sum(idxMatch);
+                        allDataPkgRcsAcc.duration_coh(i) = duration;
+                        allDataPkgRcsAcc.maxgap_coh(i) = maxGap;
                     end
                 end
             end
@@ -913,7 +912,7 @@ for dd = 4:length(psdrFiles)
                     meanmat = repmat(meandat,1,size(dat,2));
                     dat = dat./meanmat;
                 else
-                    dat = allDataPkgRcsAccCoh.(fn);
+                    dat = allDataPkgRcsAcc.(fn);
                 end
 
                 plotShaded = 1; 
@@ -941,14 +940,14 @@ for dd = 4:length(psdrFiles)
                 end
                % save the median data 
                
-               rawdat = allDataPkgRcsAccCoh.(fn);
+               rawdat = allDataPkgRcsAcc.(fn);
                rawdat = rawdat(labels,:);
                coh = mean(rawdat,1);
                patientCOH_at_home.patient{cntOut} = patient{dd}(1:5);
                patientCOH_at_home.side{cntOut} = patient{dd}(end);
                patientCOH_at_home.medstate{cntOut} = statesUse{s};
                patientCOH_at_home.electrode{cntOut} = titles{c};
-               patientCOH_at_home.ff{cntOut} = psdResults.ff;
+               patientCOH_at_home.ff{cntOut} = cohResults.ff;
                patientCOH_at_home.coh{cntOut} = coh;
                patientCOH_at_home.srate(cntOut) = 250;
 
@@ -981,9 +980,9 @@ for dd = 4:length(psdrFiles)
         prfig.figdir             = figdirout;
         prfig.figname             = sprintf('%s %s pkg coherence_10_min_avgerage','pkg_states',patient{dd},pkgSideUse);
         plot_hfig(hfig,prfig)
-%         close(hfig);
-%         fnmsave = fullfile(resultsdir,'patientPSD_at_home.mat');
-%         save(fnmsave,'patientPSD_at_home');
+        close(hfig);
+        fnmsave = fullfile(resultsdir,'patientCOH_at_home.mat');
+        save(fnmsave,'patientCOH_at_home');
     end
     %%
     

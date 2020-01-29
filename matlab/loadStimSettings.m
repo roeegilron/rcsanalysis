@@ -57,7 +57,10 @@ end
 
 % initialize a table of stim events: 
 stimEvents = table(); 
-idxuseFirstSettings = (initialStimSettings.activeGroup==1) & (initialStimSettings.program==1);
+% XXX assume only one program here, need to change to device settings or
+% use the 850 - anything ont 850 9s possible program 
+% xxxx 
+idxuseFirstSettings = (initialStimSettings.activeGroup==1) & (initialStimSettings.program==1); 
 firstSettings = initialStimSettings( idxuseFirstSettings,:);
 % put the first records in from the initial stim settings structure 
 stimEvents.group = firstSettings.group;
@@ -159,6 +162,7 @@ for s = 1:length(stimRaw)
                 idxConfig = find(cellfun(@(x) strcmp(x,group),stimEventsTemp.group)==1,1,'last');
                 if isempty(idxConfig) % hasn't been configued in this session, used initial settings 
                     stimSettings = initialStimSettings(strcmp(initialStimSettings.group,group),:);
+                    stimSettings = stimSettings(1,:);  % assumes only first program active 
                     stimEvents.rate(stimEventsIdx) = stimSettings.rate;
                     stimEvents.AmplitudeInMilliamps(stimEventsIdx) = stimSettings.AmplitudeInMilliamps;
                     stimEvents.PulseWidthInMicroseconds(stimEventsIdx) = stimSettings.PulseWidthInMicroseconds;

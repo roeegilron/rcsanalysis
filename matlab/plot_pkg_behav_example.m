@@ -8,6 +8,26 @@ load(fullfile(pkgdatdir,'pkgDataBaseProcessed.mat'),'pkgDB');
 uniqePatients = unique(pkgDB.patient); 
 uniqeSides    = unique(pkgDB.side); 
 close all;
+%% get some general states about PKG 
+clc;
+BKall = [];
+DKall = []; 
+for p = 1 :length(uniqePatients)
+    for s = 1:length(uniqeSides)
+        idxpat = strcmp(uniqePatients{p},pkgDB.patient) &  strcmp(uniqeSides{s},pkgDB.side); 
+        load(pkgDB.savefn{idxpat}); 
+        BKall = [BKall ; pkgTable.BK];
+        DKall = [DKall ; pkgTable.DK];
+    end
+end
+BKall = abs(BKall); 
+fprintf('mean BK %.2f range (%.2f - %.2f)\n',mean(BKall),min(BKall),max(BKall) ); 
+fprintf('mean DK %.2f range (%.2f - %.2f)\n',mean(DKall),min(DKall),max(DKall) ); 
+
+fprintf('\n\n'); 
+fprintf('BK %.2f %.2f %.2f (25,50,75 - percentiles)\n',prctile(BKall,25),prctile(BKall,50),prctile(BKall,75));
+fprintf('DK %.2f %.2f %.2f (25,50,75 - percentiles)\n',prctile(DKall,25),prctile(DKall,50),prctile(DKall,75));
+
 
 %% plot in three graphs with state trend line 
 for p = 1 % 1:length(uniqePatients)
@@ -166,6 +186,7 @@ end
 
 
 return 
+
 %% plot in one bar graph  
 for p = 1:length(uniqePatients)
     for s = 1:length(uniqeSides)
@@ -273,11 +294,6 @@ for p = 1:length(uniqePatients)
         end
     end
 end
- 
-
-
-
-
 
 %% plot in one graphs 
 for p = 1:length(uniqePatients)

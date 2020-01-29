@@ -15,7 +15,7 @@ end
 txtfilename = fullfile(dirname,'channels_recorded_from_per_session.txt'); 
 fid = fopen(txtfilename,'w+'); 
 for s = 1:size(datTab,1) % loop on sessions 
-    sesstime = datTab.rectime(s);
+    sesstime = datTab.rectime{s};
     sesstime.Format = 'dd-MMM-yyyy HH:mm';
     fprintf(fid,'[%0.2d]\n',s);
     fprintf(fid,'\t%s\n',sesstime);

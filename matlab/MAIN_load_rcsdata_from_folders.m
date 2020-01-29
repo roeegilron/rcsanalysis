@@ -30,6 +30,29 @@ else
     idxRecordingsOver30Seconds = tblout.duration > seconds(30); 
 end
 tbluse = tbluse(idxRecordingsOver30Seconds,:); 
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+% startTimes = [tbluse.startTime{:}]';
+% idxopen = isbetween(startTimes,'19-Jun-2019','10-Jul-2019');
+% tbluse = tbluse(idxopen,:); 
+% % delete all the .mat files and reopen this folder 
+% for t = 1:size(tbluse)
+%     [pn,fn,ext] = fileparts(tbluse.tdfile{t});
+%     ff = findFilesBVQX(pn,'*.mat'); 
+%     for f = 1:length(ff)
+% %         delete(ff{f});
+%     end
+% end
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%
 
 for f = 1:size(tbluse,1)
     try

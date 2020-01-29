@@ -147,6 +147,9 @@ for e = 1:length(startTimes)
     bandsUsed = str2num(strrep(strrep(adaptiveInfo(e).bandsUsed,'Hz',''),'-',' '));
     sr = adaptiveInfo(e).SampleRate;
     tddata = tddata - mean(tddata);
+    % only way to get a closer approximation is a real time fft 
+    % scott feedback this is the right thing to do in real time 
+    % can stream both the raw power domain as well as detector 
     [b,a]        = butter(3,[bandsUsed(1) bandsUsed(end)] / (sr/2),'bandpass'); % user 3rd order butter filter
     y_filt       = filtfilt(b,a,tddata); %filter all
     y_filt_hilbert       = abs(hilbert(y_filt));

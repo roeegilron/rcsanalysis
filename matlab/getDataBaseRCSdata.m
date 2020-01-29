@@ -34,38 +34,42 @@ for d = 1:length(dirsdata)
         dbout(d).tdfile  = []; 
         [pn,fn] = fileparts(dirsdata{d}); 
         dbout(d).sessname = fn;
-    else % data exists 
-        [pn,fn] = fileparts(dirsdata{d}); 
-        dbout(d).rectime = getTime(fn); 
-        dbout(d).sessname = fn;
+    else % data may exist, check for time domai ndata  
         tdfile = findFilesBVQX(dirsdata{d},'RawDataTD.json');
-        dbout(d).tdfile = tdfile{1}; 
-%         timeReport = reportime(tdfile{1}); % XXX 
-        timeReport = report_start_end_time_td_file_rcs(tdfile{1});
-        dbout(d).startTime = timeReport.startTime;
-        dbout(d).endTime = timeReport.endTime;
-        dbout(d).duration = timeReport.duration;
-        
-        % load event file 
-        try
-            evFile = findFilesBVQX(dirsdata{d},'EventLog.json');
-            dbout(d).eventFile = evFile{1};
-            eventData = loadEventLog(dbout(d).eventFile);
-            dbout(d).eventData = eventData;
-        catch
-        end
-
-
-        % does mat file exist? 
-        matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');
-        if isempty(matfile) % no matlab data loaded
-            dbout(d).matExist = false;
-            dbout(d).fnm = [];  
+        if isempty(tdfile) % time data file doesn't exist
         else
-            dbout(d).matExist = true; 
-            dbout(d).fnm = matfile{1}; 
+            [pn,fn] = fileparts(dirsdata{d});
+            dbout(d).rectime = getTime(fn);
+            dbout(d).sessname = fn;
+            
+            dbout(d).tdfile = tdfile{1};
+            %         timeReport = reportime(tdfile{1}); % XXX
+            timeReport = report_start_end_time_td_file_rcs(tdfile{1});
+            dbout(d).startTime = timeReport.startTime;
+            dbout(d).endTime = timeReport.endTime;
+            dbout(d).duration = timeReport.duration;
+            
+            % load event file
+            try
+                evFile = findFilesBVQX(dirsdata{d},'EventLog.json');
+                dbout(d).eventFile = evFile{1};
+                eventData = loadEventLog(dbout(d).eventFile);
+                dbout(d).eventData = eventData;
+            catch
+            end
+            
+            
+            % does mat file exist?
+            matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');
+            if isempty(matfile) % no matlab data loaded
+                dbout(d).matExist = false;
+                dbout(d).fnm = [];
+            else
+                dbout(d).matExist = true;
+                dbout(d).fnm = matfile{1};
+            end
+            dbout(d).plot = false;
         end
-        dbout(d).plot = false; 
     end
 end
 tblout = struct2table(dbout,'AsArray',true); 

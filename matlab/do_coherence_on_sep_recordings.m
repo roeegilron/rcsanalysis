@@ -84,11 +84,22 @@ channel(cnt) = 0;
 patient{cnt} = 'RCS02 R';
 side{cnt} = 'R';
 cnt = cnt+1;
+
+dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/processedData.mat';
+psdrFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/psdResults.mat';
+resultsdir = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/';
+dateChoose{cnt} = datetime('May 21 2019','Format','MMM dd yyyy');
+peaks(cnt,:)  = [17 20];
+channel(cnt) = 0;
+patient{cnt} = 'RCS03 L';
+side{cnt} = 'L';
+areaname = 'gpi';
+cnt = cnt+1;
 %% 
 
 Fs = 250; % XXX note that this is hard coded. 
 
-for d = 3:length(dataFiles)
+for d = 9:length(dataFiles)
     startall = tic; 
     startload = tic; 
     load(dataFiles{d});
@@ -103,7 +114,7 @@ for d = 3:length(dataFiles)
         end
     end
     
-    
+    if strcmp(areaname,'stn')
     pairname = {'STN 0-2','M1 8-10';...
         'STN 0-2','M1 9-11';...
         'STN 1-3','M1 8-10';...
@@ -113,6 +124,23 @@ for d = 3:length(dataFiles)
                    1 2;...
                    1 3];
     fieldnamesuse = {'stn02m10810','stn02m10911','stn13m10810','stn13m0911'};
+    elseif strcmp(areaname,'gpi')
+        x = 2;
+%         0 +1-0 lpf1-450Hz lpf2-1700Hz sr-250Hz
+%         1 +3-2 lpf1-450Hz lpf2-1700Hz sr-250Hz
+%         2 +9-8 lpf1-450Hz lpf2-1700Hz sr-250Hz
+%         3 +11-10 lpf1-450Hz lpf2-1700Hz sr-250Hz
+        pairname = {'GPi 0-1','M1 8-9';...
+                    'GPi 0-1','M1 10-11';...
+                    'GPi 2-3','M1 8-9';...
+                    'GPi 2-3','M1 10-11'};
+        paircontact = [0 2;...
+                       0 3;...
+                       1 2;...
+                       1 3];
+        fieldnamesuse = {'gpi01m10809','gpi01m1011','gpi23m10809','gpi23m1011'};
+
+    end
             
     
     for cc = 1:length(pairname)
@@ -132,7 +160,7 @@ for d = 3:length(dataFiles)
         endtime = toc(start); 
         coherenceResultsTd.(fieldnamesuse{cc}) = Cxy; 
         clear Cxy
-        fprintf('channel %d done in  %.2f seconds \n',c,toc(startchan));
+        fprintf('channel %d done in  %.2f seconds \n',cc,toc(startchan));
     end
     
     coherenceResultsTd.paircontact = paircontact;

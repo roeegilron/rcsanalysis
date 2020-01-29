@@ -12,7 +12,7 @@ figDir     = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/presenta
 tlower(1,1) = datetime(2019,05,20,'TimeZone','America/Los_Angeles');
 tupper(2,1) = datetime(2019,05,24,'TimeZone','America/Los_Angeles');
 % on stim 
-tlower(1,2) = datetime(2019,07,1,'TimeZone','America/Los_Angeles');
+tlower(1,2) = datetime(2019,06,28,'TimeZone','America/Los_Angeles');
 tupper(2,2) = datetime(2019,07,4,'TimeZone','America/Los_Angeles');
 %% st some params
 prfig.figdir = figDir;
@@ -29,6 +29,7 @@ prfig.plotheight          = 10;
 % avarege psds on 10 minute increments
 pruse.minaverage = 10; 
 pruse.maxgap = 120; % seconds 
+pruse.stepsize = 2; % minutes to step each time 
 
 for dd = 1:length(dataLoc)
     settings.rootdir = dataLoc{dd};
@@ -52,7 +53,7 @@ for dd = 1:length(dataLoc)
             psdResults.numberOfPsds(cntavg) = sum(idxbetween);
             cntavg = cntavg + 1;
         end
-        curTime = endTime;
+        curTime = curTime + minutes(pruse.stepsize);
         endTime = curTime + minutes(pruse.minaverage);
     end
     psdResults.ff = fftResultsTd.ff;

@@ -61,7 +61,20 @@ if ~isempty(strfind(filename,'RawDataAccel'))
     end
 end
 if ~isempty(outtable)
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
     outdatcomplete = populateTimeStamp(outtable,srates,filename);
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+    % XXXXXXX
+%     outdatcomplete = populateTimeStamp_KS(outtable,srates,filename);
 else
     outdatcomplete = table();
 end

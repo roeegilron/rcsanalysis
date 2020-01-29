@@ -12,6 +12,7 @@ function AUC_analysis_including_coherence_and_psd_pkg_data()
 % loop on patient, side to get AUC for each patient and minute
 % gap
 datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir_AUC = datadir;
 %% XXX
 %             uniquePatients = {'RCS07'};
 %% XXX
@@ -86,28 +87,59 @@ for p = 1:length(uniquePatients) % loop on patients
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
         end
-        %% fit the model
+        %% get all the data ready for both cohernece and for psd 
         % get the labels
         idxuse = strcmp(allstates,'off') | strcmp(allstates,'on');
         labelsRaw = allstates(idxuse);
         labels = zeros(size(labelsRaw,1),1);
         labels(strcmp(labelsRaw,'on')) = 1;
-        %% loop on areas
-        alldat = [];
+        
+
+        % data psd 
+        cntfeature = 1; 
         for c = 1:length(cnls)
             % get channel
             fn = sprintf('key%dfftOut',cnls(c));
             % get freq
             idxfreq = psdResults.ff >= freqs(c)-1 & psdResults.ff <= freqs(c)+1;
-            dat = mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2);
-            datuse = dat;
-            alldat(:,c) = dat;
+            rescaledat = rescale(mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2),0,1); 
+            alldataUse(:,cntfeature) = rescaledat; 
+            labelMeta{cntfeature,1}  = ttls{c}; 
+            cntfeature = cntfeature + 1; 
+        end
+        meanbetafreq = mean(freqs(1:4)); 
+        meangammafrq = mean(freqs(5:8)); 
+        freqsloop    = [meanbetafreq meangammafrq]; 
+        freqnames    = {'beta','gamma'}; 
+        cohfieldnames = {'stn02m10810','stn02m10911','stn13m10810','stn13m0911'}; 
+        for fc = 1:length(freqnames)
+            for ac = 1:length(cohfieldnames)
+                % get channel
+                fn = sprintf('%s',cohfieldnames{ac});
+                % get freq
+                idxfreq = cohResults.ff >= freqsloop(fc)-2 & cohResults.ff <= freqsloop(fc)+2;
+                rescaledat = rescale(mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2),0,1);
+                alldataUse(:,cntfeature) = rescaledat;
+                labelMeta{cntfeature,1}  = sprintf('STN-M1 coh %s',freqnames{fc});
+                cntfeature = cntfeature + 1;
+            end
+        end
+        
+        
+        %% fit the model
+        
+        %% loop on areas
+        alldat = [];
+        for c = 1:length(labelMeta)
+            start = tic;
+            % get channel
+            dat = alldataUse(:,c);
             %% disc
             rng(1); % For reproducibility
             cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
             doshuffle = 1;
             if doshuffle
-                numshuffls = 100;
+                numshuffls = 5e3;
             else
                 numshuffls = 1;
             end
@@ -135,29 +167,29 @@ for p = 1:length(uniquePatients) % loop on patients
                     end
                 end
             end
-            %%
-            headinguse = sprintf('%s %s AUC',ttls{c},titles{cnls(c)+1});
             if doshuffle
                 realVal = mean(AUC(:,1));
                 shufflevals = mean(AUC(:,2:end),1);
                 AUCout(c) = realVal;
                 sumsmaller = sum(realVal < mean(AUC(:,2:end),1));
                 if sumsmaller == 0
-                    p = 1/numshuffls;
+                    pval = 1/numshuffls;
                 else
-                    p = sumsmaller/numshuffls;
+                    pval = sumsmaller/numshuffls;
                 end
-                AUCpOut(c) = p;
+                AUCpOut(c) = pval;
             else
                 AUCout(c) = mean(AUC);
             end
+            fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
+                    c, length(labelMeta)+1, uniquePatients{p},sides{s},labelMeta{c},toc(start));
         end
         %% use all areas
         for si =1:numshuffls+1
             for k = 1:5
                 idxTrn = training(cvp,k); % Training set indices
                 idxTest = test(cvp,k);    % Test set indices
-                tblTrn = array2table(alldat(idxTrn,:));
+                tblTrn = array2table(alldataUse(idxTrn,:));
                 tblTrn.Y = labels(idxTrn);
                 if doshuffle
                     if si > 1 % first is real
@@ -169,7 +201,7 @@ for p = 1:length(uniquePatients) % loop on patients
                     end
                 end
                 Mdl = fitcdiscr(tblTrn,'Y');
-                [labeltest,scoretest,costest] = predict(Mdl,dat(idxTest,:));
+                [labeltest,scoretest,costest] = predict(Mdl,alldataUse(idxTest,:));
                 if doshuffle
                     [X,Y,T,AUC(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
                 else
@@ -183,23 +215,33 @@ for p = 1:length(uniquePatients) % loop on patients
             AUCout(c+1) = realVal;
             sumsmaller = sum(realVal < mean(AUC(:,2:end),1));
             if sumsmaller == 0
-                p = 1/numshuffls;
+                pval = 1/numshuffls;
             else
-                p = sumsmaller/numshuffls;
+                pval = sumsmaller/numshuffls;
             end
-            AUCpOut(c+1) = p;
+            AUCpOut(c+1) = pval;
         else
             AUCout(c+1) = mean(AUC);
         end
-        
+        fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
+            c+1, length(labelMeta)+1, uniquePatients{p},sides{s},'all areas',toc(start));
         %%
-        patientTable.AUC{m} = AUCout;
-        fnmmuse = sprintf('%s_%s_pkg%s_AUC_by_min_results.mat',patientTable.patient{1},...
-            patientTable.patientRCSside{1},...
-            patientTable.patientPKGside{1});
+        labelMetaTitles = labelMeta;
+        labelMetaTitles{17,1} = 'all areas';
+        AUC_results_table = table(); 
+        for r = 1:length(AUCout)
+            AUC_results_table.patient{r} = uniquePatients{p};
+            AUC_results_table.side{r} = sides{s};
+            AUC_results_table.area{r} = labelMetaTitles{r}; 
+            AUC_results_table.AUC(r) = AUCout(r); 
+            AUC_results_table.AUCp(r) = AUCpOut(r);             
+        end
+        fnmmuse = sprintf('%s_%s_AUC_by_min_results_with_coherence.mat',uniquePatients{p},...
+            sides{s});
         fnmsave = fullfile(resultsdir_AUC,fnmmuse);
         readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
-        save(fnmsave,'patientTable','cnls','freqs','titles','readme');
+        save(fnmsave,'AUC_results_table','cnls','freqs','readme');
+        clear alldataUse
         % save this patient data
     end
 end

@@ -1,5 +1,5 @@
-function outRec  = loadDeviceSettings(fn)
-DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
+function outRec  = loadDeviceSettings(jsonfn)
+DeviceSettings = jsondecode(fixMalformedJson(fileread(jsonfn),'DeviceSettings'));
 %% load stimulation config
 % this code (re stim sweep part) assumes no change in stimulation from initial states
 % this code will fail for stim sweeps or if any changes were made to
@@ -11,7 +11,6 @@ therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
 groups = [ 0 1 2 3]; 
 groupNames = {'A','B','C','D'}; 
 stimState = table(); 
-
 cnt = 1; 
 for g = 1:length(groups) 
     fn = sprintf('TherapyConfigGroup%d',groups(g));
@@ -58,7 +57,11 @@ for g = 1:length(groups)
         end
     end
 end 
-stimStatus = stimState(logical(stimState.activeGroup),:);
+if ~isempty(stimState)
+    stimStatus = stimState(logical(stimState.activeGroup),:);
+else
+    stimStatus = [];
+end
 %% load the device configration for sensing 
 
 recNum = 0;
@@ -121,8 +124,9 @@ end
 %%
 
 % loop on structures and construct table of files that exist
-[pn,fnm,ext ] = fileparts(fn);
-save(fullfile(pn,[fnm '.mat']),'outRec','DeviceSettings');
+
+[pn,fnm,ext ] = fileparts(jsonfn);
+save(fullfile(pn,[fnm '.mat']),'outRec','stimState','stimStatus','DeviceSettings');
 % tblout = struct2table(outRec);
 end
 

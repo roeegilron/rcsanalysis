@@ -30,8 +30,22 @@ badPackets4= startTimeDt < (medianTime - hours(24)*7);
 % check for packets in the future 
 badPackets2 = uxtimes(1:end-1) >= uxtimes(2:end) ;
 badPackets2 = [badPackets2; 0];
+% check to see if packet time can be negative 
+badpackets5 = [TDdat.TimeDomainData.PacketGenTime]<=0;
+badpackets5 = badpackets5';
+% check to see if data type sequence always increases monotonically 
+% note that it roles over after 255 packets (e.g. goes from 255 to 0). 
+% I am getting rid of the first packet on purpose 
+headertemp = TDdat.TimeDomainData;
+headers2 = [headertemp.Header];
+dataTypeSequence = [headers2.dataTypeSequence];
+dataTypeSequenceTemp = [headers2(1).dataTypeSequence dataTypeSequence];
+badpackets6 = diff(dataTypeSequenceTemp')==0;
 
-idxBadPackets = badPackets | badPackets2 | badPackets3 | badPackets4;
+
+
+idxBadPackets = badPackets | badPackets2 | badPackets3 | badPackets4 | badpackets5 | badpackets6;
+
 
 TDdat.TimeDomainData = TDdat.TimeDomainData(~idxBadPackets);
 
@@ -90,6 +104,10 @@ for p = 1:size(datasizes,1)
     
     outdat(packetidx,maxnchans+6) =  packetsizes(p); 
     varnames{maxnchans+6} = 'packetsizes'; 
+    
+    outdat(packetidx,maxnchans+7) = TDdat.TimeDomainData(p).Header.dataTypeSequence;
+    varnames{maxnchans+7} = 'dataTypeSequence';
+
 end
 
 
