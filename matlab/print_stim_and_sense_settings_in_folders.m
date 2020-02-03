@@ -23,8 +23,13 @@ for s = 1:size(datTab,1)
         jsonfn = fullfile(pn,'StimLog.json');
         loadStimSettings(jsonfn);
         load(fullfile(pn,'StimLog.mat'));
+        try 
         fprintf(fid,'%s - %s\n',datTab.startTime{s}, datTab.endTime{s});
-        fprintf(fid,'\t - duration %s \t%s\n',datTab.duration{s},datTab.sessname{s});
+        fprintf(fid,'\t - duration %s \t%s\n',datTab.duration(s),datTab.sessname{s});
+        catch
+            fprintf(fid,'%s - %s\n',datTab.startTime(s), datTab.endTime(s));
+            fprintf(fid,'\t - duration %s \t%s\n',datTab.duration(s),datTab.sessname{s});
+        end
         stimTable = stimState(logical(stimState.activeGroup),:);
         fprintf(fid,'\t - stim:\t group %s - stim state %d stim amp %.2f rate %.2f\n',...
             stimTable.group,stimTable.stimulation_on,stimTable.amplitude_mA, stimTable.rate_Hz);

@@ -1,4 +1,4 @@
-function temp_rcs02_dyskinesia_adaptive_make_video()
+    function temp_rcs02_dyskinesia_adaptive_make_video()
 % make video of RCS02 dyskinesia start 
 
 

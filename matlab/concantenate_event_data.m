@@ -15,31 +15,38 @@ for f = 1:length(ff)
 end
 
 ff = findFilesBVQX(dirname,'EventLog.mat'); 
-
 eventOut = table(); 
+
 for f = 1:length(ff)
     load(ff{f});
     [pn,fn,ext] = fileparts(ff{f});
     load(fullfile(pn,'StimLog.mat'));
     
-    timeReport = report_start_end_time_td_file_rcs(fullfile(pn,'RawDataTD.json'));
-
-    stimEvents  = stimEvents(end,{'group','rate','AmplitudeInMilliamps','PulseWidthInMicroseconds','stimStatus'});
-    stimEvents.sesionID = eventTable.sessionid(1);
-    stimEvents.sessionTime = eventTable.sessionTime(1);
-    stimEvents.startTime = timeReport.startTime;
-    stimEvents.endTime = timeReport.endTime;
-    stimEvents.duration = timeReport.duration;
-    if ~isempty(eventTable)
-        if f == 1
-            eventOut = eventTable;
-            stimEventsAll = stimEvents; 
-        else
-            eventOut = [eventOut; eventTable];
-            stimEventsAll(f,:) = stimEvents;
+    try 
+        timeReport = report_start_end_time_td_file_rcs(fullfile(pn,'RawDataTD.json'));
+    catch 
+        timeReport.duration = [];
+    end
+    if ~isempty(timeReport.duration)
+%         stimEvents  = stimEvents(end,{'group','rate','AmplitudeInMilliamps','PulseWidthInMicroseconds','stimStatus'});
+%         stimEvents.sesionID = eventTable.sessionid(1);
+%         stimEvents.sessionTime = eventTable.sessionTime(1);
+%         stimEvents.startTime = timeReport.startTime;
+%         stimEvents.endTime = timeReport.endTime;
+%         stimEvents.duration = timeReport.duration;
+        if ~isempty(eventTable)
+            if f == 1
+                eventOut = eventTable;
+%                 stimEventsAll = stimEvents;
+            else
+                eventOut = [eventOut; eventTable];
+%                 stimEventsAll(f,:) = stimEvents;
+            end
         end
     end
 end
+
+
 
 idxKeep = ~(strcmp(eventOut.EventType,'CTMLeftBatteryLevel') | ...
             strcmp(eventOut.EventType,'CTMRightBatteryLevel') | ...

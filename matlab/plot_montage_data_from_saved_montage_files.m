@@ -6,21 +6,207 @@ ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
 mkdir(figdir);
 
-for f = 1:length(ff)
+for f = 4:length(ff)
     load(ff{f});
-    plot_pac_montage_data_within(montageData,figdir,ff{f});
+    plot_data_per_recording(montageDataRaw,figdir,ff{f});
+%     plot_pac_montage_data_within(montageData,figdir,ff{f});
     [pn,fn] = fileparts(ff{f});
+    
 %     plot_montage_data(pn);
 %     rcsDataChopper(pn); 
 end
 end
 
+function plot_data_per_recording(montageData,figdir,origfile)
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+for i = 1:size(montageData,1)
+    hfig = figure('Visible','on');
+    hfig.Color = 'w';
+    hfig.Position = [1000         547        1020         791];
+    hpanel = panel();
+    hpanel.pack(4,5);
+    % raw data
+    x = montageData.derivedTimes{i};
+    idxuse = x > seconds(3) & x < (x(end)-seconds(3));
+    x = x(idxuse); 
+    x = x - x(1); 
+    sr = montageData.samplingRate(i);
+    ydat = montageData.data{i};
+    ydat = ydat(idxuse,:);
+    for c = 1:4
+        hsb = hpanel(c,1).select();
+        axes(hsb);
+        y = ydat(:,c);
+        y = y - mean(y); 
+        plot(x,y);
+        xlabel('Time');
+        ylabel('uV');
+        xtickformat('mm:ss');
+        chanchar = montageData.TimeDomainDataStruc{i}(c).chanOut;
+        ttlstr = sprintf('raw %s',chanchar);
+        title(ttlstr);
+    end
+    % spectrogram
+     for c = 1:4
+        hsb = hpanel(c,2).select();
+        axes(hsb);
+        y = ydat(:,c);
+        y = y - mean(y); 
+        if sum(y) ~= 0
+            srate = sr;
+            overlapFac = 0.875;
+            spectrogram(y,srate,ceil(overlapFac*srate),1:ceil(srate/2-20),srate,'yaxis','psd');
+            shading interp
+            axis tight;
+            colorbar off;
+            chanchar = montageData.TimeDomainDataStruc{i}(c).chanOut;
+            ttlstr = sprintf('Spect %s',chanchar);
+            title(ttlstr);
+        end
+     end
+     % psd 
+     for c = 1:4
+        hsb = hpanel(c,3).select();
+        axes(hsb);
+        hold on;
+        y = ydat(:,c);
+        y = y - mean(y);
+        if sum(y) ~= 0
+            [fftOut,f]   = pwelch(y,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+            plotFreqPatches(hsb);
+            plot(f,log10(fftOut),'LineWidth',2);
+            xlabel('Freq (Hz)');
+            ylabel('Power (log_1_0\muV^2/Hz)');
+            chanchar = montageData.TimeDomainDataStruc{i}(c).chanOut;
+            ttlstr = sprintf('PSD %s',chanchar);
+            title(ttlstr);
+
+        end
+     end
+    % pac
+    pacparams.PhaseFreqVector      = 5:2:50;
+    pacparams.AmpFreqVector        = 10:5:400;
+    
+    pacparams.PhaseFreq_BandWidth  = 4;
+    pacparams.AmpFreq_BandWidth    = 10;
+    pacparams.computeSurrogates    = 0;
+    pacparams.numsurrogate         = 0;
+    pacparams.alphause             = 0.05;
+    pacparams.plotdata             = 0;
+    pacparams.useparfor            = 0; % if true, user parfor, requires parallel computing toolbox
+    pacparams.regionnames          = {'STN','M1'};
+
+    addpath(genpath(fullfile('..','..','PAC')));
+    if sr == 250
+        pacparams.AmpFreqVector        = 10:5:80;
+    elseif sr == 500
+        pacparams.AmpFreqVector        = 10:5:200;
+    elseif sr == 1000
+        pacparams.AmpFreqVector        = 10:5:420;
+    end
+    for c = 1:4
+        hsb = hpanel(c,4).select();
+        axes(hsb);
+        hold on;
+        y = ydat(:,c);
+        y = y - mean(y);
+        if sum(y) ~= 0
+            res = computePAC(y',sr,pacparams);
+            chanchar = montageData.TimeDomainDataStruc{i}(c).chanOut;
+            areasAmp = sprintf('%s',chanchar);
+            areasPhase = sprintf('%s',chanchar);
+            
+            contourf(res.PhaseFreqVector+res.PhaseFreq_BandWidth/2,...
+                res.AmpFreqVector+res.AmpFreq_BandWidth/2,...
+                res.Comodulogram',30,'lines','none')
+            shading interp
+            ttly = sprintf('Amplitude Frequency %s (Hz)',areasAmp);
+            ylabel(ttly)
+            ttlx = sprintf('Phase Frequency %s (Hz)',areasPhase);
+            xlabel(ttlx)
+            ttlstr = sprintf('PAC %s',chanchar);
+            title(ttlstr);
+            set(gca,'FontSize',10);
+        end
+    end
+    % coherence 
+    % pairs: 
+    if sr == 1000 
+        reps = 2;
+    else
+        reps = 1; 
+    end 
+    for r = 1:reps
+        if sr == 1000
+            copairs = [1 3; 1 3];
+        else
+            copairs = [1 3; 1 4; 2 3; 2 4];
+        end
+        for c = 1:size(copairs,1)
+            if sr == 1000
+                hsb = hpanel(r,5).select();
+            else
+                hsb = hpanel(c,5).select();
+            end
+            axes(hsb);
+            hold on;
+            y1 = ydat(:,copairs(c,1));
+            y2 = ydat(:,copairs(c,2));
+            if (sum(y1) ~= 0) & (sum(y2) ~= 0)
+                pair1 = montageData.TimeDomainDataStruc{i}(copairs(c,1)).chanOut;
+                pair2 = montageData.TimeDomainDataStruc{i}(copairs(c,2)).chanOut;
+                ttlstr = sprintf('%s - %s coh',pair1, pair2);
+                Fs = sr;
+                [Cxy,F] = mscohere(y1',y2',...
+                    2^(nextpow2(Fs)),...
+                    2^(nextpow2(Fs/2)),...
+                    2^(nextpow2(Fs)),...
+                    Fs);
+                if r == 2
+                    idxplot = F > 100 & F < 400;
+                else
+                    idxplot = F > 2 & F < 100;
+                end
+                hplot = plot(F(idxplot),Cxy(idxplot),'LineWidth',2);
+                xlabel('Freq (Hz)');
+                ylabel('MS Coherence');
+                title(ttlstr);
+            end
+        end
+    end
+    timeStart = datetime(montageData.startTime(i),'Format','HH:mm');
+    fntitle = sprintf('%0.2d %s %s %s',i,montageData.patient{i},montageData.side{i},timeStart);
+%     sgtitle(fntitle)
+    
+    hpanel.margin = [20 20 20 20];
+    hpanel.fontsize = 13;
+    hpanel.de.margin = 20;
+    % print the figure 
+    timeStart = datetime(montageData.startTime(i),'Format','dd-MMM-yyyy_HH-mm');
+    fnsave = sprintf('%s_%s_%s_%0.2d',montageData.patient{i},montageData.side{i},timeStart,i);
+    prfig.plotwidth           = 20;
+    prfig.plotheight          = 15;
+    prfig.figdir              = figdir;
+    prfig.figtype             = '-djpeg';
+    prfig.closeafterprint     = 0;
+    prfig.resolution          = 100;
+    prfig.figname             = fnsave;
+    plot_hfig(hfig,prfig);
+    close all;
+end
+
+
+
+
+
+end
+
 function plot_pac_montage_data_within(montageData,figdir,origfile)
 close all;
 addpath(genpath(fullfile('..','..','PAC')));
-timeStart = datetime(montageData.startTime,'Format','dd-MMM-yyyy_HH-mm');
+timeStart = datetime(montageData.startTime(1),'Format','dd-MMM-yyyy_HH-mm');
 fnsave = sprintf('%s_%s_%s',montageData.patient,montageData.side,timeStart);
-timeStart = datetime(montageData.startTime,'Format','dd-MMM-yyyy HH:mm');
+timeStart = datetime(montageData.startTime(1),'Format','dd-MMM-yyyy HH:mm');
 titleName = sprintf('%s %s %s',montageData.patient,montageData.side,timeStart);
 
 pacparams.PhaseFreqVector      = 5:2:50;
@@ -116,6 +302,8 @@ plot_hfig(hfig,prfig);
 close all;
 
 end
+
+
 
 function plot_coherence_montage_data(montageData,figdir,origfile)
 results = [];
