@@ -4,6 +4,21 @@ function plot_compare_montage_data_from_saved_montage_files(dirname)
 
 ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
+montageTableFn = fullfile(dirname,'montageTable.mat');
+if exist(montageTableFn,'file')
+    load(montageTableFn); 
+else
+    report_motnage_files_in_dir(dirname); 
+    load(montageTableFn); 
+end
+partAllOrPart = input('do you want to plot all data or part of the data? [1 all 2 part]? '); 
+if partAllOrPart == 2
+    tableToSave
+    fprintf('\n'); 
+    montageToPlot = input('type out montage nubmer you want to plot: '); 
+    ff = ff(montageToPlot);
+end
+
 mkdir(figdir);
 % get unique channels
 unqchannel_lfp = {};
@@ -69,13 +84,13 @@ for u = 1:length(unqlfp)
                     axes(hsb);
                     hold on; 
                     sr  = 500; 
-                    [fftOut,f]   = pwelch(y,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+                    [fftOut,freqs]   = pwelch(y,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
                     fftlog  = log10(fftOut);
                     % normalize
-                    idxfreq = f >=10 & f<=90;
+                    idxfreq = freqs >=10 & freqs<=90;
                     meanfreq = abs(mean(fftlog(idxfreq)));
                     fftplot = fftlog./meanfreq;
-                    hplt = plot(f,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
+                    hplt = plot(freqs,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
                     hplt.UserData.dirname = ff{f};
                    
                     
@@ -117,13 +132,13 @@ for u = 1:length(unqctx)
                     axes(hsb);
                     hold on; 
                     sr  = 500; 
-                    [fftOut,f]   = pwelch(y,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+                    [fftOut,freqs]   = pwelch(y,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
                     fftlog  = log10(fftOut);
                     % normalize
-                    idxfreq = f >=10 & f<=90;
+                    idxfreq = freqs >=10 & freqs<=90;
                     meanfreq = abs(mean(fftlog(idxfreq)));
                     fftplot = fftlog./meanfreq;
-                    hplt = plot(f,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
+                    hplt = plot(freqs,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
                     hplt.UserData.dirname = ff{f};
                     title(unqctx{u});
                     xlabel('Freq. (Hz)');

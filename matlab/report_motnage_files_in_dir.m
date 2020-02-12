@@ -5,6 +5,7 @@ ff = findFilesBVQX(dirname,'rawMontageData.mat');
 txtfn = fullfile(dirname,'folders_with_motnage.txt');
 fid = fopen(txtfn,'w+'); 
 
+tableToSave = table(); 
 for f = 1:length(ff) % loop ib montage files
     fprintf(fid, '[%0.2d]\t\n',f); 
     % use a function called fileparts
@@ -22,8 +23,16 @@ for f = 1:length(ff) % loop ib montage files
          fprintf(fid,'\t%s \t%s\n',eventToReport.EventType{e}, eventToReport.EventSubType{e});
      end
      fprintf(fid,'\n\n');
-        
+     montageNum = repmat(f,size(eventToReport,1),1);
+     currTable = table();
+     currTable.montageNumber = montageNum;
+     currTable = [currTable, eventToReport(:,{'sessionid','sessionTime','EventSubType','EventType'})]; 
+     
+     tableToSave = [tableToSave; currTable];
+     
 end
 % close the text file: 
 fclose(fid); 
+tablesvname = fullfile(dirname,'montageTable.mat'); 
+save(tablesvname,'tableToSave'); 
 end
