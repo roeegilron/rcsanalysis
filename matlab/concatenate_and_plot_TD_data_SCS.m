@@ -6,9 +6,9 @@ else isunix
 end
 
 fprintf('\n\n');
-save acc 
-check to see if file exists, if it does just 
-load the file that exists 
+% save acc 
+% check to see if file exists, if it does just 
+% load the file that exists 
 
 cnttime = 1; 
 if exist(fullfile(rootdir,'processedDataAcc.mat'),'file')

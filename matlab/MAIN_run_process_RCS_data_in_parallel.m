@@ -18,6 +18,7 @@ for f = 1:length(ffiles)
         % first check to see if this foler has been analyzed already 
         [pnn,fnn] = fileparts(ffiles{f});
         if exist(fullfile(pnn,'processedTDdata.mat'),'file')
+            analyzeContinouseDataFromSCS(ffiles{f});
 %             matFileObj = matfile(fullfile(pnn,'processedTDdata.mat'));
 %             pd = matFileObj.processedData;
 %             if isfield(pd,'alltimes')

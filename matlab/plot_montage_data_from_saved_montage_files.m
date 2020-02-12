@@ -6,8 +6,11 @@ ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
 mkdir(figdir);
 
-for f = 4:length(ff)
+for f = 2:length(ff)
     load(ff{f});
+    if exist('montagDataRawManualIdxs','var')
+        montageDataRaw = montagDataRawManualIdxs;
+    end
     plot_data_per_recording(montageDataRaw,figdir,ff{f});
 %     plot_pac_montage_data_within(montageData,figdir,ff{f});
     [pn,fn] = fileparts(ff{f});
@@ -27,7 +30,11 @@ for i = 1:size(montageData,1)
     hpanel.pack(4,5);
     % raw data
     x = montageData.derivedTimes{i};
-    idxuse = x > seconds(3) & x < (x(end)-seconds(3));
+    if isduration(x)
+        idxuse = x > seconds(3) & x < (x(end)-seconds(3));
+    else
+        idxuse = (x > 3) & x < (x(end)-3);
+    end
     x = x(idxuse); 
     x = x - x(1); 
     sr = montageData.samplingRate(i);
@@ -41,7 +48,9 @@ for i = 1:size(montageData,1)
         plot(x,y);
         xlabel('Time');
         ylabel('uV');
-        xtickformat('mm:ss');
+        if isduration(x)
+            xtickformat('mm:ss');
+        end
         chanchar = montageData.TimeDomainDataStruc{i}(c).chanOut;
         ttlstr = sprintf('raw %s',chanchar);
         title(ttlstr);

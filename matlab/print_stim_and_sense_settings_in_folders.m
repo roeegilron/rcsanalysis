@@ -9,7 +9,8 @@ end
 if iscell(tblout.startTime)
     idxkeep = cellfun(@(x) ~isempty(x),tblout.startTime);
     datTab = tblout(idxkeep,:);
-elseif isdatetime( tblout.startTime);
+    datTab.duration = cellfun(@(x) x(1),datTab.duration);
+elseif isdatetime( tblout.startTime)
     datTab = tblout;
 end
 

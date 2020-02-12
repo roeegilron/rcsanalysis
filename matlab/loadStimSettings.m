@@ -6,13 +6,20 @@ for s = 1 % this needs way more work ...
     % rec info 
     fnms = {'ApiVer','DeviceId',...
         'HostUnixTime','SessionId'};
-    recInfo = stimRaw{s}.RecordInfo;
+    if iscell(stimRaw(1))
+        recInfo = stimRaw{s}.RecordInfo;
+        therStatus = stimRaw{s}.therapyStatusData;
+        stimStruc = stimRaw{s};
+    else
+        recInfo = stimRaw(s).RecordInfo;
+        therStatus = stimRaw(s).therapyStatusData;
+        stimStruc = stimRaw(s);
+    end
     for f = 1:length(fnms)
         stimSettings(s).(fnms{f}) = [recInfo.(fnms{f})];
     end
     % therapy status 
     fnms = {'activeGroup','therapyStatus'};
-    therStatus = stimRaw{s}.therapyStatusData;
     for f = 1:length(fnms)
         stimSettings(s).(fnms{f}) = [therStatus.(fnms{f})];
     end
@@ -29,7 +36,7 @@ for s = 1 % this needs way more work ...
     for g = 1:4
         fldnm = sprintf('TherapyConfigGroup%d',g-1); 
         
-        thrpConfigGroup = stimRaw{s}.(fldnm); 
+        thrpConfigGroup = stimStruc.(fldnm); 
         fnuse = sprintf('%s_%s',groupNames{g},'ratePeriod'); 
         stimSettings(s).(fnuse) = thrpConfigGroup.ratePeriod;
         fnuse = sprintf('%s_%s',groupNames{g},'RateInHz'); 
@@ -74,6 +81,13 @@ else
 end
 stimEvents.EventType = {'config'};
 
+% only initial settings exists (no stim titration done)
+% in this case, stimRaw is a struct instead of cell array 
+% for backward compatability  with rest of the cost move this into a cell
+% array 
+if ~iscell(stimRaw) 
+    stimRaw = {stimRaw};
+end
 
 t = datetime(stimRaw{1}.RecordInfo.HostUnixTime/1000,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
