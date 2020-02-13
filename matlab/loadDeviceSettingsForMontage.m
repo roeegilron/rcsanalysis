@@ -17,7 +17,6 @@ for f = 1:length(DeviceSettings)
     end
     fprintf('\n');
 end
-
 %%
 deviceSettingTable = table();
 recNum = 1; 
@@ -54,7 +53,6 @@ while f <= length(DeviceSettings)
             if ~instream % if not instream then streaming is starting 
                 timenum = curStr.RecordInfo.HostUnixTime;
                 t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                
                 actionuse = sprintf('stream start %d',strCnt);
                 deviceSettingTable.action{recNum} = actionuse;
                 deviceSettingTable.recNum(recNum) = strCnt;
@@ -73,14 +71,12 @@ while f <= length(DeviceSettings)
     % check if streaming stopped - 
     % it can either be stopped by turning streaming off 
     % or it can be stopped by turning sensing off 
-    
     % option 1 - stream has been turned off 
     if isfield(curStr,'StreamState')
         if instream % streaming is happening detect it's stop
             if ~curStr.StreamState.TimeDomainStreamEnabled
                 timenum = curStr.RecordInfo.HostUnixTime;
                 t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                
                 actionuse = sprintf('stop stream %d',strmStopCnt);
                 deviceSettingTable.action{recNum} = actionuse;
                 deviceSettingTable.recNum(recNum) = strmStopCnt;
@@ -108,7 +104,6 @@ while f <= length(DeviceSettings)
             if strcmp(sensestat(4),'0') % time domain off 
                 timenum = curStr.RecordInfo.HostUnixTime;
                 t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                
                 actionuse = sprintf('stop sense %d',senseStopCnt);
                 deviceSettingTable.action{recNum} = actionuse;
                 deviceSettingTable.recNum(recNum) = senseStopCnt;
@@ -126,7 +121,6 @@ while f <= length(DeviceSettings)
     end
     f = f+1;
 end
-
 % loop on deviceSettigs and extract the start and stop time for each
 % recording in the file.
 deviceSettingsOut = table(); 
@@ -134,21 +128,22 @@ idxnotnan = ~isnan(deviceSettingTable.recNum);
 unqRecs = unique(deviceSettingTable.recNum(idxnotnan)); 
 for u = 1:length(unqRecs)
     idxuse = deviceSettingTable.recNum == unqRecs(u);
-    dt = deviceSettingTable(idxuse,:); 
-    deviceSettingsOut.recNum(u) = unqRecs(u); 
-    deviceSettingsOut.timeStart(u) = dt.timeStart{1};
-    deviceSettingsOut.timeStop(u) = dt.timeStart{2};
-    deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
-    deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(1).sampleRate(1:end-2));
-    for c = 1:4
-        fnuse = sprintf('chan%d',c);
-        deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+    dt = deviceSettingTable(idxuse,:);
+    if size(dt,1) == 1 % this means that stream didn't stop properly
+    else
+        deviceSettingsOut.recNum(u) = unqRecs(u);
+        deviceSettingsOut.timeStart(u) = dt.timeStart{1};
+        deviceSettingsOut.timeStop(u) = dt.timeStart{2};
+        deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
+        deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(1).sampleRate(1:end-2));
+        for c = 1:4
+            fnuse = sprintf('chan%d',c);
+            deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+        end
+        deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
     end
-    deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
 end
-
 end
-
 function outstruc = translateTimeDomainChannelsStruct(tdDat)
 %% assume no bridging
 outstruc = tdDat;
@@ -252,5 +247,4 @@ for f = 1:length(outstruc)
         outstruc(f).chanOut,...
         outstruc(f).lpf1,outstruc(f).lpf2,outstruc(f).sampleRate);
 end
-
 end
