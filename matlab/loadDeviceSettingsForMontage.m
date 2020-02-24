@@ -136,7 +136,7 @@ for u = 1:length(unqRecs)
         deviceSettingsOut.timeStop(u) = dt.timeStart{2};
         deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
         for c = 1:4 % find sample rate
-            if ~strcmp(dt.tdDataStruc{1}(1).sampleRate,'disabled')
+            if ~strcmp(dt.tdDataStruc{1}(c).sampleRate,'disabled')
                 deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
             end
         end
