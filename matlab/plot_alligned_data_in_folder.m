@@ -1,14 +1,13 @@
 function plot_alligned_data_in_folder(dirname)
 %% function to plot alligned data in a folder 
 fnmload = fullfile(dirname,'all_data_alligned.mat'); 
-if exist(fnmload,'file')
+if ~exist(fnmload,'file')
     load_and_save_alligned_data_in_folder(dirname);
     load(fnmload,'outdatcomplete','outdatcompleteAcc','outRec',...
     'eventTable','powerOut','adaptiveTable','adaptiveStruc','senseStruc','embeddedStartEndTimes','adaptiveInfo');
 else
     load(fnmload,'outdatcomplete','outdatcompleteAcc','outRec',...
     'eventTable','powerOut','adaptiveTable','adaptiveStruc','senseStruc','embeddedStartEndTimes','adaptiveInfo');
-
 end
 close all;
 figdir = fullfile(dirname,'figures'); 
@@ -36,7 +35,7 @@ endTimes = endTimes(dur > seconds(30));
 
 nrows = 4; 
 ncols = 1; 
-for e = 1:length(startTimes)
+for e = 3:length(startTimes)
     hfig = figure;
     hfig.Position = [45           1        1636         954];
     hfig.Color = 'w';
@@ -79,19 +78,24 @@ for e = 1:length(startTimes)
     fftsize = adaptiveInfo(e).Fftsize;
     sr = adaptiveInfo(e).SampleRate;
     
-    strOut{3} = sprintf('each FFT represents %d ms of data (fft size %d sr %d Hz)',...
-        ceil((fftsize/sr).*1000), fftsize,sr);
+    fftinterval = adaptiveInfo(e).FftInterval;
+    fftime = ceil((fftsize/sr).*1000); 
+    % xxx 
+    percentOverlap = fftime/ (fftime +fftinterval);
+    strOut{3} = sprintf('%d ms FFt interval, each FFT represents %d ms of data and %.2f overlap (fft size %d sr %d Hz)',...
+        fftinterval, ceil((fftsize/sr).*1000),  fftsize,sr);
     updateRate = adaptiveInfo(e).UpdateRate; 
     
     strOut{strline} = sprintf('%d ffts are averaged - %d ms of data before being input to LD',updateRate,ceil((fftsize/sr).*1000)*updateRate);    
     strline = strline + 1; 
     
 
-    strOut{strline} = sprintf('update rate %d onset %d termination %d state change blank %d',...
+    strOut{strline} = sprintf('update rate %d onset %d termination %d state change blank %d (%d ms)',...
         adaptiveInfo(e).UpdateRate,...
         adaptiveInfo(e).OnsetDuration,...
         adaptiveInfo(e).TerminationDuration,...
-        adaptiveInfo(e).StateChangeBlankingUponStateChange);
+        adaptiveInfo(e).StateChangeBlankingUponStateChange,...
+        adaptiveInfo(e).StateChangeBlankingUponStateChange * adaptiveInfo(e).FftInterval);
     strline = strline + 1; 
 
     
@@ -151,9 +155,38 @@ for e = 1:length(startTimes)
     % scott feedback this is the right thing to do in real time 
     % can stream both the raw power domain as well as detector 
     [b,a]        = butter(3,[bandsUsed(1) bandsUsed(end)] / (sr/2),'bandpass'); % user 3rd order butter filter
+%     [b,a]        = butter(5,80 / (sr/2),'low'); % user 3rd order butter filter
     y_filt       = filtfilt(b,a,tddata); %filter all
+    
+    % find the peaks and plot the am
+    ydatRescaled = rescale(y_filt,0,1); % XXXX 
+    %{
+    figure; 
+    subplot(3,1,1); 
+    hold on; 
+    plot(secs,ydatRescaled)
+    [pks,locs] = findpeaks(ydatRescaled,'MinPeakHeight',0.9);
+    scatter(secs(locs),pks,10,'filled');
+    subplot(3,1,2); 
+    hold on; 
+    dat = []; 
+    for s = 1:length(locs)
+        dat(s,:) = tddata(locs(s)-50:locs(s)+1000);
+        [fftOutStim(s,:),f]   = pwelch(dat(s,:),sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+        plot(dat(s,:)); 
+    end
+    subplot(3,1,3); 
+    hold on;
+    sr = 1000;
+    [fftOut,f]   = pwelch(mean(dat(s,:),1),sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+    plot(f,log10(mean(fftOutStim,1)));
+    cleandat = tddata(69770+3*1e3:69770+2.5*1e4);
+    [fftOut,f]   = pwelch(cleandat,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+    plot(f,log10(fftOut));
+    
+    %}
     y_filt_hilbert       = abs(hilbert(y_filt));
-    ydatRescaled = rescale(y_filt,0.55,1);
+    ydatRescaled = rescale(y_filt,0.55,1); % XXXX 
     y_filt_hilbertRescaled = rescale(y_filt_hilbert,0.55+(1-0.55)/2,1);
     plot(secs,ydatRescaled,'LineWidth',0.5,'Color',[0 0 0.8 0.2]);
     plot(secs,y_filt_hilbertRescaled,'LineWidth',3,'Color',[0.8 0 0 0.6]);

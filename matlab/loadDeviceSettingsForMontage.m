@@ -135,7 +135,11 @@ for u = 1:length(unqRecs)
         deviceSettingsOut.timeStart(u) = dt.timeStart{1};
         deviceSettingsOut.timeStop(u) = dt.timeStart{2};
         deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
-        deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(1).sampleRate(1:end-2));
+        for c = 1:4 % find sample rate
+            if ~strcmp(dt.tdDataStruc{1}(1).sampleRate,'disabled')
+                deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
+            end
+        end
         for c = 1:4
             fnuse = sprintf('chan%d',c);
             deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};

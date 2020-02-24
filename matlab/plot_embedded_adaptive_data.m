@@ -10,6 +10,15 @@ params.dir    = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v10_2
 params.dir   = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H';
 params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
 
+params.dir   = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/adaptive_day_2/lte/StarrLab/RCS02L/Session1559769144423/DeviceNPC700398H';
+params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
+
+
+params.dir   = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v08_RCS05 4 Month/adaptive_day_2/rcsdata/RCS05R/Session1578692912450/DeviceNPC700415H';
+params.outdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v09_adaptive/figures';
+
+
+
 %% load data 
 % load acc 
 fileload = fullfile(params.dir,'RawDataAccel.json');
