@@ -5,14 +5,20 @@ try
     data = json.load(filename);
     fprintf('file loaded in %.2f seconds\n',toc(start));
 catch
-    % try to fix the file 
-    dat = fileread(filename); 
-    if strcmp(dat(end),'}')  % it's missing the end closing brackets 
+    % try to fix the file
+    dat = fileread(filename);
+    [pnn,fnn,ext] = fileparts(filename);
+    
+    if strcmp(dat(end),'}')  % it's missing the end closing brackets
         x =2 ;
         fileID = fopen(filename,'a');
-        fprintf(fileID,'%s',']}]'); 
-        fclose(fileID); 
-        try 
+        if strcmp(fnn,'AdaptiveLog') % if adaptive it needs a different solution
+            fprintf(fileID,'%s',']');
+        else
+            fprintf(fileID,'%s',']}]');
+        end
+        fclose(fileID);
+        try
             data = json.load(filename);
         catch
             fprintf('file failed to load problem with json\n');

@@ -21,6 +21,7 @@ medTimeExpanded = zeros(size(outdat,1),1);
 packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+
 usevector = 1; 
 if usevector
 %% attempt at vectorization 
@@ -30,7 +31,10 @@ endTimes.Format = 'hh:mm:ss.SSS'; % add microseconds
 % 1 figure out different isis 
 isis = 1./srates;
 
-% 1.5 start with gaps that are smaller than 6.553 seconds 
+% 1.5 start with gaps that are smaller than 6.553 seconds (actually smaller
+% than 6 seconds since 6.553 can't be resolved, gaps between 6-7 are an
+% edge case that were resolved in unravel data function 
+
 % if gap is smaller than 6.55 seconds verify packet time with systemTick clock
 % and increment from last end time
 idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)]; % add zero at start since using diff
@@ -38,7 +42,7 @@ idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)]; % add zero at start si
 % packet count
 idxInNums = find(idxsmaller==1);
 preIdxInNums = idxInNums-1;
-difftime = outdat.systemTick(idxpackets(idxInNums))-outdat.systemTick(idxpackets(preIdxInNums));
+difftime = outdat.systemTick(idxpackets(idxInNums)) - outdat.systemTick(idxpackets(preIdxInNums));
 packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
 secondsToAdd = seconds(packtime ) ;
 endTimes(idxInNums) = secondsToAdd;   
@@ -53,11 +57,21 @@ preIdxInNums = idxInNums-1;
 gapLenInSeconds = timestamps(idxInNums)-timestamps(preIdxInNums);
 numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
 systemTickPreviousPacket = outdat.systemTick(idxpackets(preIdxInNums));
+% XXX 
+% old version: 
+% systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
+% exactGapTime = seconds(floor(numberOfSixSecChunks)* (2^16/1e4) - ...
+%     systemTickPreviousPacket/1e4 + ...
+%     systemTickCurrentPacket/1e4);
+% endTimes(idxInNums) = exactGapTime;
+% 
+% new version 
 systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
-exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
-    systemTickPreviousPacket/1e4 + ...
-    systemTickCurrentPacket/1e4);
+difftimes = (systemTickCurrentPacket - systemTickPreviousPacket); 
+exactGapTime = seconds(floor(numberOfSixSecChunks)* (2^16/1e4) + ...
+                       (mod(difftimes,2^16) / 1e4) );
 endTimes(idxInNums) = exactGapTime;
+% XXX 
 % get rid of the first packet;  
 idxStartWithOutFirstPacket = find(outdat.packetsizes~=0,1)+1; 
 outdat = outdat(idxStartWithOutFirstPacket:end,:); 

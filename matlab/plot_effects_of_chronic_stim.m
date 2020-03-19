@@ -1,7 +1,11 @@
 function plot_effects_of_chronic_stim()
-patients = {'RCS05', 'RCS06','RCS02'}; 
-betapeaks = [27 19 20];
-cnlsuse = [0 1 1];
+patients = {'RCS05', 'RCS06','RCS02', 'RCS07'}; 
+betapeaks = [27 19 30 15];
+betapeaks = [65 65 75 65;...
+             65 65 65 65];
+
+cnlsuse = [0 1 1 1];
+cnlsuse = [3 3 2 3];
 width = 2.5; 
 cntpt = 1; 
 psdresultsfn{1,cntpt} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/RCS05/psdResults_R.mat'; % off stim 
@@ -16,6 +20,11 @@ cntpt = cntpt+1;
 psdresultsfn{1,cntpt} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/RCS02/psdResults_L.mat'; % off stim 
 psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS02/SummitContinuousBilateralStreaming/RCS02L/psdResults.mat'; % on stim 
 cntpt = cntpt+1; 
+
+psdresultsfn{1,cntpt} = '/Volumes/RCS_DATA/RCS07/v16_1_month/data_sump/RCS07L/psdResults.mat'; % off stim 
+psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS07/v17_on_stim/RCS07L/psdResults.mat'; % on stim 
+cntpt = cntpt+1; 
+
 
 %%
 close all;
@@ -34,17 +43,28 @@ for p = 1:size(psdresultsfn,2)
         load(psdresultsfn{i,p});
         ff = fftResultsTd.ff;
 
+        if strcmp(patients{p},'RCS07')
+            if i == 2 
+                idxuse = isbetween(fftResultsTd.timeStart,'11-Feb-2020 09:07:46.264','13-Feb-2020 01:05:56.134'); 
+                for c = 1:4 
+                    fnuse = sprintf('key%dfftOut',c-1);
+                    fftResultsTd.(fnuse) = fftResultsTd.(fnuse)(:,idxuse);
+                end
+                fftResultsTd.timeStart = fftResultsTd.timeStart(idxuse);
+                fftResultsTd.timeEnd = fftResultsTd.timeEnd(idxuse); 
+            end
+        end
         % normalize the data
         fnuse = sprintf('key%dfftOut',cnlsuse(p));
         hoursrec = hour(fftResultsTd.timeStart);
-        idxhoursuse = (hoursrec >= 8) & (hoursrec <= 22); 
+        idxhoursuse = (hoursrec >= 10) & (hoursrec <= 22); 
         fftOut = fftResultsTd.(fnuse)(:,idxhoursuse);
         timesout = fftResultsTd.timeStart(idxhoursuse);
         
         meanVals = mean(fftOut(40:60,:));
         q75_test=quantile(meanVals,0.75);
         q25_test=quantile(meanVals,0.25);
-        w=2.0;
+        w=1.5;
         wUpper = w*(q75_test-q25_test)+q75_test;
         wLower = q25_test-w*(q75_test-q25_test);
         idxWhisker = (meanVals' < wUpper) & (meanVals' > wLower);
@@ -53,23 +73,30 @@ for p = 1:size(psdresultsfn,2)
         
         dat = fftOut;
         idxnormalize = ff > 3 &  ff <90;
-        meandat = repmat(mean(abs(mean(dat(:,idxnormalize),2))),length(ff),1); % mean within range, by row
+        % normalize by individual peaks
+        idxnormalize = ff >= (betapeaks(i,p)-width) &  ff <= (betapeaks(i,p)+width);
+
+        meandat = repmat(mean(abs(mean(dat(idxnormalize,:),2))),length(ff),1); % mean within range, by row
         % the absolute is to make sure 1/f curve is not flipped
         % since PSD values are negative
         meanmat = repmat(meandat,1,size(dat,2));
-        dat = dat./meanmat;
+%         dat = dat./meanmat;
         fftOut = dat;
         % plot a random sample of the raw data 
         hsb(cnttoplot) = subplot(nrows,ncols,cnttoplot);
-        idxrand = randperm(size(dat,2),300);
+        if i == 1 
+            idxrand = randperm(size(dat,2),floor(size(dat,2)*0.1));
+        else
+            idxrand = 1:size(dat,2); 
+        end
         datplot = dat(:,idxrand); 
         plot(ff,datplot,'LineWidth',0.5,'Color',[0 0 0.8 0.05]);
         
-        xlim([3 100]);
+        xlim([3 90]);
         % use peaks or individual peaks
         idxusefreq = ff >= 13 &  ff <= 30;
         % individual peaks 
-        idxusefreq = ff >= (betapeaks(p)-width) &  ff <= (betapeaks(p)+width);
+        idxusefreq = ff >= (betapeaks(i,p)-width) &  ff <= (betapeaks(i,p)+width);
         
         meanbetafreq{p,i} = mean(fftOut(idxusefreq,:),1);
         times{p,i} = timesout;
@@ -83,6 +110,7 @@ for p = 1:size(psdresultsfn,2)
         xlabel('Freq. (Hz)');
         ylabel('Norm. power');
         set(gca,'FontSize',16); 
+        clear fftResultsTd;
     end
 end
 linkaxes(hsb,'y');
@@ -117,6 +145,6 @@ for h = 1:length(hviolin)
 end
 
 
-title('effect of chronic stim across 3 patients'); 
+title('effect of chronic stim across 4 patients'); 
 set(gca,'FontSize',16); 
 end

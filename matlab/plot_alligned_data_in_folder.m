@@ -35,7 +35,7 @@ endTimes = endTimes(dur > seconds(30));
 
 nrows = 4; 
 ncols = 1; 
-for e = 3:length(startTimes)
+for e = 1:length(startTimes)
     hfig = figure;
     hfig.Position = [45           1        1636         954];
     hfig.Color = 'w';
@@ -135,7 +135,7 @@ for e = 3:length(startTimes)
     
 
     a.String = strOut;
-    a.EdgeColor = 'none'
+    a.EdgeColor = 'none';
     
     % suplot 2
     hsub(cntplt) = subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
@@ -155,36 +155,7 @@ for e = 3:length(startTimes)
     % scott feedback this is the right thing to do in real time 
     % can stream both the raw power domain as well as detector 
     [b,a]        = butter(3,[bandsUsed(1) bandsUsed(end)] / (sr/2),'bandpass'); % user 3rd order butter filter
-%     [b,a]        = butter(5,80 / (sr/2),'low'); % user 3rd order butter filter
     y_filt       = filtfilt(b,a,tddata); %filter all
-    
-    % find the peaks and plot the am
-    ydatRescaled = rescale(y_filt,0,1); % XXXX 
-    %{
-    figure; 
-    subplot(3,1,1); 
-    hold on; 
-    plot(secs,ydatRescaled)
-    [pks,locs] = findpeaks(ydatRescaled,'MinPeakHeight',0.9);
-    scatter(secs(locs),pks,10,'filled');
-    subplot(3,1,2); 
-    hold on; 
-    dat = []; 
-    for s = 1:length(locs)
-        dat(s,:) = tddata(locs(s)-50:locs(s)+1000);
-        [fftOutStim(s,:),f]   = pwelch(dat(s,:),sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
-        plot(dat(s,:)); 
-    end
-    subplot(3,1,3); 
-    hold on;
-    sr = 1000;
-    [fftOut,f]   = pwelch(mean(dat(s,:),1),sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
-    plot(f,log10(mean(fftOutStim,1)));
-    cleandat = tddata(69770+3*1e3:69770+2.5*1e4);
-    [fftOut,f]   = pwelch(cleandat,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
-    plot(f,log10(fftOut));
-    
-    %}
     y_filt_hilbert       = abs(hilbert(y_filt));
     ydatRescaled = rescale(y_filt,0.55,1); % XXXX 
     y_filt_hilbertRescaled = rescale(y_filt_hilbert,0.55+(1-0.55)/2,1);
@@ -247,6 +218,118 @@ for e = 3:length(startTimes)
     % save figure; 
     linkaxes(hsub(2:end),'x');
     savefig(hfig,figsaveFullName); 
+    
+    % plot the artifact from rapid switching of current 
+    
+    
+    %{
+    figure; 
+    nrows = 4; 
+    ncols = 1; 
+    cnplt = 1; 
+    % plot raw data (but filter a bit between 5-80 to center data a bit) 
+    hsb(cnplt ) = subplot(nrows,ncols,cnplt); cnplt = cnplt + 1; 
+    hold on; 
+    [b,a]        = butter(5,80 / (sr/2),'low'); % user 3rd order butter filter
+    y_filt       = filtfilt(b,a,tddata); %filter all
+    % find the peaks and plot the am
+    ydatRescaled = rescale(y_filt,0,1); % XXXX 
+    plot(secs,ydatRescaled)
+    [pks,locs] = findpeaks(ydatRescaled,'MinPeakHeight',0.9);
+    scatter(secs(locs),pks,50,'filled','MarkerFaceColor',[0.8 0 0 ],'MarkerFaceAlpha',0.5);
+    
+     [pks2,locs2] = findpeaks(ydatRescaled.*(-1),'MinPeakHeight',-0.15);
+    scatter(secs(locs2),ydatRescaled(locs2),50,'filled','MarkerFaceColor',[0 0.8 0 ],'MarkerFaceAlpha',0.5);
+    
+    
+    [wtmat,fr] = a_wavelet_pow_pha(tddata,sr,1,150);
+    for ll = 1:length(locs) 
+        statidx = locs - 2000; 
+        stopidx = locs + 2000;
+        if statidx(ll) > 1 & (stopidx(ll) < length(tddata))
+            averageEnd(:,:,ll) = wtmat(:,statidx(ll):stopidx(ll));
+            rawEnd(ll,:) = tddata(statidx(ll):stopidx(ll));
+        end
+    end
+    
+    for ll = 1:length(locs2)
+        statidx = locs2 - 2000;
+        stopidx = locs2 + 2000;
+        if statidx(ll) > 1 & (stopidx(ll) < length(tddata))
+            averageStart(:,:,ll) = wtmat(:,statidx(ll):stopidx(ll));
+            rawStart(ll,:) = tddata(statidx(ll):stopidx(ll));
+        end
+    end
+    
+    avgStart = mean(averageStart,3);
+    avgEnd = mean(averageEnd,3);
+    hfig = figure;
+    hfig.Color = 'w'; 
+    subplot(2,1,1);
+    plot(rawStart'); 
+    title('raw data allinged to stim sweep start'); 
+    xlim([0 4e3]); 
+    set(gca,'FontSize',16);
+    subplot(2,1,2);
+    imagesc(abs(avgStart));
+    title('wavelet transform'); 
+    xlabel('data points');
+    ylabel('Frequencty (Hz)');
+    set(gca,'YDir','normal')
+    set(gca,'FontSize',16);
+    
+    hfig = figure;
+    hfig.Color = 'w';
+    subplot(2,1,1);
+    plot(rawEnd');
+    title('raw data allinged to stim sweep end');
+    xlim([0 4e3]);
+    set(gca,'FontSize',16);
+    subplot(2,1,2);
+    imagesc(abs(avgEnd));
+    title('wavelet transform');
+    xlabel('data points');
+    ylabel('Frequencty (Hz)');
+    set(gca,'YDir','normal')
+    set(gca,'FontSize',16);
+    
+    
+    % Input must contains at list 2 argument;
+    % dx - data massive
+    % SampleRate - SampleRate
+    % fr1 - Start freq.
+    % fr2 - Stopt freq.
+    % Optional -
+    % dfr - Frequency resolution; = 1  if not define
+    % w_strectch -  = 3    if not define
+
+    
+    % plot the current 
+    hsb(cnplt ) = subplot(nrows,ncols,cnplt); cnplt = cnplt + 1; 
+    plot(secsAdaptive,current,'LineWidth',3,'Color',[0.8 0 0 0.6]);
+    
+    linkaxes(hsb,'x');
+    subplot(nrows,ncols,cnplt); cnplt = cnplt + 1; 
+    hold on; 
+    dat = []; 
+    for s = 1:length(locs)
+        dat(s,:) = tddata(locs(s)-50:locs(s)+1000);
+        [fftOutStim(s,:),f]   = pwelch(dat(s,:),sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+        plot(dat(s,:)); 
+    end
+    
+    % plot artifact ffft and real signal FFT
+    subplot(nrows,ncols,cnplt); cnplt = cnplt + 1; 
+    hold on;
+    sr = 1000;
+%     plot(f,log10(mean(fftOutStim,1)),'LineWidth',2);
+    plot(f,log10(fftOutStim),'LineWidth',2);
+    cleandat = tddata(69770+3*1e3:69770+2.5*1e4);
+    [fftOut,f]   = pwelch(cleandat,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
+    plot(f,log10(fftOut),'LineWidth',2);
+    legend({'stim going down','clean data - no stim change'}); 
+    %%
+    %}
 end
 return;
 %% 

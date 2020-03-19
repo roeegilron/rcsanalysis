@@ -9,6 +9,12 @@ tblout = getDataBaseRCSdata(dirname);
 % print out details about this to a text file in this directory
 fid = fopen(fullfile(dirname,'recordingReport.txt'),'w+');
 
+idxkeep = ~cellfun(@(x) isempty(x), tblout.startTime); 
+
+% get rid of all the empty files that don't have a start time - this may
+% skip large files that are formatted incorectyl - e.g. don't have closing
+% brackets - but need to check this 
+tblout = tblout(idxkeep,:) 
 for t = 1:size(tblout,1)
     if ~isempty(tblout.startTime(t))
         % need to check if the table is comprised of cell arrays

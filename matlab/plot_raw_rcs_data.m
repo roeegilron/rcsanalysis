@@ -41,6 +41,9 @@ derivedTime    = outdatcomplete.derivedTimes(idxTimeCompare);
 timeDiff       = derivedTime - packtRxTime;
 
 eventTable = allign_events_time_domain_time(eventTable,outdatcomplete);
+% XXX 
+eventTable = eventTable(1,:);
+% XXX 
 
 numplots = 5;
 for c = 1:4 % loop on channels
@@ -116,10 +119,10 @@ for h = 1:length(hsub)
 end
 
 
-dcm_obj = datacursormode(hfig);
-dcm_obj.UpdateFcn = @myupdatefcn;
-dcm_obj.SnapToDataVertex = 'on';
-datacursormode on;
+% dcm_obj = datacursormode(hfig);
+% dcm_obj.UpdateFcn = @myupdatefcn;
+% dcm_obj.SnapToDataVertex = 'on';
+% datacursormode on;
 
 
 end

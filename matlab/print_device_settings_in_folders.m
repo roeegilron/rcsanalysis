@@ -1,3 +1,4 @@
+
 function print_device_settings_in_folders(dirname)
 % this will print the channels recorded from in each file 
 databasefile = fullfile(dirname,'database.mat'); 
@@ -15,7 +16,12 @@ end
 txtfilename = fullfile(dirname,'channels_recorded_from_per_session.txt'); 
 fid = fopen(txtfilename,'w+'); 
 for s = 1:size(datTab,1) % loop on sessions 
-    sesstime = datTab.rectime{s};
+    if iscell(datTab.rectime)
+        sesstime = datTab.rectime{s};
+    else
+        sesstime = datTab.rectime(s);
+    end
+
     sesstime.Format = 'dd-MMM-yyyy HH:mm';
     fprintf(fid,'[%0.2d]\n',s);
     fprintf(fid,'\t%s\n',sesstime);

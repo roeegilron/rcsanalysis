@@ -1,3 +1,4 @@
+
 function outdat = populateTimeStamp_KS(outdat,srates,filename)
 %% function to populate time stamps according to INS with Unix style time 
 %% 

@@ -147,6 +147,66 @@ for u = 1:length(unqRecs)
         deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
     end
 end
+%% detection config 
+% DetectionConfig
+% AdaptiveConfig
+detectionSettings = struct(); 
+adaptiveSettings  = struct();
+stateSettings     = struct();
+f = 1;
+while f <= length(DeviceSettings)
+    fnms = fieldnames(DeviceSettings{f});
+    curStr = DeviceSettings{f};
+    det_fiels = {'blankingDurationUponStateChange',...
+        'detectionEnable','detectionInputs','fractionalFixedPointValue',...
+        'holdoffTime','onsetDuration','terminationDuration','updateRate'};
+    if isfield(curStr,'DetectionConfig')
+        lds_fn = {'Ld0','Ld1'}; 
+        for ll = 1:length(lds_fn)
+            ldTable = table();
+            LD = curStr.DetectionConfig.(lds_fn{ll});
+            ldTable.([ 'biasTerm']) = LD.biasTerm';
+            ldTable.([ 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
+            ldTable.([ 'normalizationSubtractVector']) = [LD.features.normalizationSubtractVector];
+            ldTable.([ 'weightVector']) = [LD.features.weightVector];
+            for d = 1:length(det_fiels)
+                ldTable.([det_fiels{d}])  =  LD.(det_fiels{d});
+            end
+            detectionSettings(f).(lds_fn{ll}) = ldTable;
+        end
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
+            'deltaLimitsValid','deltasValid'};
+        adaptiveTable = table(); 
+        adaptiveConfig = curStr.AdaptiveConfig;
+        for a = 1:length(adaptive_fields)
+            adaptiveTable.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
+        end
+        adaptiveTable.fall_rate = [adaptiveConfig.deltas.fall];
+        adaptiveTable.rise_rate = [adaptiveConfig.deltas.rise];
+        
+        adaptiveSettings(f).adaptiveTable = adaptiveTable;        
+        
+        % get state table 
+        stateTable = table(); 
+        % loop on states 
+        for s = 0:8 
+            statefn = sprintf('state%d',s);
+            stateStruct = adaptiveConfig.(statefn);
+            stateTable.state(s+1) = s; 
+            stateTable.rate_hz(s+1) = stateStruct.rateTargetInHz; 
+            stateTable.isValid(s+1) = stateStruct.isValid; 
+            for p = 0:3 
+                progfn = sprintf('prog%dAmpInMilliamps',p);
+                curr(p+1) = stateStruct.(progfn);
+            end
+            stateTable.current_mA(s+1,:) = curr; 
+        end
+     stateSettings(f).stateTable = stateTable;   
+    end
+    f = f + 1;
+end
 end
 function outstruc = translateTimeDomainChannelsStruct(tdDat)
 %% assume no bridging
