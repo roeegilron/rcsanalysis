@@ -12,7 +12,7 @@ fprintf('\n\n');
 
 cnttime = 1; 
 if exist(fullfile(rootdir,'processedDataAcc.mat'),'file')
-    load( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur');
+    %load( fullfile(rootdir,'processedDataAcc.mat'),'accProcDat','accFileDur');
 else
     
     ffAcc = findFilesBVQX(rootdir,'processedAccData.mat');
