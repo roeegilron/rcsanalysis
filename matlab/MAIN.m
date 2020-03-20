@@ -81,6 +81,6 @@ end
 [pn,fn,ext] = fileparts(filename); 
 % writetable(outdatcomplete,fullfile(pn,[fn '.csv']));
 unqsrates = unique(srates); 
-save(fullfile(pn,[fn '.mat']),'outdatcomplete','srates','unqsrates');
+save(fullfile(pn,[fn '.mat']),'outdatcomplete','srates','unqsrates','-v7.3');
 end
 

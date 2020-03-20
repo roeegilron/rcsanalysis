@@ -62,8 +62,8 @@ for s = 1:size(datTab,1)
             catch
                 fprintf(fid,'%s - %s\n',datTab.startTime(s), datTab.endTime(s));
                 fprintf(fid,'\t - duration %s \t%s\n',datTab.duration(s),datTab.sessname{s});
-                sense_stim_table.duration(cntbl) = datTab.startTime(s);
-                sense_stim_table.start_time(cntbl) = datTab.duration(s);
+                sense_stim_table.duration(cntbl) = datTab.duration(s);
+                sense_stim_table.start_time(cntbl) = datTab.startTime(s);
                 sense_stim_table.session{cntbl} = datTab.sessname{s};
 
             end
