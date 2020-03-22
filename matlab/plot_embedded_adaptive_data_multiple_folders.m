@@ -31,6 +31,20 @@ titleuse = 'RCS02 R';
 % endTime   = '11-Mar-2020 12:15:29.600';
 % titleuse = 'RCS07 R'; 
 
+dirname = '/Volumes/RCS_DATA/RCS07/v19_remote_adaptive/RCS07L';
+filenameload = fullfile(dirname,'database.mat');
+load(filenameload);
+startTime = '19-Mar-2020 11:39:11.301';
+endTime   = '19-Mar-2020 14:29:36.263';
+titleuse = 'RCS07 L'; 
+
+dirname = '/Volumes/RCS_DATA/RCS07/v19_remote_adaptive/RCS07R';
+filenameload = fullfile(dirname,'database.mat');
+load(filenameload);
+startTime = '19-Mar-2020 11:39:11.301';
+endTime   = '19-Mar-2020 16:13:43.108';
+titleuse = 'RCS07 R'; 
+
 
 try
     idxuse = tblout.rectime > startTime & tblout.rectime < endTime;
@@ -39,8 +53,12 @@ try
 catch
     idxkeep = ~cellfun(@(x) isempty(x),tblout.sessname);
     tblout = tblout(idxkeep,:); 
-    idxuse = cellfun(@(x) x > startTime,tblout.rectime) & ... 
-        cellfun(@(x) x < endTime,tblout.rectime); 
+    if iscell(tblout.rectime)
+        idxuse = cellfun(@(x) x > startTime,tblout.rectime) & ...
+            cellfun(@(x) x < endTime,tblout.rectime);
+    else
+        idxuse = tblout.rectime  > startTime & tblout.rectime  < endTime;
+    end
     motherTable = tblout(idxuse,:);
     alldays = day([motherTable.startTime{:}]);
 end

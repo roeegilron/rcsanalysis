@@ -7,6 +7,7 @@ if exist(databasefile,'file')
     load(databasefile);
 else
     MAIN_report_data_in_folder(dirname); 
+    load(databasefile);
 end
 if iscell(tblout.startTime)
     idxkeep = cellfun(@(x) ~isempty(x),tblout.startTime);

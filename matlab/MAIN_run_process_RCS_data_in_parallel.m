@@ -4,8 +4,11 @@ function MAIN_run_process_RCS_data_in_parallel(dirname)
 if ismac 
     rootdir  = dirname;
     curdir = pwd; 
-else isunix
+elseif isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
+    curdir = pwd; 
+elseif ispc 
+    rootdir  = dirname;
     curdir = pwd; 
 end
 ffiles = findFilesBVQX(rootdir,'RawDataTD.mat');
