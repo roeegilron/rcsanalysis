@@ -121,6 +121,9 @@ fid = fopen(fullfile(dirname,'sense_stim_database_report.txt'),'w+');
 
 fprintf(fid, 'sensing and stimulation settings report of database size and settings\n\n\n'); 
 
+fprintf(fid, 'information in brackets contains amount of data in that condition in the format:\n'); 
+fprintf(fid, '[HH:MM:SS]\n\n\n'); 
+
 fprintf(fid, '%%%%%%%%\n'); 
 fprintf(fid, '%%%%%%%%\n'); 
 fprintf(fid, '%%%%%%%%\n'); 
@@ -131,7 +134,7 @@ fprintf(fid, '%%%%%%%%\n\n');
 % sense settings: 
 idxkeep = ~sense_stim_table.stimulation_on;
 tbluse = sense_stim_table(idxkeep,:); 
-fprintf(fid, '%s hours of data OFF stim\n\n', sum(tbluse.duration)); 
+fprintf(fid, '[%s] hours of data OFF stim\n\n', sum(tbluse.duration)); 
 fprintf(fid,'\tunique settings per channel:\n'); 
 fprintf(fid,'\t *note that hour count/ channel can contain partial overlaps across channels\n\n')
 for c = 1:4 
@@ -157,7 +160,7 @@ fprintf(fid, '%%%%%%%%\n\n');
 % sense settings: 
 idxkeep = logical(sense_stim_table.stimulation_on);
 tbluse = sense_stim_table(idxkeep,:); 
-fprintf(fid, '%s hours of data ON stim\n\n', sum(tbluse.duration)); 
+fprintf(fid, '[%s] hours of data ON stim\n\n', sum(tbluse.duration)); 
 fprintf(fid,'\tunique settings per channel:\n'); 
 fprintf(fid,'\t *note that hour count/ channel can contain partial overlaps across channels\n\n')
 for c = 1:4 
