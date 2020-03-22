@@ -1,8 +1,10 @@
 function concatenate_and_plot_TD_data_SCS(dirname)
 if ismac 
     rootdir  = dirname;
-else isunix
+elseif isunix
     rootdir  = '/home/starr/ROEE/data/RCS02L/';
+elseif ispc 
+    rootdir  = dirname;
 end
 
 fprintf('\n\n');
