@@ -7,6 +7,10 @@ DeviceSettings = jsondecode(fixMalformedJson(fileread(jsonfn),'DeviceSettings'))
 % need to fix this to include stim changes and when the occured to color
 % data properly according to stim changes and when the took place for in
 % clinic testing 
+
+if isstruct(DeviceSettings)
+    DeviceSettings = {DeviceSettings};
+end
 therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
 groups = [ 0 1 2 3]; 
 groupNames = {'A','B','C','D'}; 

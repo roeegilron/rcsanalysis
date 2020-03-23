@@ -23,7 +23,7 @@ end
 
 
 sense_stim_file = fullfile(dirname,'stim_and_sense_settings_table.mat');
-if exist(databasefile,'file')
+if exist(sense_stim_file,'file')
     load(sense_stim_file)
 else
     
