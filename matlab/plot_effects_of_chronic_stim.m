@@ -1,12 +1,12 @@
 function plot_effects_of_chronic_stim()
-patients = {'RCS05', 'RCS06','RCS02', 'RCS07'}; 
-betapeaks = [27 19 20 19;
-            27 19 20 19];
+patients = {'RCS05', 'RCS06','RCS02', 'RCS07','RCS04'}; 
+betapeaks = [27 19 20 19 13;
+            27 19 20 19 13];
 % betapeaks = [65 65 75 65;...
 %              65 65 65 65];
 
 
-cnlsuse = [0 1 1 1];
+cnlsuse = [0 1 1 1 0];
 % cnlsuse = [3 3 2 3];
 width = 2.5; 
 cntpt = 1; 
@@ -25,6 +25,10 @@ cntpt = cntpt+1;
 
 psdresultsfn{1,cntpt} = '/Volumes/RCS_DATA/RCS07/v16_1_month/data_sump/RCS07L/psdResults.mat'; % off stim 
 psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS07/v17_on_stim/RCS07L/psdResults.mat'; % on stim 
+cntpt = cntpt+1; 
+
+psdresultsfn{1,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_off_stim.mat'; % off stim 
+psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_on_stim.mat'; % on stim 
 cntpt = cntpt+1; 
 
 
@@ -55,6 +59,19 @@ for p = 1:size(psdresultsfn,2)
                 fftResultsTd.timeStart = fftResultsTd.timeStart(idxuse);
                 fftResultsTd.timeEnd = fftResultsTd.timeEnd(idxuse); 
             end
+            
+        end
+        if strcmp(patients{p},'RCS04')
+            timeAfter = datetime('13-Jul-2019 08:15:52.728');
+            timeAfter.TimeZone = fftResultsTd.timeStart.TimeZone;
+            idxuse = fftResultsTd.timeStart > timeAfter;
+            for c = 1:4
+                fnuse = sprintf('key%dfftOut',c-1);
+                fftResultsTd.(fnuse) = fftResultsTd.(fnuse)(:,idxuse);
+            end
+            fftResultsTd.timeStart = fftResultsTd.timeStart(idxuse);
+            fftResultsTd.timeEnd = fftResultsTd.timeEnd(idxuse);
+
         end
         % normalize the data
         fnuse = sprintf('key%dfftOut',cnlsuse(p));
@@ -70,6 +87,7 @@ for p = 1:size(psdresultsfn,2)
         wUpper = w*(q75_test-q25_test)+q75_test;
         wLower = q25_test-w*(q75_test-q25_test);
         idxWhisker = (meanVals' < wUpper) & (meanVals' > wLower);
+        
         fftOut = fftOut(:,idxWhisker);
         timesout = timesout(idxWhisker);
         

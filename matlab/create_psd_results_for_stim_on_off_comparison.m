@@ -7,7 +7,7 @@ function create_psd_results_for_stim_on_off_comparison()
 % C. print_stim_and_sense_settings_in_folders % create a stim database folder
 close all; clear all; clc;
 %% set params
-params.patient = 'RCS04'; 
+params.patient = 'RCS03'; 
 params.side    = 'L';
 %% 
 switch params.patient
@@ -37,6 +37,12 @@ switch params.patient
             sense_stim_table.stimulation_on == 1;
         tbluse = sense_stim_table(idxkeep_stim_on,:);
         sum(tbluse.duration);
+    case 'RCS03'
+        if ispc 
+            params.rootdir = 'D:\Starr Lab Dropbox\RC+S Patient Un-Synced Data\RCS04 Un-Synced Data\SummitData\SummitContinuousBilateralStreaming';
+        elseif ismac 
+            params.rootdir = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04';
+        end
 
     otherwise 
 end
@@ -44,40 +50,12 @@ end
 %% load data base file 
 stim_database_fn = fullfile(params.rootdir,'stim_and_sense_settings_table.mat');
 load(stim_database_fn); 
-%% 
-
-%% print some states 
-
-idxkeep = ...
-    sense_stim_table.stimulation_on == 0;
-tbluse = sense_stim_table(idxkeep,:);
-sum(tbluse.duration)
-
-idxkeep = ...
-    cellfun(@(x) any(strfind(x,'+3-2 lpf1-450Hz lpf2-1700Hz sr-250Hz')),sense_stim_table.chan2) & ... % only use contacts 2-3
-    sense_stim_table.duration > minutes(2) & ...  % only choose files over 2 minutes
-    sense_stim_table.stimulation_on == 0;
-tbluse = sense_stim_table(idxkeep,:);
-sum(tbluse.duration)
-
-idxkeep = ...
-    sense_stim_table.stimulation_on == 1;
-tbluse = sense_stim_table(idxkeep,:);
-sum(tbluse.duration)
-
-
-idxkeep = ...
-    cellfun(@(x) any(strfind(x,'+3-1 lpf1-450Hz lpf2-1700Hz sr-250Hz')),sense_stim_table.chan2) & ... % only use contacts 2-3
-    cellfun(@(x) any(strfind(x,'+1 -c ')),sense_stim_table.electrodes) & ... % only use contacts 2-3
-    sense_stim_table.duration > minutes(2) & ...  % only choose files over 2 minutes
-    sense_stim_table.stimulation_on == 1;
-tbluse = sense_stim_table(idxkeep,:);
-sum(tbluse.duration)
+%%
 
  
 
 %% loop on stim on / stim off 
-skipthis = 1; % if 1 - skpi this part 
+skipthis = 0; % if 1 - skpi this part 
 if ~skipthis 
 for ss = 1:2 % loop on stim off / on 1 = stim off 
     %% data picker 

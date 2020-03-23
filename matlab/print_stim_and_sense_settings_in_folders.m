@@ -55,7 +55,7 @@ else
             loadDeviceSettings(jsonfn); % old version 
             deviceSettingsOut = loadDeviceSettingsForMontage(jsonfn); % new version 
             load(fullfile(pn,'DeviceSettings.mat'));
-            if length(outRec) == 1 % only choose files in which sense settinsg have not changed
+            if size(deviceSettingsOut,1) == 1 % only choose files in which sense settinsg have not changed
                 jsonfn = fullfile(pn,'StimLog.json');
                 loadStimSettings(jsonfn);
                 load(fullfile(pn,'StimLog.mat'));

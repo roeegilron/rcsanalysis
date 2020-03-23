@@ -147,7 +147,15 @@ for u = 1:length(unqRecs)
         deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
     end
 end
+return;
+
 %% detection config 
+% note this sometiems returns error - 
+% move this into other stand alone function and debug there 
+% only use once you know adatpive exists / for casees in which a detector
+% is running 
+
+
 % DetectionConfig
 % AdaptiveConfig
 detectionSettings = struct(); 
