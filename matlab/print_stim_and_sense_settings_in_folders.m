@@ -52,7 +52,8 @@ else
         [pn,fn,ext] = fileparts(datTab.tdfile{s});
         jsonfn = fullfile(pn,'DeviceSettings.json');
         if isfile(jsonfn)
-            loadDeviceSettings(jsonfn);
+            loadDeviceSettings(jsonfn); % old version 
+            deviceSettingsOut = loadDeviceSettingsForMontage(jsonfn); % new version 
             load(fullfile(pn,'DeviceSettings.mat'));
             if length(outRec) == 1 % only choose files in which sense settinsg have not changed
                 jsonfn = fullfile(pn,'StimLog.json');
