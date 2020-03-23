@@ -1,12 +1,12 @@
 function plot_effects_of_chronic_stim()
-patients = {'RCS05', 'RCS06','RCS02', 'RCS07','RCS04'}; 
-betapeaks = [27 19 20 19 13;
-            27 19 20 19 13];
+patients = {'RCS05', 'RCS06','RCS02', 'RCS07','RCS04', 'RCS03'}; 
+betapeaks = [27 19 20 19 13 14;
+            27 19 20 19 13 14];
 % betapeaks = [65 65 75 65;...
 %              65 65 65 65];
 
 
-cnlsuse = [0 1 1 1 0];
+cnlsuse = [0 1 1 1 0 1];
 % cnlsuse = [3 3 2 3];
 width = 2.5; 
 cntpt = 1; 
@@ -30,6 +30,11 @@ cntpt = cntpt+1;
 psdresultsfn{1,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_off_stim.mat'; % off stim 
 psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_on_stim.mat'; % on stim 
 cntpt = cntpt+1; 
+
+psdresultsfn{1,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_off_stim.mat'; % off stim 
+psdresultsfn{2,cntpt} = '/Volumes/RCS_DATA/RCS04/sense_stim_settings_RCS04/RCS04L/psdResults_on_stim.mat'; % on stim 
+cntpt = cntpt+1; 
+
 
 
 %%
