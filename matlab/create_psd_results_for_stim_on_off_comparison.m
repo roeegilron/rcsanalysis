@@ -7,7 +7,7 @@ function create_psd_results_for_stim_on_off_comparison()
 % C. print_stim_and_sense_settings_in_folders % create a stim database folder
 close all; clear all; clc;
 %% set params
-params.patient = 'RCS03'; 
+params.patient = 'RCS04'; 
 params.side    = 'L';
 %% 
 switch params.patient
@@ -21,13 +21,17 @@ switch params.patient
         stim_database_fn = fullfile(params.rootdir,'stim_and_sense_settings_table.mat');
         load(stim_database_fn);
         % select data for stim off: 
+        
+        timeAfter = datetime('13-Jul-2019 08:15:52.728');
+        timeAfter.TimeZone = sense_stim_table.start_time.TimeZone;
         idxkeep_stim_off = ... 
             cellfun(@(x) any(strfind(x,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz')),sense_stim_table.chan1) & ... % only use contacts 2-3
             sense_stim_table.duration > minutes(4) & ...  % only choose files over 2 minutes
+            sense_stim_table.start_time > timeAfter& ... % only data after this time is real 
             sense_stim_table.stimulation_on == 0;
         tbluse = sense_stim_table(idxkeep_stim_off,:);
         sum(tbluse.duration)
-        
+         
         % select data for stim on: 
         idxkeep_stim_on = ...
             cellfun(@(x) any(strfind(x,'+2-0 lpf1-100Hz lpf2-100Hz sr-250Hz')),sense_stim_table.chan1) & ... % only use contacts 2-3

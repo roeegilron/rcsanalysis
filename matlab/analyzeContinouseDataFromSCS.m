@@ -312,7 +312,7 @@ if ~reject
     secDiffs = seconds(diff(reshapedTimes,1,2));
     idxmaxgapFactor = max(secDiffs,[],2) <= (1/samplerate)* params.maxGapFactor;
     % chek for max gap 
-    idxmaxgap = max(secDiffs,[],2) <= params.maxGap;
+    idxmaxgap =idxuse<= params.maxGap;
     idxuse = idxmaxgapFactor & idxmaxgap;
 end
 timeStart = reshapedTimes(:,1);

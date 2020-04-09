@@ -36,6 +36,8 @@ print_stim_and_sense_settings_in_folders
 % This function will also plot a sense_stim_text_metrics.txt text file that
 % will have infromation about all unique sense and stim combinations and
 % their datasize 
+% sense_stim_database_operations
+
 
 concantenate_event_data
 % this function is very likely to error out, be warned. 
@@ -74,7 +76,19 @@ concatenate_and_plot_TD_data_SCS
 % 1. processed all the fft data creating an fft from each data chunk  
 % 2. concatenates all the data for easy analysis and lines eveythign up with PKG 
 
-% alternate methods to PSD: 
+% alternate methods to PSD:
+
+create_psd_results_for_stim_on_off_comparison 
+% after MAIN_run_process_RCS_data_in_parallel this function will take
+% output from print_stim_and_sense_settings_in_folders and create custom
+% data sets sets of PSD results for furhter analysis. For example: 
+
+plot_effects_of_chronic_stim
+% plots violin plots of chronic stim from psd results create with above
+% function 
+
+plot_compare_montage_data_from_saved_montage_files
+% compare montage files within a session directory 
 
 violin_plot_compare_stim_no_stim
 % this function allows you to compare stim and no stim data in a violin
