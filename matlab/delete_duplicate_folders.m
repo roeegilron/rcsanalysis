@@ -1,7 +1,7 @@
 function delete_duplicate_folders()
 %%
 clc;
-rootdir = 'D:\Starr Lab Dropbox\RC+S Patient Un-Synced Data\';
+rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS06 Un_Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS06R';
 
 ff = findFilesBVQX(rootdir,'*(1)*',struct('dirs',1));
 fprintf('proposing to delete:\n')
