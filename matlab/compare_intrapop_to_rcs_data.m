@@ -19,16 +19,20 @@ fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/Neur
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v01_or_day/NeuroOmega/cora_analysis/RCS02_bilatM1_bilatlfp_rest_postlead_ecog_filt.mat';
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v02_or_day/intraop_data/NO/RCS05_bi_04_LRecog_Rlfp_rest_ecog_filt.mat';
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v01_ORday/NeuroOmegaData/RCS07_05_biEcog_bilfp_rest_ecog_filt.mat';
+
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v01_ORday/NeuroOmegaData/RCS07_05_biEcog_bilfp_rest_ecog_filt.mat';
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS08/v02_OR_day/NO_data/RCS08_biecog_bilfp_rest_ecog_filt.mat';
+
 % fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS06/v00_OR_day/NeuroOmegaData/RCS06_07_bi_ecog_lfp_rest_postlead_ecog_filt.mat';
 %1-4 left 5-8 right for both ecog and lfp 
 load(fnm);
 clear fnm
 % remember for right side to trim neuroomega
 % 
-% lfp.contact = lfp.contact(5:8); 
-% lfp.Fs      = lfp.Fs(5:8); 
-% ecog.contact = ecog.contact(5:8); 
-% ecog.Fs = ecog.Fs(5:8); 
+lfp.contact = lfp.contact(5:8); 
+lfp.Fs      = lfp.Fs(5:8); 
+ecog.contact = ecog.contact(5:8);     
+ecog.Fs = ecog.Fs(5:8); 
 
 %% load rest rc+s data
 % right side
@@ -39,9 +43,10 @@ fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS06/v00_OR_day/RCSd
 fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v05_3week/rcs_data/SummitContinuousBilateralStreaming/RCS05R/Session1565801991414/DeviceNPC700415H/rest.mat';
 % left side 
 % fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v04_10_day/rcs_data/off_meds/RCS02L/Session1557938513404/DeviceNPC700398H/rest.mat';
-fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v05_3week/rcs_data/SummitContinuousBilateralStreaming/RCS05L/Session1565801977503/DeviceNPC700414H/rest_off_meds_rcs05L.mat';
+% fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v05_3week/rcs_data/SummitContinuousBilateralStreaming/RCS05L/Session1565801977503/DeviceNPC700414H/rest_off_meds_rcs05L.mat';
 % fnm  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v13_10day/scbs/SummitContinuousBilateralStreaming/RCS07L/Session1568824808509/DeviceNPC700419H/rest.mat';
 % fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS06/v00_OR_day/RCSdata/StarrLab/RCS06L/Session1569979258863/DeviceNPC700424H/rest.mat';
+fnm = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS08/v03_10_day/rcsdata/RCS08L/Session1580841864086/DeviceNPC700444H/rest.mat';
 load(fnm);
 clear fnm;
 
@@ -52,6 +57,10 @@ idxuse = 60754:90572;
 idxuse = 15901:30503; 
 % idx use right RCS05 
 idxuse = 2504 :6538;
+% idx use left RCS08 
+idxuse = 9507:46502;
+% idx use right side RCS08 - some weird signals 
+idxuse = 55867: 61599;
 % default 
 % idxuse = 1:size(lfp.contact(1).signal,2);
 

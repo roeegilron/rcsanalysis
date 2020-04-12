@@ -6,7 +6,7 @@ ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
 mkdir(figdir);
 
-for f = 2:length(ff)
+for f = 1:length(ff)
     load(ff{f});
     if exist('montagDataRawManualIdxs','var')
         montageDataRaw = montagDataRawManualIdxs;

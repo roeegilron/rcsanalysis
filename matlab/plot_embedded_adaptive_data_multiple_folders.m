@@ -3,18 +3,18 @@ function plot_embedded_adaptive_data_multiple_folders()
 %% clear stuff
 clear all; close all; clc;
 %% get folder list
-dirname = '/Volumes/RCS_DATA/RCS02/SummitContinuousBilateralStreaming/New Data/Adaptive/RCS02L';
-filenameload = fullfile(dirname,'database.mat');
-load(filenameload);
-startTime = '10-Mar-2020 13:45:45.660';
-endTime   = '13-Mar-2020 08:05:47.036';
-
-dirname = '/Volumes/RCS_DATA/RCS02/SummitContinuousBilateralStreaming/New Data/Adaptive/RCS02R';
-filenameload = fullfile(dirname,'database.mat');
-load(filenameload);
-startTime = '11-Mar-2020 07:55:57.139';
-endTime   = '13-Mar-2020 08:06:16.173';
-titleuse = 'RCS02 R'; 
+% dirname = '/Volumes/RCS_DATA/RCS02/SummitContinuousBilateralStreaming/New Data/Adaptive/RCS02L';
+% filenameload = fullfile(dirname,'database.mat');
+% load(filenameload);
+% startTime = '10-Mar-2020 13:45:45.660';
+% endTime   = '13-Mar-2020 08:05:47.036';
+% 
+% dirname = '/Volumes/RCS_DATA/RCS02/SummitContinuousBilateralStreaming/New Data/Adaptive/RCS02R';
+% filenameload = fullfile(dirname,'database.mat');
+% load(filenameload);
+% startTime = '11-Mar-2020 07:55:57.139';
+% endTime   = '13-Mar-2020 08:06:16.173';
+% titleuse = 'RCS02 R'; 
 
 
 % dirname = '/Volumes/RCS_DATA/RCS07/v18_remote_adaptive/SCBS/RCS07L';
@@ -63,18 +63,17 @@ catch
     alldays = day([motherTable.startTime{:}]);
 end
 unqdays = unique(alldays);
+%% set up figure
+hfig = figure;
+hfig.Color = 'w';
+nrows = 3;
+for i = 1:nrows
+    hsb(i) = subplot(nrows,1,i);
+    hold(hsb(i),'on');
+end
 for u = 1:length(unqdays)
     idxday = alldays ==unqdays(u);
     tblUse = motherTable(idxday,:);
-    %% set up figure
-    hfig = figure;
-    hfig.Color = 'w';
-    nrows = 3;
-    for i = 1:nrows
-        hsb(i) = subplot(nrows,1,i);
-        hold(hsb(i),'on');
-    end
-    
     for t = 1:size(tblUse,1)
         try
             %% set up params
@@ -82,14 +81,20 @@ for u = 1:length(unqdays)
             params.dir    = pn;
             %% load data
             % load acc
-            fileload = fullfile(params.dir,'RawDataAccel.json');
-            [pn,fn,ext] = fileparts(fileload);
-            if exist(fullfile(pn,[fn '.mat']),'file')
-                load(fullfile(pn,[fn '.mat']));
+            if exist(fullfile(params.dir,'RawDataAccel.mat'),'file')
+                load(fullfile(params.dir,'RawDataAccel.mat')); 
                 outdatcompleteAcc = outdatcomplete;
                 clear outdatcomplete;
             else
-                [outdatcompleteAcc, ~, ~] = MAIN(fileload);
+                fileload = fullfile(params.dir,'RawDataAccel.json');
+                [pn,fn,ext] = fileparts(fileload);
+                if exist(fullfile(pn,[fn '.mat']),'file')
+                    load(fullfile(pn,[fn '.mat']));
+                    outdatcompleteAcc = outdatcomplete;
+                    clear outdatcomplete;
+                else
+                    [outdatcompleteAcc, ~, ~] = MAIN(fileload);
+                end
             end
             % load device settings
             fileLoadDeviceSettings = fullfile(params.dir,'DeviceSettings.json');
@@ -151,6 +156,7 @@ for u = 1:length(unqdays)
             title(hsb(2),'power');
             set(hsb(2),'FontSize',16);
             % plot acc
+            
             insTimes = outdatcompleteAcc.derivedTimes;
             idxwithPacGenTime = find(outdatcompleteAcc.PacketGenTime~=0);
             pacGenTime  = datetime(outdatcompleteAcc.PacketGenTime(idxwithPacGenTime(10))/1000,...
@@ -184,9 +190,10 @@ for u = 1:length(unqdays)
         end
         
     end
-    linkaxes(hsb,'x');
-    axis tight;
+
     sgtitle(titleuse,'FontSize',24);
 end
+%     linkaxes(hsb,'x');
+    axis tight;
 
 end

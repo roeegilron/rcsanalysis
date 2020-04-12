@@ -20,7 +20,6 @@ eventOut = table();
 for f = 1:length(ff)
     load(ff{f});
     [pn,fn,ext] = fileparts(ff{f});
-    load(fullfile(pn,'StimLog.mat'));
     
     try
         timeReport = report_start_end_time_td_file_rcs(fullfile(pn,'RawDataTD.json'));
@@ -44,6 +43,7 @@ for f = 1:length(ff)
             end
         end
     end
+    
 end
 
 
