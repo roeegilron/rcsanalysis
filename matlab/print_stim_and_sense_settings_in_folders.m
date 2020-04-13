@@ -1,4 +1,4 @@
-function print_stim_and_sense_settings_in_folders(dirname)
+function print_stim_and_sense_settings_in_folders(varargin)
 % this will print the channels recorded from in each file
 % it will only choose files in which the sense settings have not changed
 % mid file (e.g. smpaling rate change, montage files etc.)
@@ -6,9 +6,17 @@ function print_stim_and_sense_settings_in_folders(dirname)
 % folder you are trying to open it will just re-open this
 % so if you have more data you sohuld delete stim_and_sense_settings_table.mat
 % from your folder and rerun
+dirname = varargin{1};
+overwrite_file = 0; % don't load existing file 
+if size(varargin,2) == 2 
+    overwrite_file = varargin{2}; 
+end
 databasefile = fullfile(dirname,'database.mat');
 if exist(databasefile,'file')
     load(databasefile);
+    ismember('patient', tblout.Properties.VariableNames)
+    MAIN_report_data_in_folder(dirname);
+
 else
     MAIN_report_data_in_folder(dirname);
     load(databasefile);
@@ -23,7 +31,7 @@ end
 
 
 sense_stim_file = fullfile(dirname,'stim_and_sense_settings_table.mat');
-if exist(sense_stim_file,'file')
+if exist(sense_stim_file,'file') & ~overwrite_file
     load(sense_stim_file)
 else
     
@@ -49,12 +57,17 @@ else
     cntbl = 1;
     fid = fopen(fullfile(dirname,'stimAndDeviceSettingsLog.txt'),'w+');
     for s = 1:size(datTab,1)
-        [pn,fn,ext] = fileparts(datTab.tdfile{s});
+        
+        pn = fullfile(dirname,datTab.sessname{s},datTab.device{s});
         jsonfn = fullfile(pn,'DeviceSettings.json');
-        if isfile(jsonfn)
-            loadDeviceSettings(jsonfn); % old version 
-            deviceSettingsOut = loadDeviceSettingsForMontage(jsonfn); % new version 
-            load(fullfile(pn,'DeviceSettings.mat'));
+        try 
+            [deviceSettingsOut,stimStatus,stimState] = loadDeviceSettingsForMontage(jsonfn); % new version
+            deviceSettingsError = 0;
+        catch 
+            deviceSettingsError = 1;
+        end
+            
+        if isfile(jsonfn) & ~deviceSettingsError
             if size(deviceSettingsOut,1) == 1 % only choose files in which sense settinsg have not changed
                 jsonfn = fullfile(pn,'StimLog.json');
                 loadStimSettings(jsonfn);
@@ -63,7 +76,7 @@ else
                 % put device settings in output table
                 for cc = 1:4
                     fnuse = sprintf('chan%d',cc);
-                    sense_stim_table.(fnuse){cntbl} = outRec.tdData(cc).chanFullStr;
+                    sense_stim_table.(fnuse){cntbl} = deviceSettingsOut.(fnuse){1};
                 end
                 try
                     fprintf(fid,'%s - %s\n',datTab.startTime{s}, datTab.endTime{s});
@@ -93,6 +106,7 @@ else
                     
                 else
                     stimTable = stimState(logical(stimState.activeGroup),:);
+                    stimTable = stimTable(1,:); % assume only 1 program 
                     fprintf(fid,'\t - stim:\t group %s - stim state %d stim amp %.2f rate %.2f\n',...
                         stimTable.group,stimTable.stimulation_on,stimTable.amplitude_mA, stimTable.rate_Hz);
                     
@@ -108,8 +122,13 @@ else
                 end
                 cntbl = cntbl +1;
                 fprintf(fid,'\n');
-                fprintf(fid,'\t\t\t\t\t\t\t\t\t%s\n',outRec.tdData.chanFullStr);
+                for ccc = 1:4
+                    fnusechan = sprintf('chan%d',ccc);
+                    fprintf(fid,'\t\t\t\t\t\t\t\t\t%s\n',deviceSettingsOut.(fnusechan){1});
+                end
                 fprintf(fid,'\n\n\');
+            else
+                
             end
         end
     end
