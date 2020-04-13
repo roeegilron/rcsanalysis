@@ -2,9 +2,9 @@ function copyFolderInDateRange()
 % this function copies folders in a certain date range from 
 % dropbox to another folder 
 % origin folder: 
-params.dropboxOrigin = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitContinuousBilateralStreaming/RCS02R';
+params.dropboxOrigin = '/Users/roee/Starr Lab Dropbox/RC02LTE/SummitData/SummitContinuousBilateralStreaming/RCS02L';
 % destination folder: 
-params.destFolder    = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/v13_home_data_stim/rcs_data/RCS02R';
+params.destFolder    = '/Users/roee/Documents/potential_adaptive/RCS02/RCS02L';
 fdirs = findFilesBVQX(params.dropboxOrigin,'*ess*',struct('depth',1,'dirs',1));
 % report fast 
 clc; 

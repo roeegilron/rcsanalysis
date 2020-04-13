@@ -72,6 +72,25 @@ curruntInMaTrunc = current;
 %% 
 
 
+%% rcs 07 
+% have issue with opening up the adaptive file 
+% have to do it with medtornic code 
+% had to open this with medtronic plotting tools 
+load('/Users/roee/Documents/Adaptive Visit 1/RCS Data/RCS07R/Session1582321705380/DeviceNPC700403H/adatpive_adata_opened_medtronic_code.mat');
+load('/Users/roee/Documents/Adaptive Visit 1/RCS Data/RCS07R/Session1582321705380/DeviceNPC700403H/EventLog.mat');
+load('/Users/roee/Documents/Adaptive Visit 1/RCS Data/RCS07R/Session1582321705380/DeviceNPC700403H/RawDataTD.mat');
+idxuse = tvec > 2109; 
+tsecs = outdatcomplete.derivedTimes - outdatcomplete.derivedTimes(1);
+tsecs = seconds(tsecs); 
+idxustd = tsecs > 2109;
+timeuse = outdatcomplete.derivedTimes(idxustd);
+fprintf('start %s\n',timeuse(1));
+fprintf('stop %s\n',timeuse(end));
+curruntInMaTrunc = ProgramAmps(1,idxuse);
+
+%%
+
+
 
 
 % rcs 02 
@@ -91,6 +110,12 @@ pw = 60; % pulse width
 f  = 130.2;% frequency (hz) 
 r  = 1378; % impedence 
 openloopCur = 1.7; % in mili amps.
+
+% rcs 07 
+pw = 60; % pulse width
+f  = 130.2;% frequency (hz) 
+r  = 1730; % taking from 1 month visit can't find anything else 
+openloopCur = 2; % in mili amps.
 
 % total TEED per second adaptive 
 % previous computation 
