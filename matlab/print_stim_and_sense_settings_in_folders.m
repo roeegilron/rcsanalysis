@@ -36,8 +36,15 @@ if exist(sense_stim_file,'file') & ~overwrite_file
 else
     
     sense_stim_table = table();
+    sense_stim_table.rectime(1) = NaT; 
     sense_stim_table.duration(1) = duration();
-    sense_stim_table.start_time(1) = NaT;
+    sense_stim_table.patient{1} = 'NA';
+    sense_stim_table.side{1} = 'NA';
+    sense_stim_table.device{1} = 'NA';
+    
+    
+    sense_stim_table.startTime(1) = NaT;
+    sense_stim_table.endTime(1) = NaT;
     sense_stim_table.group{1} = 'NA';
     sense_stim_table.activeGroup{1} = 'NA';
     sense_stim_table.stimulation_on(1) = 0;
@@ -50,7 +57,7 @@ else
     sense_stim_table.chan2{1} = 'NA';
     sense_stim_table.chan3{1} = 'NA';
     sense_stim_table.chan4{1} = 'NA';
-    sense_stim_table.session{1} = 'NA';
+    sense_stim_table.sessname{1} = 'NA';
     
     
     
@@ -79,17 +86,45 @@ else
                     sense_stim_table.(fnuse){cntbl} = deviceSettingsOut.(fnuse){1};
                 end
                 try
-                    fprintf(fid,'%s - %s\n',datTab.startTime{s}, datTab.endTime{s});
-                    fprintf(fid,'\t - duration %s \t%s\n',datTab.duration(s),datTab.sessname{s});
-                    sense_stim_table.duration(cntbl) = datTab.duration(s);
-                    sense_stim_table.start_time(cntbl) = datTab.startTime{s};
-                    sense_stim_table.session{cntbl} = datTab.sessname{s};
+
+                    
+                    valsget = {'rectime','startTime','endTime'};
+                    for vv = 1:length(valsget)
+                        if iscell(datTab.(valsget{vv}))
+                            sense_stim_table.(valsget{vv}).TimeZone = datTab.(valsget{vv}){s}.TimeZone;
+                            sense_stim_table.(valsget{vv})(cntbl) = datTab.(valsget{vv}){s};
+                        else
+                            sense_stim_table.(valsget{vv}).TimeZone = datTab.(valsget{vv})(s).TimeZone;
+                            sense_stim_table.(valsget{vv})(cntbl) = datTab.(valsget{vv})(s);
+                        end
+                    end
+                    
+                    
+                    valsget = {'duration'};
+                    for vv = 1:length(valsget)
+                        if iscell(datTab.(valsget{vv}))
+                            sense_stim_table.(valsget{vv})(cntbl) = datTab.(valsget{vv}){s};
+                        else
+                            sense_stim_table.(valsget{vv})(cntbl) = datTab.(valsget{vv})(s);
+                        end
+                    end
+                    
+                    valsget = {'patient','side','device','sessname'};
+                    for vv = 1:length(valsget)
+                        if iscell(datTab.(valsget{vv}))
+                            sense_stim_table.(valsget{vv}){cntbl} = datTab.(valsget{vv}){s};
+                        else
+                            sense_stim_table.(valsget{vv}){cntbl} = datTab.(valsget{vv})(s);
+                        end
+                    end
+                    
+                    fprintf(fid,'%s - %s\n',sense_stim_table.startTime(cntbl), sense_stim_table.endTime(cntbl));
+                    fprintf(fid,'\t - duration %s \t%s\n',sense_stim_table.duration(cntbl),sense_stim_table.sessname{cntbl});
+                    
+                    
+                    
                 catch
-                    fprintf(fid,'%s - %s\n',datTab.startTime(s), datTab.endTime(s));
-                    fprintf(fid,'\t - duration %s \t%s\n',datTab.duration(s),datTab.sessname{s});
-                    sense_stim_table.duration(cntbl) = datTab.duration(s);
-                    sense_stim_table.start_time(cntbl) = datTab.startTime(s);
-                    sense_stim_table.session{cntbl} = datTab.sessname{s};
+                    warning('problem with this session');
                     
                 end
                 if isempty(stimState)

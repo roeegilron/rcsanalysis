@@ -1,5 +1,10 @@
 function [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontage(fn)
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
+% fix issues with device settings sometiems being a cell array and
+% sometimes not 
+if isstruct(DeviceSettings)
+    DeviceSettings = {DeviceSettings};
+end
 %% print raw device settings strucutre 
 for f = 1:length(DeviceSettings)
     curStr = DeviceSettings{f};
@@ -95,27 +100,29 @@ while f <= length(DeviceSettings)
     % option 2 sense has been turned off 
     if isfield(curStr,'SenseState')
         if instream % streaming is happening detect it's stop
-            sensestat = dec2bin(curStr.SenseState.state,4);
-            % blow is assuming we only care about time domain streaming
-            % starting / stopping, see: 
-            % enum
-            % Medtronic.NeuroStim.Olympus.DataTypes.Sensing.SenseStates : byte 
-            % for details re what the binary number means 
-            if strcmp(sensestat(4),'0') % time domain off 
-                timenum = curStr.RecordInfo.HostUnixTime;
-                t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                actionuse = sprintf('stop sense %d',senseStopCnt);
-                deviceSettingTable.action{recNum} = actionuse;
-                deviceSettingTable.recNum(recNum) = senseStopCnt;
-                deviceSettingTable.timeStart{recNum} = t;
-                for c = 1:4
-                    fnuse = sprintf('chan%d',c);
-                    deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+            if isfield(curStr.SenseState,'state')
+                sensestat = dec2bin(curStr.SenseState.state,4);
+                % blow is assuming we only care about time domain streaming
+                % starting / stopping, see:
+                % enum
+                % Medtronic.NeuroStim.Olympus.DataTypes.Sensing.SenseStates : byte
+                % for details re what the binary number means
+                if strcmp(sensestat(4),'0') % time domain off
+                    timenum = curStr.RecordInfo.HostUnixTime;
+                    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                    actionuse = sprintf('stop sense %d',senseStopCnt);
+                    deviceSettingTable.action{recNum} = actionuse;
+                    deviceSettingTable.recNum(recNum) = senseStopCnt;
+                    deviceSettingTable.timeStart{recNum} = t;
+                    for c = 1:4
+                        fnuse = sprintf('chan%d',c);
+                        deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+                    end
+                    deviceSettingTable.tdDataStruc{recNum} = tdData;
+                    instream = 0;
+                    senseStopCnt = senseStopCnt + 1;
+                    recNum = recNum + 1;
                 end
-                deviceSettingTable.tdDataStruc{recNum} = tdData;
-                instream = 0;
-                senseStopCnt = senseStopCnt + 1;
-                recNum = recNum + 1;
             end
         end
     end

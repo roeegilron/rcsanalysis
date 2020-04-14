@@ -10,4 +10,10 @@ move_and_delete_folders(); % second call is to delete folders that are empty
 %% get stim and sense database 
 maintain_stim_sense_database();
 
+%% agregate stim and sense database for easy viewing and query 
+agregate_patient_databases()
+
+%% print some basic stats about the database 
+print_database_stats();
+
 end
