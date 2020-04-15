@@ -1,4 +1,4 @@
-% cheat sheets directions for analyzing large amounts of data 
+    % cheat sheets directions for analyzing large amounts of data 
 
 % the primary role of these function is to convert a directory of 
 % session with RC+S .json data into .mat files (each .json gets converted

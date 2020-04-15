@@ -14,6 +14,8 @@ timesOut = getTimesFromPowerOrAdaptive(timestamps,systemTicks,rxUnixTimes);
 powerOut.powerTable = powerOut.powerTable(2:end,:); % get rid of first idx 
 powerOut.powerTable.derivedTimes = timesOut;
 
+
+
 % get times for adaptive data  
 timestamps   = adaptiveTable.timestamp;
 systemTicks  = adaptiveTable.systemTick;
