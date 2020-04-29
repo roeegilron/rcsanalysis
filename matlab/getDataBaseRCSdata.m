@@ -83,7 +83,6 @@ for d = 1:length(dirsdata)
                 matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');
                 if isempty(matfile) % no matlab data loaded
                     dbout(cntsave).matExist = false;
-                    dbout(cntsave).fnm = [];
                 else
                     dbout(cntsave).matExist = true;
                 end
@@ -110,7 +109,7 @@ else
     tblout = newdb;
 end
 tblout_sort_cols = tblout(:,{'rectime','duration','patient','side','device','startTime',...
-    'endTime','sessname','tdfile','eventFile','eventData','matExist','fnm','plot'});
+    'endTime','sessname','tdfile','eventFile','eventData','matExist','plot'});
 % get rid of files with no duration
 tblout = sortrows(tblout_sort_cols,'rectime');
 

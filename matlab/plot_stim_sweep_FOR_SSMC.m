@@ -1,5 +1,6 @@
 function plot_stim_titrations_manual_saved_files()
 close all;clc;
+addpath(genpath(fullfile(pwd,'toolboxes','notBoxPlot')));
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/stim_titrations';
 figdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/stim_titrations/figures';
 
@@ -37,7 +38,9 @@ end
 %%
 %%
 clear outdat;
-for ppp = 8%1:length(patientFolders)
+% #5 RCS05 L 
+% #1 RCS02 L 
+for ppp = 1%1:length(patientFolders)
     [pn,fn] = fileparts(patientFolders{ppp});
     patient = fn(1:end-1);
     side = fn(end);
@@ -120,8 +123,8 @@ for ppp = 8%1:length(patientFolders)
     %% plot time domain data
     hfig = figure;
     hfig.Color = 'w';
-    for cn = 1:4
-        hsb = subplot(2,2,cn);
+    for cn = 1
+        hsb = subplot(1,1,cn);
         hold on;
         plotFreqPatches(hsb)
     end
@@ -134,8 +137,8 @@ for ppp = 8%1:length(patientFolders)
         else
             colorUse = [0 0.8 0.5];
         end
-        chanorder = [3 4 1 2];
-        for cn = 1:4
+        chanorder = [1];
+        for cn = 1
             fnuse = sprintf('key%d',chanorder(cn)-1);
             ttluse = outRec(end).tdData(chanorder(cn)).chanFullStr;
             if chanorder(cn) > 2
@@ -156,6 +159,7 @@ for ppp = 8%1:length(patientFolders)
                 idxkeep   = tdtimes >= timeabove;
                 
                 tddat = tdTAble.(fnuse)(idxkeep,:);
+                tddat = tddat - mean(tddat);
                 sr  = unique(tdTAble.samplerate(idxkeep,:));
                 [fftOut,ff]   = pwelch(tddat,sr,sr/2,0:1:sr/2,sr,'psd');
                 outdat.(meds{m})(c).ff(chanorder(cn),:) = ff;
@@ -183,18 +187,7 @@ for ppp = 8%1:length(patientFolders)
     largeTitleUse = sprintf('%s %s',patient,side);
     sgtitle(largeTitleUse,'FontSize',24);
 
-    fprintf('patient %s side %s\n', patient,side);
-    % params to print the figures
-    params.plotwidth           = 20;
-    params.plotheight          = 20*0.6;
-    params.figdir              = figdir;
-    params.figtype             = '-djpeg';
-    params.closeafterprint     = 0;
-    params.resolution          = 300;
-    fnmres = sprintf('%s_%s_time_domain_data.jpeg',patient,side);
-    params.figname             = fnmres;
-    plot_hfig(hfig,params);
-    
+
     %% plot power data from time domain data
     dontskipthis = 1;
     if dontskipthis
@@ -260,10 +253,10 @@ for ppp = 8%1:length(patientFolders)
                 colorUse = [0 0.8 0.5];
             end
             
-            chanorder = [3 4 1 2];
-            for cn = 1:4 % loop on sense electrodes
+            chanorder = [1];
+            for cn = 1 % loop on sense electrodes
                 ttluse = outRec(end).tdData(cn).chanFullStr;
-                subplot(2,2,cn);
+                hsb = subplot(1,1,cn);
                 if chanorder(cn) > 2
                     area = 'M1';
                 else
@@ -283,6 +276,7 @@ for ppp = 8%1:length(patientFolders)
                     currents(c) = current;
                     % plot power
                     hsc = scatter(current,meanpower(c),2e2,'filled');
+%                     hnbp = notBoxPlot(fftOut(idxuse),current);
                     hsc.MarkerFaceColor = colorUse;
                     hsc.MarkerFaceAlpha = 0.6;
                     
@@ -292,6 +286,14 @@ for ppp = 8%1:length(patientFolders)
                     
                     
                 end
+                % plot only one dot 
+                
+                % hsc = scatter(mean(currents),mean(meanpower),2e2,'filled');
+                % hnbp = notBoxPlot(fftOut(idxuse),current);
+                % hsc.MarkerFaceColor = colorUse;
+                % hsc.MarkerFaceAlpha = 0.6;
+
+                    
                 % fit a regression line to current over 1ma
                 idxcurrents = currents >= 1;
                 currentsuse = currents(idxcurrents);
@@ -304,9 +306,9 @@ for ppp = 8%1:length(patientFolders)
                 SStotal = (length(y)-1) * var(y);
                 rsq = 1 - SSresid/SStotal;
                 rsq_adj = 1 - SSresid/SStotal * (length(y)-1)/(length(y)-length(p));
-                plot(currentsuse, yfit,'LineWidth',2,'Color',colorUse,'LineStyle','-.');
+%                 plot(currentsuse, yfit,'LineWidth',2,'Color',colorUse,'LineStyle','-.');
                 rsquaredtxt = sprintf('r^2 = %.2f',rsq_adj);
-                text(currentsuse(end) , yfit(end), rsquaredtxt);
+%                 text(currentsuse(end) , yfit(end), rsquaredtxt);
                 
                 
                 freqsuse = ff(idxuse);
@@ -327,17 +329,23 @@ for ppp = 8%1:length(patientFolders)
             end
             
         end
+%         legend({'"low" meds','"high" meds'});
         largeTitleUse = sprintf('%s %s',patient,side);
         sgtitle(largeTitleUse,'FontSize',24);
+        % rcs06 L
+        xlim([-0.2 2.4]);
+%         ylim([  -7.200000000000000  -5.40000000000000]);
+        hsb.XTick = 0:0.2:2.4;
+        
         
         % params to print the figures
-        params.plotwidth           = 20;
-        params.plotheight          = 20*0.6;
+        params.plotwidth           = 10;
+        params.plotheight          = 10*0.6;
         params.figdir              = figdir;
         params.figtype             = '-djpeg';
         params.closeafterprint     = 0;
         params.resolution          = 300;
-        fnmres = sprintf('%s_%s_power_from_time_domain_data.jpeg',patient,side);
+        fnmres = sprintf('%s_%s_power_from_time_domain_data_SCCM_SPECIFIC.jpeg',patient,side);
         params.figname             = fnmres;
         plot_hfig(hfig,params);
     end

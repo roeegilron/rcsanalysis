@@ -222,21 +222,219 @@ if ~isempty(stimState)
 else
     stimStatus = [];
 end
-return;
 
-%% detection config 
-% note this sometiems returns error - 
-% move this into other stand alone function and debug there 
-% only use once you know adatpive exists / for casees in which a detector
-% is running 
+%% Adaptive / detection config
+% detection settings first are reported in full (e.g. all fields) 
+% after this point, only changes are reported. 
+% to make analysis easier, each row in output table will contain the full
+% settings such that I copy over initial settings. 
+% this also assumes that you get a full report of the detection settings on
+% first connection. 
+
+% the settings being changed in each adaptive state update will be noted
+% in a cell array as well 
 
 
+
+%%%
+%%%
+%%%
+% NEW CODE - first load initial settings that then get updates 
+%%%
+%%%
+%%%
+
+f = 1;
+previosSettIdx = 0;
+currentSettIdx  = 1; 
+adaptiveSettings = table();
+
+fnms = fieldnames(DeviceSettings{f});
+curStr = DeviceSettings{f};
+det_fiels = {'blankingDurationUponStateChange',...
+    'detectionEnable','detectionInputs','fractionalFixedPointValue',...
+    'holdoffTime','onsetDuration','terminationDuration','updateRate'};
+if isfield(curStr,'DetectionConfig')
+    lds_fn = {'Ld0','Ld1'};
+    for ll = 1:length(lds_fn)
+        ldTable = table();
+        if isfield(curStr.DetectionConfig,lds_fn{ll})
+            LD = curStr.DetectionConfig.(lds_fn{ll});
+            adaptiveSettings.([lds_fn{ll} '_' 'biasTerm']) = LD.biasTerm';
+            adaptiveSettings.([lds_fn{ll} '_' 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
+            adaptiveSettings.([lds_fn{ll} '_' 'normalizationSubtractVector']) = [LD.features.normalizationSubtractVector];
+            adaptiveSettings.([lds_fn{ll} '_' 'weightVector']) = [LD.features.weightVector];
+            for d = 1:length(det_fiels)
+                adaptiveSettings.([lds_fn{ll} '_' det_fiels{d}])  =  LD.(det_fiels{d});
+            end
+        else % fill in previous settings.
+            warning('missing field on first itiration');
+        end
+    end
+    adaptiveSettings.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+end
+if isfield(curStr,'AdaptiveConfig')
+    adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
+        'deltaLimitsValid','deltasValid'};
+    adaptiveConfig = curStr.AdaptiveConfig;
+    for a = 1:length(adaptive_fields)
+        if isfield(adaptiveConfig,adaptive_fields{a})
+            adaptiveSettings.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
+        else
+            warning('missing field on first itiration');
+        end
+    end
+    if isfield(adaptiveConfig,'deltas')
+        adaptiveSettings.fall_rate = [adaptiveConfig.deltas.fall];
+        adaptiveSettings.rise_rate = [adaptiveConfig.deltas.rise];
+    else
+        warning('missing field on first itiration');
+    end
+    adaptiveSettings.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+end
+if isfield(curStr,'AdaptiveConfig')
+    % loop on states
+    if isfield(adaptiveConfig,'state0')
+        for s = 0:8
+            statefn = sprintf('state%d',s);
+            stateStruct = adaptiveConfig.(statefn);
+            adaptiveSettings.(['state' num2str(s)] ) = s;
+            adaptiveSettings.(['rate_hz_state' num2str(s)] ) = stateStruct.rateTargetInHz;
+            adaptiveSettings.(['isValid_state' num2str(s)] ) = stateStruct.isValid;
+            for p = 0:3
+                progfn = sprintf('prog%dAmpInMilliamps',p);
+                curr(p+1) = stateStruct.(progfn);
+            end
+            adaptiveSettings.(['currentMa_state' num2str(s)] )(1,:) = curr;
+        end
+    else
+        % fill in previous settings.
+    end
+end
+
+
+% loop on rest of code and just report changes and when they happened 
+% don't copy things over for now 
+
+
+
+
+f = 2;
+previosSettIdx = 0;
+currentSettIdx  = 1; 
+changesMade = struct();
+cntchange = 1;
+while f <= length(DeviceSettings)
+    adaptiveChanges = table();
+    fnms = fieldnames(DeviceSettings{f});
+    curStr = DeviceSettings{f};
+    det_fiels = {'blankingDurationUponStateChange',...
+        'detectionEnable','detectionInputs','fractionalFixedPointValue',...
+        'holdoffTime','onsetDuration','terminationDuration','updateRate'};
+    if isfield(curStr,'DetectionConfig')
+        lds_fn = {'Ld0','Ld1'};
+        for ll = 1:length(lds_fn)
+            ldTable = table();
+            if isfield(curStr.DetectionConfig,lds_fn{ll})
+            LD = curStr.DetectionConfig.(lds_fn{ll});
+            adaptiveChanges.([lds_fn{ll} '_' 'biasTerm']) = LD.biasTerm';
+            adaptiveChanges.([lds_fn{ll} '_' 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
+            adaptiveChanges.([lds_fn{ll} '_' 'normalizationSubtractVector']) = [LD.features.normalizationSubtractVector];
+            adaptiveChanges.([lds_fn{ll} '_' 'weightVector']) = [LD.features.weightVector];
+            for d = 1:length(det_fiels)
+                adaptiveChanges.([lds_fn{ll} '_' det_fiels{d}])  =  LD.(det_fiels{d});
+            end
+            else % fill in previous settings. 
+                warning('missing field on first itiration');
+            end
+        end
+        adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
+            'deltaLimitsValid','deltasValid'};
+        adaptiveConfig = curStr.AdaptiveConfig;
+        for a = 1:length(adaptive_fields)
+            if isfield(adaptiveConfig,adaptive_fields{a})
+                adaptiveChanges.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
+            else
+                warning('missing field on first itiration');
+            end
+        end
+        if isfield(adaptiveConfig,'deltas')
+            adaptiveChanges.fall_rate = [adaptiveConfig.deltas.fall];
+            adaptiveChanges.rise_rate = [adaptiveConfig.deltas.rise];
+        else
+            warning('missing field on first itiration');
+        end
+        adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        % loop on states
+        if isfield(adaptiveConfig,'state0')
+            for s = 0:8
+                statefn = sprintf('state%d',s);
+                stateStruct = adaptiveConfig.(statefn);
+                adaptiveChanges.(['state' num2str(s)] ) = s;
+                adaptiveChanges.(['rate_hz_state' num2str(s)] ) = stateStruct.rateTargetInHz;
+                adaptiveChanges.(['isValid_state' num2str(s)] ) = stateStruct.isValid;
+                for p = 0:3
+                    progfn = sprintf('prog%dAmpInMilliamps',p);
+                    curr(p+1) = stateStruct.(progfn);
+                end
+                adaptiveChanges.(['currentMa_state' num2str(s)] )(1,:) = curr;
+            end
+        end
+    end
+    if ~isempty(adaptiveChanges)
+        changesMade(cntchange).adaptiveChanges = adaptiveChanges;
+        cntchange = cntchange + 1;
+    end
+    f = f +1;
+end
+
+
+
+
+
+
+
+
+
+%%%%
+%%% NEEED TO FIX STATES   - with is field for change detection 
+%%% 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%
+%%%
+%%%
+% OLD CODE 
+%%%
+%%%
+%%%
+%{
 % DetectionConfig
 % AdaptiveConfig
-detectionSettings = struct(); 
-adaptiveSettings  = struct();
-stateSettings     = struct();
-f = 1;
+detectionSettings = struct(); detect_idx = 1; 
+adaptiveSettings  = struct(); adaptive_idx = 1; 
+stateSettings     = struct(); state_idx = 1; 
+f = 2;
+previosSettIdx = 0;
+currentSettIdx  = 1; 
 while f <= length(DeviceSettings)
     fnms = fieldnames(DeviceSettings{f});
     curStr = DeviceSettings{f};
@@ -244,9 +442,10 @@ while f <= length(DeviceSettings)
         'detectionEnable','detectionInputs','fractionalFixedPointValue',...
         'holdoffTime','onsetDuration','terminationDuration','updateRate'};
     if isfield(curStr,'DetectionConfig')
-        lds_fn = {'Ld0','Ld1'}; 
+        lds_fn = {'Ld0','Ld1'};
         for ll = 1:length(lds_fn)
             ldTable = table();
+            if isfield(curStr.DetectionConfig,lds_fn{ll})
             LD = curStr.DetectionConfig.(lds_fn{ll});
             ldTable.([ 'biasTerm']) = LD.biasTerm';
             ldTable.([ 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
@@ -255,42 +454,83 @@ while f <= length(DeviceSettings)
             for d = 1:length(det_fiels)
                 ldTable.([det_fiels{d}])  =  LD.(det_fiels{d});
             end
-            detectionSettings(f).(lds_fn{ll}) = ldTable;
+                detectionSettings(detect_idx).(lds_fn{ll}) = ldTable;
+            else
+                % fill in previous settings. 
+            end
         end
+        detectionSettings(detect_idx).HostUnixTime = curStr.RecordInfo.HostUnixTime;
+        detect_idx = detect_idx + 1;
+
     end
     if isfield(curStr,'AdaptiveConfig')
         adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
             'deltaLimitsValid','deltasValid'};
-        adaptiveTable = table(); 
+        adaptiveTable = table();
         adaptiveConfig = curStr.AdaptiveConfig;
+        cntmissing = 1; 
+        missingFields= {};
         for a = 1:length(adaptive_fields)
+            if isfield(adaptiveConfig,adaptive_fields{a})
             adaptiveTable.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
-        end
-        adaptiveTable.fall_rate = [adaptiveConfig.deltas.fall];
-        adaptiveTable.rise_rate = [adaptiveConfig.deltas.rise];
-        
-        adaptiveSettings(f).adaptiveTable = adaptiveTable;        
-        
-        % get state table 
-        stateTable = table(); 
-        % loop on states 
-        for s = 0:8 
-            statefn = sprintf('state%d',s);
-            stateStruct = adaptiveConfig.(statefn);
-            stateTable.state(s+1) = s; 
-            stateTable.rate_hz(s+1) = stateStruct.rateTargetInHz; 
-            stateTable.isValid(s+1) = stateStruct.isValid; 
-            for p = 0:3 
-                progfn = sprintf('prog%dAmpInMilliamps',p);
-                curr(p+1) = stateStruct.(progfn);
+            else
+                missingFields{cntmissing} = adaptive_fields{a};
+                cntmissing = cntmissing + 1; 
+                % fill in previous settings. 
+
             end
-            stateTable.current_mA(s+1,:) = curr; 
         end
-     stateSettings(f).stateTable = stateTable;   
+        if isfield(adaptiveConfig,'deltas')
+            adaptiveTable.fall_rate = [adaptiveConfig.deltas.fall];
+            adaptiveTable.rise_rate = [adaptiveConfig.deltas.rise];
+        else
+            
+            missingFields{cntmissing} = 'deltas';
+            cntmissing = cntmissing + 1;
+            % fill in previous settings.
+        end
+        adaptiveTable.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+        adaptiveSettings(adaptive_idx).adaptiveTable = adaptiveTable;
+        adaptive_idx = adaptive_idx + 1;
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        % get state table
+        stateTable = table();
+        % loop on states
+        if isfield(adaptiveConfig,'state0')
+            for s = 0:8
+                statefn = sprintf('state%d',s);
+                stateStruct = adaptiveConfig.(statefn);
+                stateTable.state(s+1) = s;
+                stateTable.rate_hz(s+1) = stateStruct.rateTargetInHz;
+                stateTable.isValid(s+1) = stateStruct.isValid;
+                for p = 0:3
+                    progfn = sprintf('prog%dAmpInMilliamps',p);
+                    curr(p+1) = stateStruct.(progfn);
+                end
+                stateTable.current_mA(s+1,:) = curr;
+            end
+            stateSettings(state_idx).stateTable = stateTable;
+            state_idx = state_idx + 1;
+        else
+            % fill in previous settings.
+        end
     end
     f = f + 1;
 end
+
+%%%
+%%%
+%%%
+% OLD CODE 
+%%%
+%%%
+%%%
+%}
+
+
 end
+
 function outstruc = translateTimeDomainChannelsStruct(tdDat)
 %% assume no bridging
 outstruc = tdDat;
