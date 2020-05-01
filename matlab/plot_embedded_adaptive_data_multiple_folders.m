@@ -322,13 +322,13 @@ for ppp = 1:length(patientsUse)
             yearrec = year(tblPlot.rectime(1));
             montrec = month(tblPlot.rectime(1));
             dayrec  = day(tblPlot.rectime(1));
-            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_GAMMA',patient,side,yearrec,montrec,dayrec);
+            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BETA_ZOOM',patient,side,yearrec,montrec,dayrec);
             prfig.plotwidth           = 20;
             prfig.plotheight          = 20*0.8;
             prfig.figdir              = fullfile(rootdir,'figures');
             prfig.figtype             = '-djpeg';
             prfig.closeafterprint     = 0;
-            prfig.resolution          = 300;
+            prfig.resolution          = 180;
             prfig.figname             = fig_title;
             plot_hfig(hfig,prfig);
             

@@ -220,7 +220,7 @@ for ppp = 1:length(patientsUse)
                     %%XXXXXX
                     %%XXXXXX
                     
-                    powerBand = powerTable.Band7(idxKeepYearPower);
+                    powerBand = powerTable.Band1(idxKeepYearPower);
                     
                     %%XXXXXX
                     %%XXXXXX
@@ -318,10 +318,10 @@ for ppp = 1:length(patientsUse)
             xlims = get(gca,'XLim');
             meancur = mean(allcur);
             if strcmp(patient,'RCS02') 
-                hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
-                hplt.LineWidth = 3; 
-                hplt.LineStyle = '-.';
-                hplt.Color = [0 0 0.8 0.5];
+%                 hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
+%                 hplt.LineWidth = 3; 
+%                 hplt.LineStyle = '-.';
+%                 hplt.Color = [0 0 0.8 0.5];
                 
 
                 hplt = plot([xlims(1)+hours(1) xlims(2)],[2.7 2.7]);
@@ -340,13 +340,14 @@ for ppp = 1:length(patientsUse)
                 
                 set(gca,'XLim',datetime(['20-Apr-2020 09:00:14' ;  '20-Apr-2020 18:24:11'],'TimeZone','America/Los_Angeles'));
                 set(gca,'YLim',[  -0.218273729606444   1.415456954720268].*1e3);
-
-                xlims = get(gca,'XLim');
+                
                 axes(hsb(2));
-                hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
-                hplt.LineWidth = 3;
-                hplt.LineStyle = '-.';
-                hplt.Color = [0 0 0.8 0.5];
+%                 xlims = get(gca,'XLim');
+%                 axes(hsb(2));
+%                 hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
+%                 hplt.LineWidth = 3;
+%                 hplt.LineStyle = '-.';
+%                 hplt.Color = [0 0 0.8 0.5];
                 
                 
                 hplt = plot([xlims(1)+hours(1) xlims(2)],[0.9 0.9]);
@@ -366,7 +367,7 @@ for ppp = 1:length(patientsUse)
             yearrec = year(tblPlot.rectime(1));
             montrec = month(tblPlot.rectime(1));
             dayrec  = day(tblPlot.rectime(1));
-            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_ZOOM_BETA_SSCM',patient,side,yearrec,montrec,dayrec);
+            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BAND__ZOOM_SSCM',patient,side,yearrec,montrec,dayrec);
             prfig.plotwidth           = 20;
             prfig.plotheight          = 9;
             prfig.figdir              = fullfile(rootdir,'figures');

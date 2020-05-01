@@ -1,4 +1,4 @@
-function plot_stim_titrations_manual_saved_files()
+function plot_stim_sweep_FOR_SSMC()
 close all;clc;
 addpath(genpath(fullfile(pwd,'toolboxes','notBoxPlot')));
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/stim_titrations';
@@ -40,7 +40,8 @@ end
 clear outdat;
 % #5 RCS05 L 
 % #1 RCS02 L 
-for ppp = 1%1:length(patientFolders)
+% #2 RCS02 R 
+for ppp = 2%1:length(patientFolders)
     [pn,fn] = fileparts(patientFolders{ppp});
     patient = fn(1:end-1);
     side = fn(end);
@@ -137,7 +138,7 @@ for ppp = 1%1:length(patientFolders)
         else
             colorUse = [0 0.8 0.5];
         end
-        chanorder = [1];
+        chanorder = [1 2 3 4];
         for cn = 1
             fnuse = sprintf('key%d',chanorder(cn)-1);
             ttluse = outRec(end).tdData(chanorder(cn)).chanFullStr;
@@ -253,7 +254,7 @@ for ppp = 1%1:length(patientFolders)
                 colorUse = [0 0.8 0.5];
             end
             
-            chanorder = [1];
+            chanorder = [4];
             for cn = 1 % loop on sense electrodes
                 ttluse = outRec(end).tdData(cn).chanFullStr;
                 hsb = subplot(1,1,cn);
