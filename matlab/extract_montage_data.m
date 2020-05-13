@@ -20,11 +20,14 @@ deviceSettings = deviceSettings(idxkeep,:);
 % UnixOnsetTime and PacketRxUnixTime abd get the INS time domain value for
 % this sample. 
 idxnonzero = find(outdatcomplete.PacketRxUnixTime~=0); 
-packtRxTimes    =  datetime(outdatcomplete.PacketRxUnixTime(idxnonzero)/1000,...
+% PacketGenTime
+% PacketRxUnixTime
+packtRxTimes    =  datetime(outdatcomplete.PacketGenTime(idxnonzero)/1000,...
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 % note that we only get one time sample for each time domain packet. 
 % this finds the closest time sample in "packet time". 
 derivesTimesWithInsTime = outdatcomplete.derivedTimes(idxnonzero); 
+
 
 
 % get patient
@@ -35,14 +38,20 @@ patient = patientraw(1:end-1);
 side = patientraw(end);
 
 
-% conver the packet rx unix time to ins times 
+% convert the packet rx unix time to ins times 
 for e = 1:size(deviceSettings,1)
-    % start time 
+    % start time  - is before end time in some cases fix this 
     [timeDiff, idx] = min(abs(deviceSettings.timeStart(e) - packtRxTimes));
-    deviceSettings.timeStart(e) = derivesTimesWithInsTime(idx);
+    timeDiffVec(e) = timeDiff;
+    timeDiffUse = packtRxTimes(idx) - deviceSettings.timeStart(e) ;
+    insTimeUncorrected = derivesTimesWithInsTime(idx);
+    deviceSettings.timeStart(e)       = insTimeUncorrected - timeDiffUse;
     % stop time 
     [timeDiff, idx] = min(abs(deviceSettings.timeStop(e) - packtRxTimes));
-    deviceSettings.timeStop(e) = derivesTimesWithInsTime(idx);
+    timeDiffVec(e) = timeDiff;
+    timeDiffUse = packtRxTimes(idx) - deviceSettings.timeStop(e) ;
+    insTimeUncorrected = derivesTimesWithInsTime(idx);
+    deviceSettings.timeStop(e)       = insTimeUncorrected - timeDiffUse;
 end
 
 montageDataRaw = deviceSettings(:,{'duration','samplingRate','chan1','chan2','chan3','chan4','TimeDomainDataStruc'});

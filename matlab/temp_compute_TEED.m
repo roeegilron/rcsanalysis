@@ -117,6 +117,13 @@ f  = 130.2;% frequency (hz)
 r  = 1730; % taking from 1 month visit can't find anything else 
 openloopCur = 2; % in mili amps.
 
+% rcs 06 April 17 2020
+pw = 60; % pulse width
+f  = 158.7;% frequency (hz) 
+r  = 1405; % taking from 1 month visit can't find anything else 
+openloopCur = 0.9; % in mili amps.
+curruntInMaTrunc =0.66;
+
 % total TEED per second adaptive 
 % previous computation 
 % curSquaredNormalizedByTime = sum( (curruntInMaTrunc.^2) ./ diffsUse ); 
