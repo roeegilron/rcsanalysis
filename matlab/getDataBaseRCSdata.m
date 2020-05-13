@@ -33,6 +33,12 @@ if exist(databasefn,'file')
             sessionsexist(s,1) = sum(cellfun(@(x) strcmp(x,sessname),olddb.sessname));
         end
         dirsdata = dirsdata(~sessionsexist);
+        if ~isdatetime( olddb.startTime)
+            % this is the old format of the database and it will break
+            % things
+            % recreate databse
+            olddb = [];
+        end
     end
 end
 
@@ -103,7 +109,7 @@ if istable(olddb) % an old table existed
     if isempty(newdb) % no new data to add
         tblout = olddb;
     else
-        tblout = [newdb; olddb];
+        tblout = [newdb; olddb(:,newdb.Properties.VariableNames)];
     end
 else
     tblout = newdb;

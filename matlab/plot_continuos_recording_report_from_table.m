@@ -1,7 +1,7 @@
-function hfig = plot_continuos_recording_report_from_table(tbluse)
+function hfig = plot_continuos_recording_report_from_table(startTimes,duration)
+timeDomainFileDur(:,1) = startTimes;
+timeDomainFileDur(:,2) = startTimes + duration;
 
-timeDomainFileDur(:,1) = tbluse.start_time;
-timeDomainFileDur(:,2) = tbluse.start_time + tbluse.duration;
 idxNotSameDay = day(timeDomainFileDur(:,1)) ~= day(timeDomainFileDur(:,2));
 allTimesSameDay = timeDomainFileDur(~idxNotSameDay,:); 
 allTimesDiffDay = timeDomainFileDur(idxNotSameDay,:); 
