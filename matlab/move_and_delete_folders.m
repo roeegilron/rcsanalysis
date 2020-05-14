@@ -9,6 +9,8 @@ patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08'
 
 for p = 2:length(patdirs)% loop on patient directories
     recordingPrograms = {'SummitContinuousBilateralStreaming','StarrLab'};
+    recordingPrograms = {'SummitContinuousBilateralStreaming'}; % don't give RUNE labs Starr Lab for now 
+    % XXX figure out a difference place to put that - work  on this 
     for rp = 1:length(recordingPrograms)
         % find all data from SCBS
         patdir = fullfile(rootdir_orig,patdirs{p},'SummitData',recordingPrograms{rp});

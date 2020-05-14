@@ -1,4 +1,4 @@
-function plot_embedded_adaptive_data_multiple_folders()
+function plot_embedded_adaptive_data_multiple_folders_SSCM()
 
 %% clear stuff
 clear all; close all; clc;
@@ -54,6 +54,7 @@ end
 mintrim = 10;
 min_duration_day = hours(1);
 
+allcur = [];
 %%
 for ppp = 1:length(patientsUse)
     for sss = 1:length(sidesUse)
@@ -106,20 +107,18 @@ for ppp = 1:length(patientsUse)
             %% set up figure
             hfig = figure;
             hfig.Color = 'w';
-            nrows = 4;
+            nrows = 2;
             for i = 1:nrows
                 hsb(i) = subplot(nrows,1,i);
                 hold(hsb(i),'on');
-                title('test');
             end
-            sgtitle('test');
             % sgtitle(hfig,titleuse,'FontSize',24);
             % order plot - default
             % (1) detector
             % (2) power
             % (3) acc
             % (4) current
-            orderplot = [2 1 4 3];
+            orderplot = [1 2];
             for t = 1:size(tblPlot,1)
                 try
                     %% set up params
@@ -207,7 +206,7 @@ for ppp = 1:length(patientsUse)
                     set(hsb(orderplot(idxorder)),'FontSize',16);
                     idxorder = idxorder + 1;
                     %% plot power
-                    axes(hsb(orderplot(idxorder)));
+%                     axes(hsb(orderplot(idxorder)));
                     uxtimesPower = datetime(powerTable.PacketRxUnixTime/1000,...
                         'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
                     
@@ -235,54 +234,54 @@ for ppp = 1:length(patientsUse)
                     uxtimesPowerUse = uxtimesPowerUse(idxkeeppower);
                     powerBand = powerBand(idxkeeppower);
                     
-                    hplt = plot(hsb(orderplot(idxorder)),uxtimesPowerUse,powerBand,'LineWidth',1.5);
-                    hplt.Color = [0.8 0 0 0.5];
-                    prctile_99 = prctile(powerBand,99.5);
-                    prctile_1  = prctile(powerBand,1);
-                    ylim([prctile_1 prctile_99]);
-                    ylabel('Power (a.u.)');
-                    title(hsb(orderplot(idxorder)),'power');
-                    set(hsb(orderplot(idxorder)),'FontSize',16);
-                    idxorder = idxorder + 1;
+%                     hplt = plot(hsb(orderplot(idxorder)),uxtimesPowerUse,powerBand,'LineWidth',1.5);
+%                     hplt.Color = [0.8 0 0 0.5];
+%                     prctile_99 = prctile(powerBand,99.5);
+%                     prctile_1  = prctile(powerBand,1);
+%                     ylim([prctile_1 prctile_99]);
+%                     ylabel('Power (a.u.)');
+%                     title(hsb(orderplot(idxorder)),'power');
+%                     set(hsb(orderplot(idxorder)),'FontSize',16);
+%                     idxorder = idxorder + 1;
                     %% plot acc
-                    axes( hsb(orderplot(idxorder)) );
-                    insTimes = outdatcompleteAcc.derivedTimes;
-                    idxwithPacGenTime = find(outdatcompleteAcc.PacketGenTime~=0);
-                    pacGenTime  = datetime(outdatcompleteAcc.PacketGenTime(idxwithPacGenTime(10))/1000,...
-                        'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                    insTimesAtThatPoint = insTimes(idxwithPacGenTime(10));
-                    diff_found = insTimesAtThatPoint - pacGenTime;
-                    insTimesCorrected = insTimes - diff_found;
-                    yearUsePower = mode(year(insTimesCorrected));
-                    idxKeepYearPower = year(insTimesCorrected)==yearUsePower;
-                    insTimesToUse = insTimesCorrected(idxKeepYearPower);
-                    
-                    x = outdatcompleteAcc.XSamples(idxKeepYearPower);
-                    y = outdatcompleteAcc.YSamples(idxKeepYearPower);
-                    z = outdatcompleteAcc.ZSamples(idxKeepYearPower);
-                    
-                    x = x - mean(x);
-                    y = y - mean(y);
-                    z = z - mean(z);
-                    
-                    avgMov = mean([abs(x) abs(y) abs(z)],2)';
-                    
-                    avgMoveSmoothed = movmean(avgMov,[64*30 0]);
-                    avgMovePercent = avgMoveSmoothed;
-                    
-                    % trim start of file
-                    idxkeepacc = insTimesToUse > (insTimesToUse(1) + minutes(mintrim));
-                    insTimesToUse = insTimesToUse(idxkeepacc);
-                    avgMovePercent = avgMovePercent(idxkeepacc);
-                    
-                    
-                    hp = plot(hsb(orderplot(idxorder)) ,insTimesToUse, avgMovePercent);
-                    hp.LineWidth = 3;
-                    hp.Color = [0 0 0.8 0.8];
-                    title(hsb(orderplot(idxorder)) ,'Internal accelrometer');
-                    set(hsb(orderplot(idxorder)) ,'FontSize',16);
-                    ylabel(hsb(orderplot(idxorder)) ,'smoothed acc (a.u.)');
-                    idxorder = idxorder + 1;
+%                     axes( hsb(orderplot(idxorder)) );
+%                     insTimes = outdatcompleteAcc.derivedTimes;
+%                     idxwithPacGenTime = find(outdatcompleteAcc.PacketGenTime~=0);
+%                     pacGenTime  = datetime(outdatcompleteAcc.PacketGenTime(idxwithPacGenTime(10))/1000,...
+%                         'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+%                     insTimesAtThatPoint = insTimes(idxwithPacGenTime(10));
+%                     diff_found = insTimesAtThatPoint - pacGenTime;
+%                     insTimesCorrected = insTimes - diff_found;
+%                     yearUsePower = mode(year(insTimesCorrected));
+%                     idxKeepYearPower = year(insTimesCorrected)==yearUsePower;
+%                     insTimesToUse = insTimesCorrected(idxKeepYearPower);
+%                     
+%                     x = outdatcompleteAcc.XSamples(idxKeepYearPower);
+%                     y = outdatcompleteAcc.YSamples(idxKeepYearPower);
+%                     z = outdatcompleteAcc.ZSamples(idxKeepYearPower);
+%                     
+%                     x = x - mean(x);
+%                     y = y - mean(y);
+%                     z = z - mean(z);
+%                     
+%                     avgMov = mean([abs(x) abs(y) abs(z)],2)';
+%                     
+%                     avgMoveSmoothed = movmean(avgMov,[64*30 0]);
+%                     avgMovePercent = avgMoveSmoothed;
+%                     
+%                     % trim start of file
+%                     idxkeepacc = insTimesToUse > (insTimesToUse(1) + minutes(mintrim));
+%                     insTimesToUse = insTimesToUse(idxkeepacc);
+%                     avgMovePercent = avgMovePercent(idxkeepacc);
+%                     
+%                     
+%                     hp = plot(hsb(orderplot(idxorder)) ,insTimesToUse, avgMovePercent);
+%                     hp.LineWidth = 3;
+%                     hp.Color = [0 0 0.8 0.8];
+%                     title(hsb(orderplot(idxorder)) ,'Internal accelrometer');
+%                     set(hsb(orderplot(idxorder)) ,'FontSize',16);
+%                     ylabel(hsb(orderplot(idxorder)) ,'smoothed acc (a.u.)');
+%                     idxorder = idxorder + 1;
                     %% plot current
                     axes( hsb(orderplot(idxorder) ));
                     cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
@@ -299,7 +298,7 @@ for ppp = 1:length(patientsUse)
                     idxkeep = setxor(1:length(timesUseDetector),idxbad);
                     timesUseDetector = timesUseDetector(idxkeep);
                     cur = cur(idxkeep);
-                    
+                    allcur = [allcur , cur];
                     fprintf('mean current %0.2f\n',mean(cur));
                     plot(timesUseDetector,cur,'LineWidth',3,'Color',[0 0.8 0 0.7],'Parent', hsb(orderplot(idxorder)) );
                     title( hsb(orderplot(idxorder)) ,'Current in mA');
@@ -314,21 +313,67 @@ for ppp = 1:length(patientsUse)
                 
             end
             largetitle = sprintf('%s %s %s',patient,side,datetime(tblPlot.rectime(1),'Format','dd-MMM-yyyy'));
-            sgtitle(largetitle,'FontSize',24);
+%             sgtitle(largetitle,'FontSize',24);
             linkaxes(hsb,'x');
+            xlims = get(gca,'XLim');
+            meancur = mean(allcur);
+            if strcmp(patient,'RCS02') 
+%                 hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
+%                 hplt.LineWidth = 3; 
+%                 hplt.LineStyle = '-.';
+%                 hplt.Color = [0 0 0.8 0.5];
+                
+
+                hplt = plot([xlims(1)+hours(1) xlims(2)],[2.7 2.7]);
+                hplt.LineWidth = 3;
+                hplt.LineStyle = '-.';
+                hplt.Color = [0.8 0 0 0.5];
+
+                axes( hsb(1));
+                title('Cortical gamma control signal');
+                ylabel('Cortical gamma power (a.u.)');
+                
+            end
+            
+            if strcmp(patient,'RCS06')
+                axes(hsb(1));
+                
+                set(gca,'XLim',datetime(['20-Apr-2020 09:00:14' ;  '20-Apr-2020 18:24:11'],'TimeZone','America/Los_Angeles'));
+                set(gca,'YLim',[  -0.218273729606444   1.415456954720268].*1e3);
+                
+                axes(hsb(2));
+%                 xlims = get(gca,'XLim');
+%                 axes(hsb(2));
+%                 hplt = plot([xlims(1)+hours(1) xlims(2)],[meancur meancur]);
+%                 hplt.LineWidth = 3;
+%                 hplt.LineStyle = '-.';
+%                 hplt.Color = [0 0 0.8 0.5];
+                
+                
+                hplt = plot([xlims(1)+hours(1) xlims(2)],[0.9 0.9]);
+                hplt.LineWidth = 3;
+                hplt.LineStyle = '-.';
+                hplt.Color = [0.8 0 0 0.5];
+                
+                axes( hsb(1));
+                title('STN beta control signal');
+                ylabel('STN beta power (a.u.)');
+                
+            end
+
             
             %% print figure
             % params to print the figures
             yearrec = year(tblPlot.rectime(1));
             montrec = month(tblPlot.rectime(1));
             dayrec  = day(tblPlot.rectime(1));
-            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BETA_ZOOM',patient,side,yearrec,montrec,dayrec);
+            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BAND__ZOOM_1',patient,side,yearrec,montrec,dayrec);
             prfig.plotwidth           = 20;
-            prfig.plotheight          = 20*0.8;
+            prfig.plotheight          = 9;
             prfig.figdir              = fullfile(rootdir,'figures');
             prfig.figtype             = '-djpeg';
             prfig.closeafterprint     = 0;
-            prfig.resolution          = 180;
+            prfig.resolution          = 300;
             prfig.figname             = fig_title;
             plot_hfig(hfig,prfig);
             

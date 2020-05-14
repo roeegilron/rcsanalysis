@@ -35,7 +35,7 @@ endTimes = endTimes(dur > seconds(30));
 
 nrows = 4; 
 ncols = 1; 
-for e = 1:length(startTimes)
+for e = 5%2:length(startTimes)
     hfig = figure;
     hfig.Position = [45           1        1636         954];
     hfig.Color = 'w';
@@ -210,7 +210,7 @@ for e = 1:length(startTimes)
     set(gca,'FontSize',16);
     
     figTitle = sprintf('%s %s run %.2d',adaptiveInfo(e).patient,...
-        adaptiveInfo(e).duration,e);
+        secsAdaptive(end) - secsAdaptive(1),e);
     sgtitle(figTitle,'FontSize',20); 
     
     figSaveName = sprintf('%.2d_embedded_%s',e,adaptiveInfo(e).patient);

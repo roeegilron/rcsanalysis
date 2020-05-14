@@ -1,27 +1,24 @@
-
-function outdat = populateTimeStamp_KS(outdat,srates,filename)
+function outdat = populateTimeStamp_KS2(outdat,srates)
 %% function to populate time stamps according to INS with Unix style time 
 %% 
 start = tic;
-[pn,fn] = fileparts(filename);
-fid = fopen(fullfile(pn,[fn '-Packet-Loss-Report.txt']),'w+'); 
+
 idxpackets = find(outdat.timestamp~=0); 
 timestamps = datetime(datevec(outdat.timestamp(idxpackets)./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds 
 % find abnormal packet gaps and report some states 
 idxlarge = find(seconds(diff(timestamps)) > 2^16/1e4);
-fprintf(fid,'approximate recording length %s\n',timestamps(end)-timestamps(1));
-fprintf(fid,'%d gaps larger than %.3f seconds found\n',sum(seconds(diff(timestamps)) > 2^16/1e4),2^16/1e4)
 
 gapmode =  mode(timestamps( idxlarge+1) - timestamps( idxlarge));
 gapmedian = median(timestamps( idxlarge+1) - timestamps( idxlarge));
 maxgap = max(timestamps( idxlarge+1) - timestamps( idxlarge));
-fprintf(fid,'gap mode %s, gap median %s, max gap %s\n',gapmode,gapmedian,maxgap);
+
 
 pctlost = 1; 
 medTimeExpanded = zeros(size(outdat,1),1);
 packTimes = zeros(size(timestamps,1),1);
 endTimes  = NaT(size(timestamps,1),1);
 endTimes.Format = 'dd-MMM-yyyy HH:mm:ss.SSS';
+
 usevector = 1; 
 if usevector
 %% attempt at vectorization 
@@ -31,58 +28,10 @@ endTimes.Format = 'hh:mm:ss.SSS'; % add microseconds
 % 1 figure out different isis 
 isis = 1./srates;
 
+% 1.5 start with gaps that are smaller than 6.553 seconds (actually smaller
+% than 6 seconds since 6.553 can't be resolved, gaps between 6-7 are an
+% edge case that were resolved in unravel data function 
 
-
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
-% Continue to check order using DataTypeSequence; if order doesn't increase by 1, investigate further
-disp('Investigating gaps in data')
-dataTypeSequence = outdat.dataTypeSequence(idxpackets);
-possrolover = dataTypeSequence(1:end-1) == 255 & (dataTypeSequence(2:end) == 0);
-
-% verify that during possibly rolover you don't also have a big gap in time
-%%%% got to here - need to fix this with find and not vector basaed 
-% use code below as guide 
-largegapinroleover = (timestamps(logical([0 ; possrolover])) - timestamps(logical([possrolover; 0]))) > seconds(6);
-
-toCheck = diff(dataTypeSequence) ~= 1;
-% true inides indicate large rolovers (start idx of large roleover) 
-gapsToCheck = [ toCheck & ~possrolover ; 0 ]; 
-
-
-
-%KS: This assumes that there aren't instances of exactly 255 packets missing
-% Check for probable rollover (dataTypeSequence going from 255 to 0)
-likelyRollover = [];
-for iCheck = 1:length(toCheck)
-    if (dataTypeSequence(toCheck(iCheck)) == 255) && (dataTypeSequence(toCheck(iCheck) + 1) == 0)
-        likelyRollover = [likelyRollover toCheck(iCheck)];
-    end
-end
-% Possible to have dataTypeSequence rollover AND change in time greater than cycle of systemTick
-% (> 6.55 sec). Thus check times, and if not within one cycle of systemTick, do not remove from list of indices to
-% check (need to use timestamp, with resolution in seconds, so use 6 seconds)
-returnToCheck = likelyRollover(timestamp(likelyRollover + 1) - timestamp(likelyRollover) > 6);
-% Indices to investigate further
-verifiedRollover = setdiff(likelyRollover,returnToCheck);
-gaps_startIndex = setdiff(toCheck, verifiedRollover);
-
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%
-
-% 1.5 start with gaps that are smaller than 6.553 seconds 
 % if gap is smaller than 6.55 seconds verify packet time with systemTick clock
 % and increment from last end time
 idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)]; % add zero at start since using diff
@@ -90,7 +39,7 @@ idxsmaller = [0 ; diff(timestamps) <= seconds(2^16/1e4)]; % add zero at start si
 % packet count
 idxInNums = find(idxsmaller==1);
 preIdxInNums = idxInNums-1;
-difftime = outdat.systemTick(idxpackets(idxInNums))-outdat.systemTick(idxpackets(preIdxInNums));
+difftime = outdat.systemTick(idxpackets(idxInNums)) - outdat.systemTick(idxpackets(preIdxInNums));
 packtime = mod(difftime,2^16) / 1e4 ;% packet time in seconds
 secondsToAdd = seconds(packtime ) ;
 endTimes(idxInNums) = secondsToAdd;   
@@ -105,11 +54,21 @@ preIdxInNums = idxInNums-1;
 gapLenInSeconds = timestamps(idxInNums)-timestamps(preIdxInNums);
 numberOfSixSecChunks = seconds(gapLenInSeconds)/(2^16/1e4);
 systemTickPreviousPacket = outdat.systemTick(idxpackets(preIdxInNums));
+% XXX 
+% old version: 
+% systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
+% exactGapTime = seconds(floor(numberOfSixSecChunks)* (2^16/1e4) - ...
+%     systemTickPreviousPacket/1e4 + ...
+%     systemTickCurrentPacket/1e4);
+% endTimes(idxInNums) = exactGapTime;
+% 
+% new version 
 systemTickCurrentPacket = outdat.systemTick(idxpackets(idxInNums));
-exactGapTime = seconds(floor(numberOfSixSecChunks)*floor(2^16/1e4) - ...
-    systemTickPreviousPacket/1e4 + ...
-    systemTickCurrentPacket/1e4);
+difftimes = (systemTickCurrentPacket - systemTickPreviousPacket); 
+exactGapTime = seconds(floor(numberOfSixSecChunks)* (2^16/1e4) + ...
+                       (mod(difftimes,2^16) / 1e4) );
 endTimes(idxInNums) = exactGapTime;
+% XXX 
 % get rid of the first packet;  
 idxStartWithOutFirstPacket = find(outdat.packetsizes~=0,1)+1; 
 outdat = outdat(idxStartWithOutFirstPacket:end,:); 
@@ -122,14 +81,8 @@ timeOfLastSampleInFirstPacket = datetime(outdat.PacketRxUnixTime(firstTimeIdx)/1
     'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 startTime = timeOfLastSampleInFirstPacket - endTimes(1); 
 endTimesDate = startTime + cumsum(endTimes); 
-
-%% KS 
-% XXXXXXX 
-
-% get time domain times: 
-jsonobj = deserializeJSON(fullfile(dirtest,'RawDataTD.json'));
-[outdat, srates] = unravelData(jsonobj);
-
+%% my vectorization fails here - but almost all the way there
+% get power times: 
 unifiedTimes = unifyTime_KS(outdat);
 % unified time stamps are in units of system tick 
 % so resolution is a 10th of am milisecond 
@@ -138,11 +91,9 @@ unifiedTimes = unifyTime_KS(outdat);
 staticTimeToAdd = 951897600; % Elapsed time from Jan 1, 1970 to March 1, 2000 at midnight 
 calculatedPacketUnixTimes = (unifiedTimes / 10000) + staticTimeToAdd;
 
-time_domain_times = datetime(calculatedPacketUnixTimes,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+endTimesDate = datetime(calculatedPacketUnixTimes,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 
-
-%% 
-%% my vectorization fails here - but almost all the way there
+endTimesDate = endTimesDate';
 
 % populate each sample with a time stamp
 derivedTimes = NaT(size(outdat,1),1); 

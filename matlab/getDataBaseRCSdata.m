@@ -33,6 +33,12 @@ if exist(databasefn,'file')
             sessionsexist(s,1) = sum(cellfun(@(x) strcmp(x,sessname),olddb.sessname));
         end
         dirsdata = dirsdata(~sessionsexist);
+        if ~isdatetime( olddb.startTime)
+            % this is the old format of the database and it will break
+            % things
+            % recreate databse
+            olddb = [];
+        end
     end
 end
 
@@ -83,7 +89,6 @@ for d = 1:length(dirsdata)
                 matfile = findFilesBVQX(dirsdata{d},'*TD*.mat');
                 if isempty(matfile) % no matlab data loaded
                     dbout(cntsave).matExist = false;
-                    dbout(cntsave).fnm = [];
                 else
                     dbout(cntsave).matExist = true;
                 end
@@ -104,13 +109,13 @@ if istable(olddb) % an old table existed
     if isempty(newdb) % no new data to add
         tblout = olddb;
     else
-        tblout = [newdb; olddb];
+        tblout = [newdb; olddb(:,newdb.Properties.VariableNames)];
     end
 else
     tblout = newdb;
 end
 tblout_sort_cols = tblout(:,{'rectime','duration','patient','side','device','startTime',...
-    'endTime','sessname','tdfile','eventFile','eventData','matExist','fnm','plot'});
+    'endTime','sessname','tdfile','eventFile','eventData','matExist','plot'});
 % get rid of files with no duration
 tblout = sortrows(tblout_sort_cols,'rectime');
 

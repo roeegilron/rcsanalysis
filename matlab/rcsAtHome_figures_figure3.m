@@ -120,6 +120,7 @@ for e = 1:2
         
     end
     xlim([3.5 89.5]);
+    xlim([3.5 200]);
     ttluse = sprintf('%s',electrodes{e});
     title(ttluse,'FontName','Arial','FontSize',16);
     set(gca,'FontName','Arial','FontSize',16);

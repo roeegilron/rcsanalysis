@@ -3,8 +3,8 @@ clc;
 %% 
 
 minamp = 0; 
-inclectionpoint = 1;
-maxamp = 1.8; 
+inclectionpoint = 0.9;
+maxamp = 1.4; 
 inc1    = 0.3; 
 inc2    = 0.2;
 
