@@ -3,9 +3,22 @@ close all; clear all; clc;
 dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/benchtop_test_packet_loss/PacketLoss_Juan_Test/Session1586491169892/DeviceNPC700239H';
 % dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/benchtop_test_packet_loss/PacketLoss_Juan_Test/Session1586491879197/DeviceNPC700239H';
 dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan/Session1586491169892/DeviceNPC700239H';
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session1/moveAway/Session1586491879197/DeviceNPC700239H';
+% move away 
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588876331587/DeviceNPC700378H';
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588876522140/DeviceNPC700378H';
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588876711084/DeviceNPC700378H';
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588876901442/DeviceNPC700378H';
+dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588877091665/DeviceNPC700378H';
+% stream on / off 
+% dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/streamOnOff/Session1588874867244/DeviceNPC700378H';
+% dirtest = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/bencjtop/PacketLoss_RoeeJuan2/Session2/moveAway/Session1588877091665/DeviceNPC700378H';
 
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(dirtest);
 
+{outRec(1).tdData.chanFullStr}'
+outRec(1).fftConfig
+powerTable.bands.fftSize
 
 % get times for power data 
 timestamps   = powerTable.powerTable.timestamp;
