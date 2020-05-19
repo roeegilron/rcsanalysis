@@ -52,8 +52,9 @@ fprintf(fid,'%s\n',session);
 fprintf(fid,'\n'); 
 
 fprintf('embedded files run:\n\n'); 
-idxEmbedded = find( (cellfun(@(x) any(strfind(x,'Embedded')),eventTable.EventType) & ...
-                     cellfun(@(x) any(strfind(x,'Number:')),eventTable.EventType))...
+idxEmbedded = find( (   cellfun(@(x) any(strfind(x,'Embedded')),eventTable.EventType) & ...
+                        cellfun(@(x) any(strfind(x,'Number:')),eventTable.EventType) & ...   
+                        (cellfun(@(x) any(strfind(x,'OFF')),eventTable.EventType) | cellfun(@(x) any(strfind(x,'ON')),eventTable.EventType) ) ) ...  
                     ==1); % start idx 
 idxEmbeddedEnd = zeros(length(idxEmbedded),1);
 cnt = 1;
@@ -80,7 +81,7 @@ for i = 1:length(idxEmbedded)
         end
        idxStart = idxStart + 1; 
        eventStr = eventTable.EventType(idxStart);
-       if isempty(eventStr{1})
+       if isempty(eventStr{1}) | strcmp(eventStr{1},'medication')
            code = 0;
        else
            code = str2num(eventStr{1}(1:3));
