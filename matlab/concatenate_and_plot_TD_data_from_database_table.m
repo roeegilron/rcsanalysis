@@ -203,7 +203,7 @@ set(gca,'FontSize',16);
 ttluse = sprintf('Continous Chronic Recording at Home (%s hours)',sum(timeDomainFileDur(:,2) - timeDomainFileDur(:,1))); 
 title(ttluse);
 set(gcf,'Color','w'); 
-prfig.figname  = 'continous recording report';
+prfig.figname  = sprintf('continous recording report __ %s',label);
 
 plot_hfig(hfig,prfig); 
 
@@ -279,7 +279,7 @@ if ~isempty(fieldnames( accProcDat))
     idxkeepAcc = idxWhisker;
     close(hfig)
     
-    fnsave = sprintf('accResults%s.mat',label);
+    fnsave = sprintf('accResults__%s.mat',label);
     save( fullfile(patdir,fnsave),'params','accResults','idxkeepAcc')
 end
 
