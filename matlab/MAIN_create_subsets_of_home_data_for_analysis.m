@@ -108,7 +108,7 @@ for ss = 1:length(pat_side_folders)
     idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz') & ... 
              sense_stim_table.stimulation_on == 0; 
     stim_off_database = sense_stim_table(idxuse,:); 
-    concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss});
+    concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
     
 end
 
