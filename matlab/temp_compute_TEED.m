@@ -60,6 +60,7 @@ dur      = endTimes - startTimes;
 startTimes = startTimes(dur > seconds(30));
 endTimes = endTimes(dur > seconds(30));
 e = 8; 
+e = 24; 
 secsAdaptive = adaptiveTable.derivedTimes;
 idxuseAdaptive = secsAdaptive >= startTimes(e) & secsAdaptive <= endTimes(e);
 secsAdaptive = secsAdaptive(idxuseAdaptive);
@@ -71,6 +72,21 @@ current   = adaptiveTable.CurrentProgramAmplitudesInMilliamps(idxuseAdaptive);
 curruntInMaTrunc = current;
 %% 
 
+%% 08 way of doing things - May 12 2020
+clear all; close all; 
+dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS08/v05_adaptive/RCS08R/Session1589320314167/DeviceNPC700421H';
+load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS08/v05_adaptive/RCS08R/Session1589320314167/DeviceNPC700421H/all_data_alligned.mat');
+cur = adaptiveTable.CurrentProgramAmplitudesInMilliamps(:,1);
+tim = adaptiveTable.derivedTimes;
+secstart = datetime('12-May-2020 15:32:41.859');
+secstart.TimeZone = tim.TimeZone;
+secsend = datetime('12-May-2020 15:35:22.371');
+secsend.TimeZone = tim.TimeZone;
+idxkeep = tim>secstart & tim < secsend;
+figure;
+plot(tim(idxkeep), cur(idxkeep));
+curruntInMaTrunc = mean(cur(idxkeep));
+%%
 
 %% rcs 07 
 % have issue with opening up the adaptive file 
@@ -123,6 +139,13 @@ f  = 158.7;% frequency (hz)
 r  = 1405; % taking from 1 month visit can't find anything else 
 openloopCur = 0.9; % in mili amps.
 curruntInMaTrunc =0.66;
+
+% rcs 08 May 12 2020
+pw = 60; % pulse width
+f  = 130.2;% frequency (hz) 
+r  = 1303; % taking from 1 month visit can't find anything else 
+openloopCur = 1.7; % in mili amps.
+curruntInMaTrunc = 1.186;
 
 % total TEED per second adaptive 
 % previous computation 

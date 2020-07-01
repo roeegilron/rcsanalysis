@@ -73,9 +73,22 @@ for p = 0:3
     end
     prog = str2num(prog);
     fnuse = sprintf('prog%d',p);
+    %%%%% 
+    %%%%%
+    %%%%%
+    % XXXXXX
+        %%%%%   FIX FIX FIX
+    %%%%%
+    %%%%%
+    % XXXXXX
+    prog = prog(2:end); 
     adaptiveLogTable.(fnuse) = prog;
 end
 %%
+hfig = figure; hfig.Color = 'w';
+plot(adaptiveLogTable.time(1:end-2),prog,'LineWidth',3,'Color','g');
+title('current'); ylabel('current (mA)');
+set(gca,'FontSize',16);
 
 %% rate
 xpruse = 'AdaptiveTherapyModificationEntry.RateAtTimeOfModification ';

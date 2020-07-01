@@ -5,8 +5,9 @@ DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
+clc
 %% print raw device settings strucutre 
-for f = 1:length(DeviceSettings)
+for f = 1:100%length(DeviceSettings)
     curStr = DeviceSettings{f};
     fieldnames1 = fieldnames(curStr); 
     fprintf('[%0.3d]\n',f);
