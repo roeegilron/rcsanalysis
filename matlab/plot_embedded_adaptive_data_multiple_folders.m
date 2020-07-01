@@ -3,7 +3,15 @@ function plot_embedded_adaptive_data_multiple_folders()
 %% clear stuff
 clear all; close all; clc;
 %% get folder list
-rootdir = '/Volumes/RCS_DATA/adaptive_at_home_testing';
+
+% MyExternalIP = regexp(urlread('http://checkip.dyndns.org'),'(\d+)(\.\d+){3}','match');
+% strcmp('10.37.2.110',MyExternalIP)
+ondekstop  = 1;
+if ondekstop
+    rootdir = '/Users/roee/Documents/potential_adaptive';
+else
+    rootdir = '/Volumes/RCS_DATA/adaptive_at_home_testing';
+end
 patfolders = findFilesBVQX(rootdir,'RCS*',struct('depth',1,'dirs',1));
 %%
 fprintf('patients found:\n')
@@ -220,8 +228,16 @@ for ppp = 1:length(patientsUse)
                     %%XXXXXX
                     %%XXXXXX
                     %%XXXXXX
-                    
-                    powerBand = powerTable.Band1(idxKeepYearPower);
+                    switch patient 
+                        case 'RCS02'
+                            bandidx = 7; 
+                            control_signal = 'Gamma'; 
+                        case 'RCS06'
+                            bandidx = 1;  
+                            control_signal = 'Beta'; 
+                    end
+                    fnband = sprintf('Band%d',bandidx);
+                    powerBand = powerTable.(fnband)(idxKeepYearPower);
                     
                     %%XXXXXX
                     %%XXXXXX
@@ -319,10 +335,17 @@ for ppp = 1:length(patientsUse)
             
             %% print figure
             % params to print the figures
+            switch patient
+                case 'RCS02'
+                    control_signal = 'GAMMA';
+                case 'RCS06'
+                    control_signal = 'BETA';
+            end
+
             yearrec = year(tblPlot.rectime(1));
             montrec = month(tblPlot.rectime(1));
             dayrec  = day(tblPlot.rectime(1));
-            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BETA_ZOOM',patient,side,yearrec,montrec,dayrec);
+            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_%s_ZOOM',patient,side,yearrec,montrec,dayrec,control_signal);
             prfig.plotwidth           = 20;
             prfig.plotheight          = 20*0.8;
             prfig.figdir              = fullfile(rootdir,'figures');

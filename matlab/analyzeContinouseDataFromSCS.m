@@ -89,7 +89,9 @@ end
             
             % process and analyze time domain data
             processedData = processTimeDomainData_TEMP_VECTOR(td,params);
-            save(fullfile(datadir,'processedTDdata.mat'),'processedData','params'); 
+            if ~isempty(processedData)
+                save(fullfile(datadir,'processedTDdata.mat'),'processedData','params');
+            end
             
 
             
@@ -294,6 +296,10 @@ start = tic;
 samplerate = unique(td.samplerate); 
 if length( unique(td.samplerate) ) == 1
     reject = 0; 
+else
+    reject = 1;
+    processedData = [];
+    return; 
 end
 
 % check if sampling rate matches
@@ -312,8 +318,11 @@ if ~reject
     secDiffs = seconds(diff(reshapedTimes,1,2));
     idxmaxgapFactor = max(secDiffs,[],2) <= (1/samplerate)* params.maxGapFactor;
     % chek for max gap 
-    idxmaxgap =idxuse<= params.maxGap;
-    idxuse = idxmaxgapFactor & idxmaxgap;
+     % idxmaxgap = max(secDiffs,[],2) <= params.maxGap; Previous commit 
+     % idxmaxgap = idxuse <= params.maxGap; % time after that  - problem is
+     % that idxuse doesn't exist 
+     % get rid of idxmaxgap altogether 
+    idxuse = idxmaxgapFactor;
 end
 timeStart = reshapedTimes(:,1);
 timeEnd = reshapedTimes(:,end);
