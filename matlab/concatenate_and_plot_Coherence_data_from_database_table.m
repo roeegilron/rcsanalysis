@@ -1,4 +1,4 @@
-function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
+function concatenate_and_plot_Coherence_data_from_database_table(database,patdir,label)
 %% this function will concatenate some data given a few parameters 
 % see MAIN_create_subsets_of_home_data_for_analysis for how this database
 % is created - this function is only meant to be called from that function 
@@ -7,6 +7,9 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 % into little pieces using MAIN_create_subsets_of_home_data_for_analysis
 % above 
 
+% NEED TO INCORPORATE 
+% do_coherence_on_sep_recordings
+error(' XXXXX not ready - need to finish coding');
 
 
 %% actigraphy data 

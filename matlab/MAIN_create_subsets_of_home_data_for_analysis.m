@@ -109,6 +109,8 @@ for ss = 1:length(pat_side_folders)
              sense_stim_table.stimulation_on == 0; 
     stim_off_database = sense_stim_table(idxuse,:); 
     concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
+    %% need to finish below code before running again 
+    concatenate_and_plot_Coherence_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
     
 end
 

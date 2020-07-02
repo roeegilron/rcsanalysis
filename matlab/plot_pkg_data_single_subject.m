@@ -1,4 +1,19 @@
 function plot_pkg_data_single_subject()
+% relies on these function to run: 
+
+% for RC+S: 
+% MAIN_create_subsets_of_home_data_for_analysis - to get the RC+S data -
+% need access to dropbox on your comptuer (selective sync) 
+% 
+% for PKG: 
+% code is on Box - this is how this is created. see: 
+% '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code'; 
+% you also need selective sync installed and to sync this folder 
+% you must have ran this code:
+% 'process_pkg_two_minute_data.m' 
+% which created the PKG database 
+% and extracts all the PKG data 
+
 %% houskeeping
 close all;
 clc;
@@ -11,22 +26,80 @@ globalparams.useIndStates = 1; % use a different state mix for each patient to d
 globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row) 
 
 
-pkgdatdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/processed_data';
-figdirout = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/figures';
-resultsdir = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L';
 
 
+%% data selection PKG data 
+% '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code'; 
+% find Box directory 
+boxDir = findFilesBVQX('/Users','Box',struct('dirs',1,'depth',2));
+pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
+load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
+pkgDB
+%% 
 
-cnt = 1;
-% RCS06
-dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/processedData.mat';
-psdrFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/psdResults.mat';
-dateChoose{cnt} = datetime('Oct 30 2019','Format','MMM dd yyyy');
-peaks(cnt,:)  = [18 22];
-channel(cnt) = 1;
-patient{cnt} = 'RCS03 L';
-side{cnt} = 'L';
-cnt = cnt+1;
+%% print the database and choose the date range you want to look for overlapping RC+S data within: 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% SET PARAMS 
+%%%% SET PARAMS 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+timeBefore = datetime('2020-03-03');
+timeAfer =   datetime('2020-03-13');
+patient = 'RCS08'; 
+patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot 
+% will have a suffix chosenn during the creation process 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% SET PARAMS 
+%%%% SET PARAMS 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%% data selection - RC+S Data 
+dropboxdir = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
+DROPBOX_PATH = dropboxdir; 
+
+%%
+% find unsynced data folder on dropbox and then patient needed 
+rootfolder = findFilesBVQX(DROPBOX_PATH,'RC+S Patient Un-Synced Data',struct('dirs',1,'depth',1));
+
+% exmaple selections: 
+%%
+patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
+% find the home data folder (SCBS fodler 
+scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
+% assumign you want the same settings for L and R side  
+pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'depth',1));
+
+
+cnt = 1; 
+for ss = 1:length(pat_side_folders)
+    pkgdatdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/processed_data';
+    figdirout = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/figures';
+    resultsdir = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L';
+    
+    
+    % RCS03
+    dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/processedData.mat';
+    psdrFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/psdResults.mat';
+    dateChoose{cnt} = datetime('Oct 30 2019','Format','MMM dd yyyy');
+    peaks(cnt,:)  = [18 22];
+    channel(cnt) = 1;
+    patient{cnt} = 'RCS03 L';
+    side{cnt} = 'L';
+    cnt = cnt+1;
+
+    
+end
+%%
 
 %% decide what to plot 
 plotComparisonRCS_ACC_PKG = 0;
