@@ -109,11 +109,14 @@ for sd = 1:length(sides)
     pat_side_folders = findFilesBVQX(scbs_folder{1},[patient sides{sd}],struct('dirs',1,'depth',1));
     % find the actual psd file lookign for 
     ff = findFilesBVQX(pat_side_folders,['psdResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
+    load(ff{1});
+    % find the coherence files 
+    ff = findFilesBVQX(pat_side_folders,['coherenceResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
+    load(ff{1}); 
+    % create rootdir 
+    rootdir = pat_side_folders{1};
     
-    
-    load(fullfile(rootdir,'psdResults.mat'));
-    load(fullfile(rootdir,'coherenceResults_RCS03L.mat'));
-    savefn = 'RCS03L_pkg_and_rcs_dat_synced_10_min.mat';
+    savefn = sprintf('%s%s_pkg_and_rcs_dat_synced_10_min.mat',patient,sides{sd});
     %%
     
     %% loop on pkg data to creat one strucutre
@@ -269,6 +272,7 @@ for sd = 1:length(sides)
     
     %% plot the raw data
     hfig = figure;
+    hfig.Color = 'w'; 
     nrows = 2;
     ncols = 4;
     rawfnmsocherence = fieldnames(allDataPkgRcsAcc);
@@ -289,6 +293,8 @@ for sd = 1:length(sides)
         plot(datplot,'LineWidth',0.1,'Color',[0 0 0.5 0.1]);
         xlim([3,100]);
     end
+    savefn = sprintf('%s%s_praw_rcs_dat_synced_with_pkg_10_min.fig',patient,sides{sd});
+    savefig(hfig,fullfile(rootdir,savefn));
     %%
     
 end

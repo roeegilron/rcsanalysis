@@ -82,7 +82,7 @@ patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
 scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
 % assumign you want the same settings for L and R side  
 pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'depth',1));
-for ss = 1:length(pat_side_folders)
+for ss = 2:length(pat_side_folders)
     % check if database file exists, if not create it 
     dbFile = fullfile(pat_side_folders{ss},'stim_and_sense_settings_table.mat');
     if exist(dbFile,'file')
@@ -109,8 +109,7 @@ for ss = 1:length(pat_side_folders)
              sense_stim_table.stimulation_on == 0; 
     stim_off_database = sense_stim_table(idxuse,:); 
     concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
-    %% need to finish below code before running again 
-    concatenate_and_plot_Coherence_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
+    % just added coherence to above function 
     
 end
 
