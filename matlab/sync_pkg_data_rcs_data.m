@@ -71,14 +71,15 @@ DROPBOX_PATH = dropboxdir;
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 
 %% loop on both sides seperatly:
-sides = {'L','R'};
+sides = {'L','R'}; % these sides refer to RC+S 
+sidesPKG = {'R','L'}; % you need contralateral sides for PKG 
 for sd = 1:length(sides)
     
     
     %% create one big pkg table 
     % get subject and side 
     idxpkgdb = strcmp(pkgDB.patient,patient) & ... 
-                strcmp(pkgDB.side,sides{sd}); 
+                strcmp(pkgDB.side,sidesPKG{sd}); 
     posPKGs  = pkgDB(idxpkgdb,:);
     % filter on dates 
     idxdatespos = posPKGs.timerange(:,1) >= timeBefore & ... 
@@ -282,19 +283,52 @@ for sd = 1:length(sides)
     
     
     idxusefncoh = cellfun(@(x) any(strfind(x,'stn')),rawfnmsocherence);
+    
     if sum(idxusefncoh)==0
-        idxusefncoh = cellfun(@(x) any(strfind(x,'gpi')),rawfnmsocherence);
+        idxusefncoh = cellfun(@(x) any(strfind(x,'gpi')),rawfnmsocherence);    
     end
-    cntplt = 1;
+    
     fieldnamesloop = rawfnmsocherence(idxusefncoh | idxusetd);
+    if sum(idxusefncoh)==0 % gpi case 
+        error('need to fill this out for GPi'); 
+    else % stn case 
+        titlsUse = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11','STN 0-2 m1 8-10','STN 0-2 m1 9-11','STN 1-3 m1 8-10','STN 1-3 m1 9-11'};
+    end
+    
+    cntplt = 1;
     for f = 1:length(fieldnamesloop)
         subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
         datplot = allDataPkgRcsAcc.(fieldnamesloop{f})';
         plot(datplot,'LineWidth',0.1,'Color',[0 0 0.5 0.1]);
+        title(titlsUse{f}); 
         xlim([3,100]);
+        xlabel('Frequency (Hz)'); 
+        if f >=4 
+            ylabel('MS coherence');
+        else
+            ylabel('Power (log_1_0\muV^2/Hz)');
+        end
     end
-    savefn = sprintf('%s%s_praw_rcs_dat_synced_with_pkg_10_min.fig',patient,sides{sd});
-    savefig(hfig,fullfile(rootdir,savefn));
+    
+    lrgTitle{1} = sprintf('%s %s',patient,sides{sd});
+    lrgTitle{2} = sprintf('%s - %s',timeBefore,timeAfer); 
+    sgtitle(lrgTitle,'FontSize',18);
+    
+    figdirout = fullfile(rootdir,'figures');
+    mkdir(figdirout);
+    savefn = sprintf('%s%s_praw_rcs_dat_synced_with_pkg_10_min__%s',patient,sides{sd},lrgTitle{2});
+    savefnFig = [savefn '.fig'];
+    savefig(hfig,fullfile(figdirout,savefnFig));
+    
+    prfig.plotwidth           = 13;
+    prfig.plotheight          = 8;
+    prfig.figdir              = figdirout;
+    prfig.figname            = savefn; 
+    prfig.figtype             = '-djpeg';
+    
+
+    plot_hfig(hfig,prfig);
+
     %%
     
 end
