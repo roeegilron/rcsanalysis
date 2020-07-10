@@ -4,8 +4,8 @@ clc;
 % set destination folders
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
-patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09'};
-patdirs = {'RCS10'};
+patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10'};
+% patdirs = {'RCS10'};
 
 
 for p = 1:length(patdirs)% loop on patient directories
