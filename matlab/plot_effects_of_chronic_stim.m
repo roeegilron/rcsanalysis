@@ -2,12 +2,12 @@ function plot_effects_of_chronic_stim()
 patients = {'RCS05', 'RCS06','RCS02', 'RCS07','RCS04', 'RCS03'}; 
 betapeaks = [27 19 20 19 13 25;
             27 19 20 19 13 25];
-betapeaks = [65 65 75 65;...
-             65 65 65 65];
+% betapeaks = [65 65 75 65;...
+%              65 65 65 65];
 
 
 cnlsuse = [0 1 1 1 0 1];
-cnlsuse = [3 3 2 3];
+% cnlsuse = [3 3 2 3];
 width = 2.5; 
 cntpt = 1; 
 psdresultsfn{1,cntpt} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/RCS05/psdResults_R.mat'; % off stim 

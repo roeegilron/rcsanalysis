@@ -1,4 +1,4 @@
-function MAIN_create_subsets_of_home_data_for_analysis()
+function MAIN_plot_subsets_of_home_data_adaptive_with_pkg()
 %% This function creats subsets of home data for later analysis 
 % it uses previous functions to concatenate the data (listed below) and
 % process it into small chunks. 
@@ -76,7 +76,7 @@ rootfolder = findFilesBVQX(DROPBOX_PATH,'RC+S Patient Un-Synced Data',struct('di
 
 % exmaple selections: 
 %%
-patient = 'RCS08'; 
+patient = 'RCS02'; 
 patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
 % find the home data folder (SCBS fodler 
 scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
@@ -105,11 +105,11 @@ for ss = 2:length(pat_side_folders)
     dbtype(databaseReport);
     
     %% this bit can be specific on a "per patient" basis 
-    idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz') & ... 
-             sense_stim_table.stimulation_on == 0; 
+    idxuse =  sense_stim_table.stimulation_on == 1; 
+             
+%              strcmp(sense_stim_table.chan1,'+2-0 lpf1-100Hz lpf2-100Hz sr-250Hz') & ...
     stim_off_database = sense_stim_table(idxuse,:); 
     concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
-    % just added coherence to above function 
     
 end
 

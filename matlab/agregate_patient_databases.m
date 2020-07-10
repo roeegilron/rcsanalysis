@@ -10,6 +10,9 @@ for d = 1:length(databasefiles)
     if d == 1 
         sense_stim_database = sense_stim_table;
     else
+        sense_stim_table.rectime.TimeZone = sense_stim_database.rectime.TimeZone;
+        sense_stim_table.startTime.TimeZone = sense_stim_database.startTime.TimeZone;
+        sense_stim_table.endTime.TimeZone = sense_stim_database.endTime.TimeZone;
         sense_stim_database = [sense_stim_database; sense_stim_table];
     end
 end

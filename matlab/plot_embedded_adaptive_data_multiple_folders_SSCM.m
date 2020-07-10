@@ -4,6 +4,7 @@ function plot_embedded_adaptive_data_multiple_folders_SSCM()
 clear all; close all; clc;
 %% get folder list
 rootdir = '/Volumes/RCS_DATA/adaptive_at_home_testing';
+rootdir = '/Users/roee/Documents/potential_adaptive/';
 patfolders = findFilesBVQX(rootdir,'RCS*',struct('depth',1,'dirs',1));
 %%
 fprintf('patients found:\n')
@@ -367,7 +368,7 @@ for ppp = 1:length(patientsUse)
             yearrec = year(tblPlot.rectime(1));
             montrec = month(tblPlot.rectime(1));
             dayrec  = day(tblPlot.rectime(1));
-            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_BAND__ZOOM_1',patient,side,yearrec,montrec,dayrec);
+            fig_title = sprintf('%s_%s_%d_%0.2d-%0.2d_zoom1',patient,side,yearrec,montrec,dayrec);
             prfig.plotwidth           = 20;
             prfig.plotheight          = 9;
             prfig.figdir              = fullfile(rootdir,'figures');

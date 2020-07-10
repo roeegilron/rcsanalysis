@@ -1,4 +1,4 @@
-function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
+function concatenate_and_plot_Coherence_data_from_database_table(database,patdir,label)
 %% this function will concatenate some data given a few parameters 
 % see MAIN_create_subsets_of_home_data_for_analysis for how this database
 % is created - this function is only meant to be called from that function 
@@ -7,6 +7,9 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 % into little pieces using MAIN_create_subsets_of_home_data_for_analysis
 % above 
 
+% NEED TO INCORPORATE 
+% do_coherence_on_sep_recordings
+error(' XXXXX not ready - need to finish coding');
 
 
 %% actigraphy data 
@@ -282,114 +285,6 @@ if ~isempty(fieldnames( accProcDat))
     fnsave = sprintf('accResults__%s.mat',label);
     save( fullfile(patdir,fnsave),'params','accResults','idxkeepAcc','timeDomainFileDur','database')
 end
-
-
-
-
-
-
-
-%%  cohernece 
-
-
-
-patient = database.patient{1};
-switch patient
-    case 'RCS01'
-        areaname = 'stn';
-    case 'RCS02'
-        areaname = 'stn';
-    case 'RCS03'
-        areaname = 'gpi';
-    case 'RCS04'
-        areaname = 'stn';
-    case 'RCS05'
-        areaname = 'stn';
-    case 'RCS06'
-        areaname = 'stn';
-    case 'RCS07'
-        areaname = 'stn';
-    case 'RCS08'
-        areaname = 'stn';
-    case 'RCS09'
-        areaname = 'gpi';
-    case 'RCS10'
-        areaname = 'gpi';
-end
-
-startall = tic;
-startload = tic;
-fprintf('file loaded in %.2f seconds \n',toc(startload));
-%% do fft but on sep recordings
-for i = 1:length( tdProcDat )
-    for c = 1:4
-        fn = sprintf('key%d',c-1);
-        if size(tdProcDat(i).(fn),1) < size(tdProcDat(i).(fn),2)
-            tdProcDat(i).(fn) = tdProcDat(i).(fn)';
-        end
-    end
-end
-
-if strcmp(areaname,'stn')
-    pairname = {'STN 0-2','M1 8-10';...
-        'STN 0-2','M1 9-11';...
-        'STN 1-3','M1 8-10';...
-        'STN 1-3','M1 9-11'};
-    paircontact = [0 2;...
-        0 3;...
-        1 2;...
-        1 3];
-    fieldnamesuse = {'stn02m10810','stn02m10911','stn13m10810','stn13m0911'};
-elseif strcmp(areaname,'gpi')
-    pairname = {'GPi 0-1','M1 8-9';...
-        'GPi 0-1','M1 10-11';...
-        'GPi 2-3','M1 8-9';...
-        'GPi 2-3','M1 10-11'};
-    paircontact = [0 2;...
-        0 3;...
-        1 2;...
-        1 3];
-    fieldnamesuse = {'gpi01m10809','gpi01m1011','gpi23m10809','gpi23m1011'};
-    
-end
-
-
-Fs = unique(cell2mat(cellfun(@(x) str2num(x(end-4:end-2)), database.chan1, 'UniformOutput', false)));
-for cc = 1:length(pairname)
-    startchan = tic;
-    fnuse = sprintf('key%d',paircontact(cc,1));
-    stndat = [tdProcDat.(fnuse)];
-    
-    fnuse = sprintf('key%d',paircontact(cc,2));
-    m1dat = [tdProcDat.(fnuse)];
-    
-    start = tic;
-    [Cxy,F] = mscohere(stndat,m1dat,...
-        2^(nextpow2(Fs)),...
-        2^(nextpow2(Fs/2)),...
-        2^(nextpow2(Fs)),...
-        Fs);
-    endtime = toc(start);
-    coherenceResultsTd.(fieldnamesuse{cc}) = Cxy;
-    clear Cxy
-    fprintf('channel %d done in  %.2f seconds \n',cc,toc(startchan));
-end
-
-coherenceResultsTd.paircontact = paircontact;
-coherenceResultsTd.pairname = pairname;
-coherenceResultsTd.srate = Fs;
-coherenceResultsTd.ff = F;
-coherenceResultsTd.timeStart = [tdProcDat.timeStart];
-coherenceResultsTd.timeEnd = [tdProcDat.timeEnd];
-
-
-
-fnsave = sprintf('coherenceResults__%s.mat',label);
-save( fullfile(patdir,fnsave),'params','coherenceResultsTd','timeDomainFileDur','database')
-
-
-
-
 
 return 
 
