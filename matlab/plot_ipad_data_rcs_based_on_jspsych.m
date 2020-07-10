@@ -3,6 +3,28 @@ function plot_ipad_data_rcs_based_on_jspsych()
 % and not on deslys allignemtn 
 clc;
 
+%% data dir 
+boxdir = '/Users/roee/Box/movement_task_data_at_home/data';
+patdirs = findFilesBVQX(boxdir,'RCS*',struct('dirs',1,'depth',1));
+%% loop on each patient, find sides and possible tasks that work for each directory 
+% task data 
+% assume all patients use R hand for this case 
+taskDataLocs = table();
+for p = 1:length(patdirs)
+    % find tasks 
+    % find task dir 
+    taskDir = findFilesBVQX(patdirs{p},'task*',struct('dirs',1,'depth',1));
+    process_task_logs(dirname)
+    
+    [pn, fn] = fileparts(patdirs{p}); 
+    sidedirs = findFilesBVQX(patdirs{p},'RCS*',struct('dirs',1,'depth',1));
+    for s = 1:length(sidedirs)
+        
+    end
+end
+
+
+
 %% load RC+S data 
 diropen = '/Users/roee/Documents/RCS02_task_data_test/SummitContinuousBilateralStreaming/RCS02L/Session1594161831245/DeviceNPC700398H';
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(diropen);
@@ -15,7 +37,7 @@ fprintf('patient %s side %s\n',fn(1:5),fn(end));
 fileload = '/Users/roee/Documents/RCS02_task_data_test/task_logs/task_file_name___2020-07-07 15_44_53___2020-07-07 15_47_25.mat';
 load(fileload);
 %% 
-
+ 
 %% get idx for event 
 cnt = 1; 
 idxcnt = 1;

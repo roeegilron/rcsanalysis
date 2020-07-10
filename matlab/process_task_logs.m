@@ -1,6 +1,5 @@
-function process_task_logs()
+function process_task_logs(dirname)
 %%
-dirname = '/Users/roee/Documents/RCS02_task_data_test/task_logs'; 
 
 ff = findFilesBVQX(dirname,'*.csv'); 
 %%
