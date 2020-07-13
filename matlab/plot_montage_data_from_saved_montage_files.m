@@ -1,7 +1,7 @@
 function plot_montage_data_from_saved_montage_files(dirname)
 % you need to run this function first:
 % open_and_save_montage_data_in_sessions_directory
-
+addpath('/Users/juananso/Dropbox (Personal)/Work/Git_Repo/rcsanalysis/toolboxes/PAC-master');
 ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
 mkdir(figdir);
@@ -43,7 +43,7 @@ for i = 1:size(montageData,1)
     for c = 1:4
         hsb = hpanel(c,1).select();
         axes(hsb);
-        y = ydat(:,c);
+        y = ydat(:,c)*1000; % form millivolts to microVolts
         y = y - mean(y); 
         plot(x,y);
         xlabel('Time');

@@ -2,22 +2,38 @@ function plot_montage_on_off_meds_manual()
 
 % off meds
 % right 
-params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05R/Session1563899210979/DeviceNPC700415H';
+params.datadir{1} = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS10 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS10R/Session1592584999926/DeviceNPC700430H';
 % left 
-params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05L/Session1563899944211/DeviceNPC700414H';
+params.datadir{1} = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS10 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS10L/Session1592585002796/DeviceNPC700436H';
+
 % on meds
 % right 
-params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05R/Session1563909455247/DeviceNPC700415H';
+params.datadir{2} = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS10 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS10R/Session1592592974806/DeviceNPC700430H';
 % left 
-params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05L/Session1563909759970/DeviceNPC700414H';
+params.datadir{2} = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS10 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS10L/Session1592592981750/DeviceNPC700436H';
 
-% off meds left 
-params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/off_meds/RCS07R/Session1569436056338/DeviceNPC700403H';
-% on meds left 
-params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/on_meds_without_dykinesia/RCS07R/Session1569346542818/DeviceNPC700403H';
-params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
+params.outdir  = '/Users/juananso/Dropbox (Personal)/Work/DATA/RCS_patients/RCS10/3week/athome_off_on_montage/output';
 params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
-params.side    = 'R';
+params.side = {'L','R'};
+
+% off meds
+% right 
+% params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05R/Session1563899210979/DeviceNPC700415H';
+% % left 
+% params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05L/Session1563899944211/DeviceNPC700414H';
+% % on meds
+% % right 
+% params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05R/Session1563909455247/DeviceNPC700415H';
+% % left 
+% params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS05/v04_10_day/rcs_data/starrlab/RCS05L/Session1563909759970/DeviceNPC700414H';
+% 
+% % off meds left 
+% params.datadir{1} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/off_meds/RCS07R/Session1569436056338/DeviceNPC700403H';
+% % on meds left 
+% params.datadir{2} = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/on_meds_without_dykinesia/RCS07R/Session1569346542818/DeviceNPC700403H';
+% params.outdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
+% params.figdir  = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS07/v15_athome_off_on_montage/figures';
+% params.side    = 'R';
 
 % params to print the figures
 prfig.plotwidth           = 25;

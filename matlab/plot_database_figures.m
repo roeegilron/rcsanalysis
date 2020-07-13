@@ -2,7 +2,8 @@ function plot_database_figures()
 close all; 
 clear all;
 clc;
-rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/';
+% rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/';
+rootdir = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/';
 load(fullfile(rootdir,'sense_stim_database.mat'));
 reportdir = fullfile(rootdir,'reports'); 
 figdir = fullfile(rootdir,'figures_per_patient-time-recorded');

@@ -18,8 +18,8 @@ end
 %% loop on each montage session and save the data in a .mat file
 clc;
 for s = 1:length(sessionIds)
-    fsessionDir = findFilesBVQX(dirname,sprintf('*%s*',sessionIds{s}),struct('dirs',1));
-    fdeviceDir  = findFilesBVQX(fsessionDir{1},sprintf('Device*',sessionIds{s}),struct('dirs',1));
+    fsessionDir = findFilesBVQX(dirname,sprintf('*%s*',sessionIds{s}),struct('dirs',1))
+    fdeviceDir  = findFilesBVQX(fsessionDir{1},sprintf('Device*',sessionIds{s}),struct('dirs',1))
     savename    = fullfile(fdeviceDir{1},'rawMontageData.mat');
     if exist(savename,'file')
     else

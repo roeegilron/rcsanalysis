@@ -54,16 +54,18 @@ for i = 1:6
     end
 end
 
-clrsUse = [0.8 0 0; 
-    0   0.8 0];
+
+if partAllOrPart == 2
+    color = ['r','b'];
+end
 targetsr = '500Hz';
 targelpf = '100Hz';
-
 % stn 
+addtitleTopPlots = ['sr = ',targetsr, ', lfp = ', targelpf];
 for u = 1:length(unqlfp)
     for f = 1:length(ff)
         load(ff{f});
-        
+
         if exist('montagDataRawManualIdxs','var')
             montageDataRaw = montagDataRawManualIdxs;
         end
@@ -90,28 +92,39 @@ for u = 1:length(unqlfp)
                     idxfreq = freqs >=10 & freqs<=90;
                     meanfreq = abs(mean(fftlog(idxfreq)));
                     fftplot = fftlog./meanfreq;
-                    hplt = plot(freqs,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
+                    if partAllOrPart == 2
+                        hplt = plot(freqs,fftplot,'LineWidth',1,'Color',color(f));
+                    else
+                        hplt = plot(freqs,fftplot,'LineWidth',1,'Color',[0 0 0.8 0.2]);
+                    end
                     hplt.UserData.dirname = ff{f};
-                   
-                    
-                    title(unqlfp{u});
+
+                    title([unqlfp{u},' ',addtitleTopPlots]);
                     xlabel('Freq. (Hz)');
                     ylabel('norm power');
                     xlim([3 100]);
                 end                
             end
         end
+        if partAllOrPart == 2
+            legendConditions{f} = tableToSave.EventSubType(find(tableToSave.montageNumber==montageToPlot(f)));
+        end
     end
 end
 
+if partAllOrPart == 2
+    for ii=1:length(legendConditions)
+        legendConditions{ii}
+    end
+end
 
 % ctx
 targelpf1 = '450Hz';
 targelpf2 = '1700Hz';
+addtitleTopPlots = ['sr = ',targetsr, ', lfp1 = ', targelpf1];
 for u = 1:length(unqctx)
     for f = 1:length(ff)
-        load(ff{f});
-        
+        load(ff{f})
         if exist('montagDataRawManualIdxs','var')
             montageDataRaw = montagDataRawManualIdxs;
         end
@@ -126,7 +139,7 @@ for u = 1:length(unqctx)
                     strcmp(tdc.lpf2,targelpf2) & ...
                     strcmp(tdc.sampleRate,targetsr) ;
                 if usechanl
-                    y = montageDataRaw.data{s}(:,c); 
+                    y = montageDataRaw.data{s}(:,c);
                     y = y-mean(y); 
                     hsb = hpanel(2,u).select();
                     axes(hsb);
@@ -138,9 +151,13 @@ for u = 1:length(unqctx)
                     idxfreq = freqs >=10 & freqs<=90;
                     meanfreq = abs(mean(fftlog(idxfreq)));
                     fftplot = fftlog./meanfreq;
-                    hplt = plot(freqs,fftplot,'LineWidth',2,'Color',[0 0 0.8 0.2]);
+                    if partAllOrPart == 2
+                        hplt = plot(freqs,fftplot,'LineWidth',1,'Color',color(f));
+                    else
+                        hplt = plot(freqs,fftplot,'LineWidth',1,'Color',[0 0 0.8 0.2]);
+                    end
                     hplt.UserData.dirname = ff{f};
-                    title(unqctx{u});
+                    title([unqctx{u},' ', addtitleTopPlots]);
                     xlabel('Freq. (Hz)');
                     ylabel('norm power'); 
                     xlim([3 100]);
@@ -155,8 +172,7 @@ dcm_obj = datacursormode(hfig);
 dcm_obj.UpdateFcn = @myupdatefcn;
 dcm_obj.SnapToDataVertex = 'on';
 datacursormode on;
-
-
+  
 end
 
 function plot_data_per_recording(montageDataRaw,hpanel,clr)

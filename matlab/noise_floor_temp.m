@@ -1,6 +1,9 @@
 function noise_floor_temp() 
 %% load data 
-rawfn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/noise-floor-test-2/RCS-tests-Oct9-2018/test31/Session1539112319744/DeviceNPC700395H/RawDataTD.mat';
+% rawfn = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS_test/noise-floor-test-2/RCS-tests-Oct9-2018/test31/Session1539112319744/DeviceNPC700395H/RawDataTD.mat';
+% rawfn = '/Users/juananso/Starr Lab Dropbox/juan_testing/newFirmwareDev/RCS10/RCS10L/noise_floor/Session1589920263372/DeviceNPC700430H/RawDataTD.mat';
+rawfn = '/Users/juananso/Starr Lab Dropbox/juan_testing/newFirmwareDev/RCS10/RCS10L/noise_floor/Session1589999452398/DeviceNPC700436H/RawDataTD.mat';
+
 [pn,fn] = fileparts(rawfn); 
 outdir = pn;
 load(rawfn);
