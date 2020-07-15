@@ -7,7 +7,7 @@ function print_stim_and_sense_settings_in_folders(varargin)
 % so if you have more data you sohuld delete stim_and_sense_settings_table.mat
 % from your folder and rerun
 dirname = varargin{1};
-overwrite_file = 0; % don't load existing file 
+overwrite_file = 1; % don't load existing file  
 if size(varargin,2) == 2 
     overwrite_file = varargin{2}; 
 end

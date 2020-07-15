@@ -7,7 +7,7 @@ if isstruct(DeviceSettings)
 end
 clc
 %% print raw device settings strucutre 
-for f = 1:100%length(DeviceSettings)
+for f = 1:length(DeviceSettings)
     curStr = DeviceSettings{f};
     fieldnames1 = fieldnames(curStr); 
     fprintf('[%0.3d]\n',f);
@@ -137,7 +137,26 @@ unqRecs = unique(deviceSettingTable.recNum(idxnotnan));
 for u = 1:length(unqRecs)
     idxuse = deviceSettingTable.recNum == unqRecs(u);
     dt = deviceSettingTable(idxuse,:);
-    if size(dt,1) == 1 % this means that stream didn't stop properly
+    if size(dt,1) == 1 % this means that stream didn't stop properly / or that we jsut have one recrodings 
+        deviceSettingsOut.recNum(u) = unqRecs(u);
+        deviceSettingsOut.timeStart(u) = dt.timeStart{1};
+        % assume time stop is end of file 
+        timenum = DeviceSettings{end}.RecordInfo.HostUnixTime;
+        timeEnd = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+        deviceSettingsOut.timeStop(u) = timeEnd;
+        deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
+        for c = 1:4 % find sample rate
+            if ~strcmp(dt.tdDataStruc{1}(c).sampleRate,'disabled')
+                deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
+            end
+        end
+        for c = 1:4
+            fnuse = sprintf('chan%d',c);
+            deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+        end
+        deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
+
     else
         deviceSettingsOut.recNum(u) = unqRecs(u);
         deviceSettingsOut.timeStart(u) = dt.timeStart{1};
