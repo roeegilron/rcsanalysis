@@ -1,4 +1,5 @@
 function plot_all_embedded_adaptive_from_database()
+close all; clc;
 %% load database
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 patientFolders  = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
@@ -16,6 +17,9 @@ params.stim  = 1;
 params.min_size = hours(1);
 
 %%
+reloadDB = 0;
+
+if reloadDB
 
 idxuse = strcmp(db.group,params.group) & ...
     db.stimulation_on == params.stim & ...
@@ -26,6 +30,7 @@ dbAdapt = db(idxuse,:);
 % changing
 db = dbAdapt;
 for d = 1:size(db,1)
+    start  = tic;
     patdir = findFilesBVQX(patientFolders,['*', db.patient{d} '*'],struct('dirs',1,'depth',1));
     scbsdir = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1));
     patsid = findFilesBVQX(scbsdir,[db.patient{d} ,db.side{d}],struct('dirs',1));
@@ -34,20 +39,29 @@ for d = 1:size(db,1)
     fnSettings = fullfile(devdir{1},'DeviceSettings.json');
     adaptiveSettings = loadAdaptiveSettings(fnSettings); 
     cur(1,1) = adaptiveSettings.currentMa_state0(1);
-    cur(1,1) = adaptiveSettings.currentMa_state1(1);
+    cur(1,2) = adaptiveSettings.currentMa_state1(1);
     cur(1,3) = adaptiveSettings.currentMa_state2(1);
-    db.CurrentStates{d} = cur; 
+    db.CurrentStates(d,:) = cur; 
+    db.devdir{d}  = devdir;
     if length( unique(cur) ) > 1 
         db.AdaptiveCurrentChanging(d) = 1;
     else
         db.AdaptiveCurrentChanging(d) = 0;
     end 
+    fprintf('%d/%d done in %.2f \n',d,size(db,1),toc(start));
 end
-
-
+    save(fullfile(database_folder,'adaptive_database.mat'),'db');
+else
+    load(fullfile(database_folder,'adaptive_database.mat'),'db');
+end
 %%
+% plot only 
 
 %% loop on adaptive database and create plots on a daily basis
+% ploy only adaptive with large chnages 
+idxLargeChangs = abs(db.CurrentStates(:,1) - db.CurrentStates(:,3)) > 0.2;
+dbAdapt = db(idxLargeChangs,:); 
+dbAdapt(:,{'rectime','patient','side','CurrentStates'})
 uniquePatients = unique(dbAdapt.patient);
 for p = 1:length(uniquePatients)
     patDB = dbAdapt(strcmp(dbAdapt.patient,uniquePatients{p}) , :);
@@ -69,7 +83,7 @@ end
 end
 
 function plot_adbs_day(db,rootdir,figdir)
-
+close all;
 %% decide which files actually have current changes 
 %% and find all the files / load data 
 for s = 1:size(db,1) 
@@ -83,7 +97,7 @@ for s = 1:size(db,1)
     mintrim = 10;
     
     % load adapative 
-    [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontage(fnDeviceSettings)
+    [deviceSettingsOut,stimStatus,~]  = loadDeviceSettingsForMontage(fnDeviceSettings);
     res = readAdaptiveJson(fnAdaptive);
     cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
     timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
@@ -133,10 +147,7 @@ for s = 1:size(db,1)
     end
 
 end
-if sum(db.adaptive_running) == 0
-    return; 
-    % in group d but current isn't changing at all on either side
-else
+
     %% set up figure
     hfig = figure;
     hfig.Color = 'w';
@@ -155,10 +166,9 @@ else
         for d = 1:size(dbuse,1)
             % plot the detector
             orderplot = [1 2 3 4];
-            if ss <= 2 
+            if strcmp(dbuse.side(d),'L')
                 idxplot = 1; 
-                
-            else
+            elseif strcmp(dbuse.side(d),'R')
                 idxplot = 3; 
             end
             timesUseDetector = dbuse.timesUseDetector{d};
@@ -183,6 +193,12 @@ else
             hplt.Color = [hplt.Color 0.7];
             prctile_99 = prctile(ld0,99);
             prctile_1  = prctile(ld0,1);
+            if prctile_1 > ld0_low(1)
+                prctile_1 = ld0_low * 0.9;
+            end
+            if prctile_99 < ld0_high(1) 
+                prctile_99 = ld0_high(1)*1.1;
+            end
             ylim(hsb(idxplot),[prctile_1 prctile_99]);
             ttlus = sprintf('Control signal %s',unqSides{ss});
             title(hsb(idxplot),ttlus);
@@ -200,7 +216,16 @@ else
             
 
             plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
-            ttlus = sprintf('Current in mA %s',unqSides{ss});
+            for i = 1:3 
+                states{i} = sprintf('%0.1fmA',dbuse.CurrentStates(i));
+
+                if i == 2 
+                    if dbuse.CurrentStates(i) == 25.5
+                        states{i} = 'HOLD';
+                    end
+                end
+            end
+            ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
             title(hsb(idxplot) ,ttlus);
             ylabel( hsb(idxplot) ,'Current (mA)');
             set( hsb(idxplot),'FontSize',16);
@@ -209,11 +234,11 @@ else
     end
     % get link axes to work - time zone issue with empty axes 
     if strcmp(unique(dbuse.side),{'L'})
-        plot(hsb(3),timesUseCur(1),0);
-        plot(hsb(4),timesUseCur(1),0);
+        plot(hsb(3),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+        plot(hsb(4),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
     elseif strcmp(unique(dbuse.side),{'R'})
-        plot(hsb(1),timesUseCur(1),0);
-        plot(hsb(2),timesUseCur(1),0);
+        plot(hsb(1),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+        plot(hsb(2),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
     end
     linkaxes(hsb,'x');
     ttlLarge{1,1} = dbuse.patient{1}; 
@@ -230,7 +255,7 @@ else
     prfig.resolution          = 300;
     prfig.figname             = fig_title;
     plot_hfig(hfig,prfig);
+    close(hfig);
 
-end
 
 end
