@@ -22,6 +22,29 @@ idxuse = strcmp(db.group,params.group) & ...
     db.duration >= params.min_size;
 dbAdapt = db(idxuse,:);
 
+% loop on this databse and only plot files in which adaptive is actually
+% changing
+db = dbAdapt;
+for d = 1:size(db,1)
+    patdir = findFilesBVQX(patientFolders,['*', db.patient{d} '*'],struct('dirs',1,'depth',1));
+    scbsdir = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1));
+    patsid = findFilesBVQX(scbsdir,[db.patient{d} ,db.side{d}],struct('dirs',1));
+    sessdir = findFilesBVQX(patsid{1}, ['*',db.sessname{d} ,'*'],struct('dirs',1));
+    devdir  = findFilesBVQX(sessdir{1},'*evice*',struct('dirs',1,'depth',1));
+    fnSettings = fullfile(devdir{1},'DeviceSettings.json');
+    adaptiveSettings = loadAdaptiveSettings(fnSettings); 
+    cur(1,1) = adaptiveSettings.currentMa_state0(1);
+    cur(1,1) = adaptiveSettings.currentMa_state1(1);
+    cur(1,3) = adaptiveSettings.currentMa_state2(1);
+    db.CurrentStates{d} = cur; 
+    if length( unique(cur) ) > 1 
+        db.AdaptiveCurrentChanging(d) = 1;
+    else
+        db.AdaptiveCurrentChanging(d) = 0;
+    end 
+end
+
+
 %%
 
 %% loop on adaptive database and create plots on a daily basis
@@ -56,10 +79,11 @@ for s = 1:size(db,1)
     sessdir = findFilesBVQX(patsid{1}, ['*',db.sessname{s} ,'*'],struct('dirs',1));
     devdir  = findFilesBVQX(sessdir{1},'*evice*',struct('dirs',1,'depth',1));
     fnAdaptive = fullfile(devdir{1},'AdaptiveLog.json');
-    
+    fnDeviceSettings = fullfile(devdir{1},'DeviceSettings.json');
     mintrim = 10;
     
     % load adapative 
+    [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontage(fnDeviceSettings)
     res = readAdaptiveJson(fnAdaptive);
     cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
     timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
