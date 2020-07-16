@@ -1,4 +1,19 @@
 function plot_pkg_data_single_subject()
+% relies on these function to run: 
+
+% for RC+S: 
+% MAIN_create_subsets_of_home_data_for_analysis - to get the RC+S data -
+% need access to dropbox on your comptuer (selective sync) 
+% 
+% for PKG: 
+% code is on Box - this is how this is created. see: 
+% '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code'; 
+% you also need selective sync installed and to sync this folder 
+% you must have ran this code:
+% 'process_pkg_two_minute_data.m' 
+% which created the PKG database 
+% and extracts all the PKG data 
+
 %% houskeeping
 close all;
 clc;
@@ -11,26 +26,62 @@ globalparams.useIndStates = 1; % use a different state mix for each patient to d
 globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row) 
 
 
-pkgdatdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/processed_data';
-figdirout = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/figures';
-resultsdir = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L';
 
 
+%% data selection PKG data 
+% '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code'; 
+% find Box directory 
+boxDir = findFilesBVQX('/Users','Box',struct('dirs',1,'depth',2));
+pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
+load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
+pkgDB
+%% 
 
-cnt = 1;
-% RCS06
-dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/processedData.mat';
-psdrFiles{cnt}  = '/Volumes/RCS_DATA/RCS03/raw_data_push_jan_2020/SCBS/RCS03L/psdResults.mat';
-dateChoose{cnt} = datetime('Oct 30 2019','Format','MMM dd yyyy');
-peaks(cnt,:)  = [18 22];
-channel(cnt) = 1;
-patient{cnt} = 'RCS03 L';
-side{cnt} = 'L';
-cnt = cnt+1;
+%% print the database and choose the date range you want to look for overlapping RC+S data within: 
+patient = 'RCS08'; 
+patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot 
+% will have a suffix chosenn during the creation process 
+
+
+%% data selection - RC+S Data 
+dropboxdir = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
+DROPBOX_PATH = dropboxdir; 
+
+%% find the RC+S data
+% find unsynced data folder on dropbox and then patient needed 
+rootfolder = findFilesBVQX(DROPBOX_PATH,'RC+S Patient Un-Synced Data',struct('dirs',1,'depth',1));
+
+%% exmaple selections: 
+patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
+% find the home data folder (SCBS fodler 
+scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
+% assumign you want the same settings for L and R side  
+pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'depth',1));
+
+
+cnt = 1; 
+for ss = 1:length(pat_side_folders)
+    ff = findFilesBVQX(pat_side_folders{ss},'*pkg_and_rcs_dat_synced_10_min*.mat');
+    psdrFiles{ss} = ff{1};
+    [~, patraw] = fileparts(pat_side_folders{ss});
+    
+    patientUse{ss} = patraw(1:end-1); 
+    % check that use the right oposite pkg side 
+    if strcmp(patraw(end),'L')
+        pkgSideUse{ss} = 'R';
+    else
+        pkgSideUse{ss} = 'L';
+    end
+    rcsSideUse{ss} = patraw(end);
+end
+figdircreate = fullfile(patdir{1},'figures');
+mkdir(figdircreate);
+figdirout = figdircreate;
+%%
 
 %% decide what to plot 
 plotComparisonRCS_ACC_PKG = 0;
-plotStates = 1;
+plotStates = 0;
 plost_states_base_on_coherence = 1;
 plotTremor = 0;
 plotBKDKcorr = 0;
@@ -46,7 +97,9 @@ cntOut = 1;
 patientPSD_at_home = table();
 patientROC_at_home = table();
 for dd = 1:length(psdrFiles)
-     
+    %% load the data 
+    load(psdrFiles{dd});
+    
     %% plot all raw psd data for one patient 
     if plot_raw_psds_all_rcs_data
         hfig = figure;
@@ -126,12 +179,21 @@ for dd = 1:length(psdrFiles)
         hfig.Color = 'w';
         titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
         labelsCheck = [];
-        for c = 1:length(fieldnamesloop);
+        fieldnamesAll = fieldnames(allDataPkgRcsAcc);
+        idxfieldnames = cellfun(@(x) any(strfind(x,'stn')),fieldnamesAll);
+        if sum(idxfieldnames)>1 
+            fieldnamesloop = fieldnamesAll(idxfieldnames);
+        else
+            idxfieldnames = cellfun(@(x) any(strfind(x,'gpi')),fieldnamesAll);
+            fieldnamesloop = fieldnamesAll(idxfieldnames);
+        end
+        
+        for c = 1:length(fieldnamesloop)
             hsb(c) = subplot(2,2,c);
             hold on;
             cla(hsb(c));
             fn = fieldnamesloop{c};
-            dat = allDataPkgRcsAccCoh.(fn);
+            dat = allDataPkgRcsAcc.(fn);
             idxnormalize = cohResults.ff > 3 &  cohResults.ff <90;
             meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
             % the absolute is to make sure 1/f curve is not flipped
@@ -140,7 +202,7 @@ for dd = 1:length(psdrFiles)
             dat = dat./meanmat;
             normalizedPSD = dat; 
             frequency = cohResults.ff'; 
-            idxsleep = strcmp(allDataPkgRcsAccCoh.states,'sleep');
+            idxsleep = strcmp(allDataPkgRcsAcc.states,'sleep');
             plot(cohResults.ff', dat(~idxsleep,:),'LineWidth',0.1,'Color',[0 0 0.8 0.1]);
             plot(cohResults.ff', dat(idxsleep,:),'LineWidth',0.1,'Color',[0.5 0.5 0.5 0.1]);
             xlim([3 100]);
@@ -207,7 +269,7 @@ for dd = 1:length(psdrFiles)
     %% get and plot various states
     if globalparams.useIndStates
         rawstates = allDataPkgRcsAcc.states;
-        switch patient{dd}(1:5)
+        switch patient
             case 'RCS02'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
@@ -268,6 +330,19 @@ for dd = 1:length(psdrFiles)
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
                 statesUse = {'off','on','sleep'};
+            case 'RCS08'
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+                statesUse = {'off','on','sleep'};
+                
         end
     else
         allstates = allDataPkgRcsAcc.states; 
@@ -294,6 +369,7 @@ for dd = 1:length(psdrFiles)
                 dat = [];
                 if globalparams.normalizeData
                     dat = allDataPkgRcsAcc.(fn);
+                    psdResults.ff = allDataPkgRcsAcc.ffPSD;
                     idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
                     meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
                     % the absolute is to make sure 1/f curve is not flipped
@@ -325,8 +401,8 @@ for dd = 1:length(psdrFiles)
                rawdat = allDataPkgRcsAcc.(fn);
                rawdat = rawdat(labels,:);
                fftLogged = mean(rawdat,1);
-               patientPSD_at_home.patient{cntOut} = patient{dd}(1:5);
-               patientPSD_at_home.side{cntOut} = patient{dd}(end);
+               patientPSD_at_home.patient{cntOut} = patientUse{dd};
+               patientPSD_at_home.side{cntOut} = rcsSideUse{dd};
                patientPSD_at_home.medstate{cntOut} = statesUse{s};
                patientPSD_at_home.electrode{cntOut} = titles{c};
                patientPSD_at_home.ff{cntOut} = psdResults.ff;
@@ -348,14 +424,14 @@ for dd = 1:length(psdrFiles)
             title(titles{c});
             set(gca,'FontSize',20);
         end
-        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','pkg_states',patient{dd},pkgSideUse)); 
+        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','pkg_states',patientUse{dd},pkgSideUse{dd})); 
         save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','psdResults','titles');
         clear prfig;
-        sgtitle(sprintf('state estimate %s PKG %s', patient{dd},pkgSideUse),'FontSize',20);
+        sgtitle(sprintf('state estimate %s %s PKG %s', patientUse{dd},rcsSideUse{dd}, pkgSideUse{dd}),'FontSize',20);
         prfig.plotwidth           = 15;
         prfig.plotheight          = 10;
         prfig.figdir             = figdirout;
-        prfig.figname             = sprintf('%s %s pkg _10_min_avgerage','pkg_states',patient{dd},pkgSideUse);
+        prfig.figname             = sprintf('%s %s pkg _10_min_avgerage','pkg_states',patientUse{dd},pkgSideUse{dd});
         plot_hfig(hfig,prfig)
 %         close(hfig);
 %         fnmsave = fullfile(resultsdir,'patientPSD_at_home.mat');
@@ -369,7 +445,7 @@ for dd = 1:length(psdrFiles)
         
         rawstates = allDataPkgRcsAcc.states;
         allstates = rawstates;
-        switch patient{dd}(1:5)
+        switch patientUse{dd}
             case 'RCS02'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
@@ -416,6 +492,18 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
+                
+            case 'RCS08'
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates(onidx) = {'on'};
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
 
         end
         colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
@@ -424,6 +512,18 @@ for dd = 1:length(psdrFiles)
         hfig.Color = 'w';
         titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
         labelsCheck = [];
+        
+        fieldnamesAll = fieldnames(allDataPkgRcsAcc);
+        idxfieldnames = cellfun(@(x) any(strfind(x,'stn')),fieldnamesAll);
+        if sum(idxfieldnames)>1
+            fieldnamesloop = fieldnamesAll(idxfieldnames);
+        else
+            idxfieldnames = cellfun(@(x) any(strfind(x,'gpi')),fieldnamesAll);
+            fieldnamesloop = fieldnamesAll(idxfieldnames);
+        end
+        cohResults.ff = allDataPkgRcsAcc.ffCoh;
+        
+        
         for c = 1:4
             hsb(c) = subplot(2,2,c);
             hold on;
@@ -475,8 +575,8 @@ for dd = 1:length(psdrFiles)
                rawdat = allDataPkgRcsAcc.(fn);
                rawdat = rawdat(labels,:);
                coh = mean(rawdat,1);
-               patientCOH_at_home.patient{cntOut} = patient{dd}(1:5);
-               patientCOH_at_home.side{cntOut} = patient{dd}(end);
+               patientCOH_at_home.patient{cntOut} = patientUse{dd};
+               patientCOH_at_home.side{cntOut} = rcsSideUse{dd};
                patientCOH_at_home.medstate{cntOut} = statesUse{s};
                patientCOH_at_home.electrode{cntOut} = titles{c};
                patientCOH_at_home.ff{cntOut} = cohResults.ff;
@@ -496,24 +596,24 @@ for dd = 1:length(psdrFiles)
             xlim([3 100]);
             xlabel('Frequency (Hz)');
             ylabel('ms coherence');
-            pairname = coherenceResultsTd.pairname(c,:);
-            ttluse = sprintf('coh %s %s',pairname{1,1},pairname{1,2});
+            pairname = fn;
+            ttluse = sprintf('coh %s',fn);
             title(ttluse);
+            
             set(gca,'FontSize',20);
         end
 
-        pairnames = coherenceResultsTd.pairname;
-        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','coh_states',patient{dd},pkgSideUse)); 
-        save(fnmsv,'allDataPkgRcsAccCoh','allstates','statesUse','patientCOH_at_home','pairnames');
+        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','coh_states',patientUse{dd},pkgSideUse{dd})); 
+        save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','patientCOH_at_home');
         clear prfig;
-        sgtitle(sprintf('state estimate %s PKG %s coherence', patient{dd},pkgSideUse),'FontSize',20);
+        sgtitle(sprintf('state estimate %s PKG %s coherence', patientUse{dd},pkgSideUse{dd}),'FontSize',20);
         prfig.plotwidth           = 15;
         prfig.plotheight          = 10;
         prfig.figdir             = figdirout;
-        prfig.figname             = sprintf('%s %s pkg coherence_10_min_avgerage','pkg_states',patient{dd},pkgSideUse);
+        prfig.figname             = sprintf('%s %s pkg coherence_10_min_avgerage','pkg_states',patientUse{dd},pkgSideUse{dd});
         plot_hfig(hfig,prfig)
         close(hfig);
-        fnmsave = fullfile(resultsdir,'patientCOH_at_home.mat');
+        fnmsave = fullfile(figdirout,'patientCOH_at_home.mat');
         save(fnmsave,'patientCOH_at_home');
     end
     %%
@@ -1261,6 +1361,12 @@ for dd = 1:length(psdrFiles)
 end
 
 return;
+
+
+
+
+
+
 %% plot single subject transition 
 hfig = figure; 
 hfig.Color = 'w'; 
@@ -1435,6 +1541,12 @@ switch patient{dd}(1:5)
             cellfun(@(x) any(strfind(x,'tremor')),rawstates);
         sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
     case 'RCS07'
+        onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+            cellfun(@(x) any(strfind(x,'on')),rawstates);
+        offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+            cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+        sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+    case 'RCS08'
         onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
             cellfun(@(x) any(strfind(x,'on')),rawstates);
         offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...

@@ -1,5 +1,21 @@
-function plot_ipad_data_rcs_json(event_indices,ecog,ecogsr,figdir,timeparams)
+function [timeparams] = plot_ipad_data_rcs_json(event_indices,ecog,ecogsr,figdir,timeparams,varargin)
 addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/First_Pass_Data_Analysis/code/toolboxes/eeglab14_1_0b'));
+% set some subplot prarams 
+if ~isempty(varargin{1})
+    nrows = varargin{1}; 
+    ncols = varargin{2}; 
+    saveFig = varargin{3}; 
+    minimum_frequency= varargin{4};
+    maximum_frequency= varargin{5};
+
+else
+    nrows = 2; 
+    ncols = 2; 
+    saveFig = 1;
+    minimum_frequency=2;%lowest freq to examine
+    maximum_frequency= 123;
+
+end
 
 %load ecog file
 %load event file
@@ -12,8 +28,10 @@ stop_epoch_at_this_time     = timeparams.stop_epoch_at_this_time; % ms relative 
 start_baseline_at_this_time = timeparams.start_baseline_at_this_time;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
 stop_baseline_at_this_time  = timeparams.stop_baseline_at_this_time;%5-6000; % ms relative to event
 start_window_at_this_time   = -500;
-minimum_frequency=2;%lowest freq to examine
-maximum_frequency=200;
+
+if maximum_frequency >= ecogsr/2
+    maximum_frequency = ecogsr/2 - 10;
+end
 number_of_frequencies = 180;
 minimum_frequency_step_size = .5;
 sampling_rate = ecogsr;
@@ -119,14 +137,19 @@ for ch_index = 1:num_channels
     end
 end
 
-fnmsv = fullfile(figdir,sprintf('analyzed_ipad_data_json_%s.mat',timeparams.analysis ));
-save(fnmsv);
+timeparams.center_frequencies = center_frequencies;
+timeparams.epoch_time = epoch_time;
+timeparams.zertf = zertf;
+timeparams.ertf = ertf;
+
+% fnmsv = fullfile(figdir,sprintf('analyzed_ipad_data_json_%s.mat',timeparams.analysis ));
+% save(fnmsv);
 
 %% plot
 hfig = figure;
 for ch_plot = 1:num_channels
     for condition=1:1
-        h=subplot(2,2,ch_plot);
+        h=subplot(nrows,ncols,ch_plot);
         cmax= 2;%max(abs(squeeze(zertf(:))));
         cmin=-cmax;
         tempmat=double(squeeze(zertf(:,:,condition,ch_plot)));
@@ -140,12 +163,15 @@ for ch_plot = 1:num_channels
         hold on;
         
         plot([0 0 ],[h.YLim ],...
-            'LineWidth',2,...
-            'Color',[0.1 0.1 0.1 0.7]);        xlabel('time (msec)');
+            'LineWidth',4,...
+            'LineStyle','-.',...
+            'Color',[0.8 0.1 0.1 0.7]);        
+        xlabel('time (msec)');
         if timeparams.extralines
             plot([timeparams.extralinesec timeparams.extralinesec],[h.YLim ],...
-                'LineWidth',2,...
-                'Color',[0.2 0.2 0.2 0.7]);
+                'LineWidth',4,...
+                'LineStyle','-.',...
+                'Color',[0 0.39 0 0.7]);
         end
         ylabel('Frequency (Hz)');
         hold on;
@@ -155,27 +181,33 @@ for ch_plot = 1:num_channels
 end
 hfig.Color = 'w';
 set(findall(hfig,'-property','FontSize'),'FontSize',12)
-baselineTtl = sprintf('baseline %d %d',timeparams.start_baseline_at_this_time,...
-    timeparams.stop_baseline_at_this_time);
-suptitle(baselineTtl);
-fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.fig',timeparams.start_baseline_at_this_time,...
-    timeparams.stop_baseline_at_this_time,...
-    timeparams.analysis,timeparams.filtertype);
-saveas(hfig,fullfile(figdir,fnmsv));
-hfig.PaperPositionMode = 'manual';
-hfig.PaperSize = [14 8];
-hfig.PaperPosition = [0 0 14 8];
-fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.jpeg',timeparams.start_baseline_at_this_time,...
-    timeparams.stop_baseline_at_this_time,...
-    timeparams.analysis,timeparams.filtertype);
-print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r600');
-% print(hfig,fullfile(figdir,fnmsv),'-dpdf');
 
 
-fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.pdf',timeparams.start_baseline_at_this_time,...
-    timeparams.stop_baseline_at_this_time,...
-    timeparams.analysis,timeparams.filtertype);
-print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r600');
-
-close(hfig);
+if saveFig == 1;
+    hfig.Color = 'w';
+    set(findall(hfig,'-property','FontSize'),'FontSize',12)
+    baselineTtl = sprintf('baseline %d %d',timeparams.start_baseline_at_this_time,...
+        timeparams.stop_baseline_at_this_time);
+    suptitle(baselineTtl);
+    fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.fig',timeparams.start_baseline_at_this_time,...
+        timeparams.stop_baseline_at_this_time,...
+        timeparams.analysis,timeparams.filtertype);
+    saveas(hfig,fullfile(figdir,fnmsv));
+    hfig.PaperPositionMode = 'manual';
+    hfig.PaperSize = [14 8];
+    hfig.PaperPosition = [0 0 14 8];
+    fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.jpeg',timeparams.start_baseline_at_this_time,...
+        timeparams.stop_baseline_at_this_time,...
+        timeparams.analysis,timeparams.filtertype);
+    print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r600');
+    % print(hfig,fullfile(figdir,fnmsv),'-dpdf');
+    
+    
+    fnmsv = sprintf('ipad_spectrogram_baseline-%d-%d_%s_%s.pdf',timeparams.start_baseline_at_this_time,...
+        timeparams.stop_baseline_at_this_time,...
+        timeparams.analysis,timeparams.filtertype);
+    print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r600');
+    
+    close(hfig);
+end
 end

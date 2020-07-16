@@ -3,16 +3,16 @@ function [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontag
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 
 % fix issues with device settings sometiems being a cell array and
-% sometimes not 
+% sometimes not
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
-
-%% print raw device settings strucutre 
+clc
+%% print raw device settings strucutre
 
 for f = 1:length(DeviceSettings)
     curStr = DeviceSettings{f};
-    fieldnames1 = fieldnames(curStr); 
+    fieldnames1 = fieldnames(curStr);
     fprintf('[%0.3d]\n',f);
     for f1 = 1:length(fieldnames1)
        fprintf('\t%s\n',fieldnames1{f1});
@@ -29,11 +29,11 @@ end
 
 %%
 deviceSettingTable = table();
-recNum = 1; 
+recNum = 1;
 f = 1;
-strCnt = 1; 
-strmStopCnt = 1; 
-senseStopCnt = 1; 
+strCnt = 1;
+strmStopCnt = 1;
+senseStopCnt = 1;
 instream = 0;
 while f <= length(DeviceSettings)
     fnms = fieldnames(DeviceSettings{f});
@@ -42,7 +42,7 @@ while f <= length(DeviceSettings)
         if isfield(curStr.SensingConfig,'timeDomainChannels')
             tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
             timenum = curStr.RecordInfo.HostUnixTime;
-            t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS'); 
+            t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
             outRec(recNum).timeStart = t;
             outRec(recNum).unixtimeStart  = timenum;
             outRec(recNum).tdData = tdData;
@@ -57,10 +57,10 @@ while f <= length(DeviceSettings)
             recNum = recNum + 1;
         end
     end
-    % check if streaming started 
+    % check if streaming started
     if isfield(curStr,'StreamState')
         if curStr.StreamState.TimeDomainStreamEnabled
-            if ~instream % if not instream then streaming is starting 
+            if ~instream % if not instream then streaming is starting
                 timenum = curStr.RecordInfo.HostUnixTime;
                 t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
                 actionuse = sprintf('stream start %d',strCnt);
@@ -76,9 +76,9 @@ while f <= length(DeviceSettings)
                 recNum = recNum + 1;
                 instream = 1;
             end
-        end 
+        end
     end
-    % check if streaming stopped - 
+    % check if streaming stopped -
     % it can either be stopped by turning streaming off (MOST LOGICAL1)
     % or it can be stopped by turning sensing off (DO WE EVER TURN SENSE OFF???, ask Randy/Roee)
     % option 1 - stream has been turned off ()
@@ -135,13 +135,32 @@ while f <= length(DeviceSettings)
 end
 % loop on deviceSettigs and extract the start and stop time for each
 % recording in the file.
-deviceSettingsOut = table(); 
+deviceSettingsOut = table();
 idxnotnan = ~isnan(deviceSettingTable.recNum);
-unqRecs = unique(deviceSettingTable.recNum(idxnotnan)); 
+unqRecs = unique(deviceSettingTable.recNum(idxnotnan));
 for u = 1:length(unqRecs)
     idxuse = deviceSettingTable.recNum == unqRecs(u);
     dt = deviceSettingTable(idxuse,:);
-    if size(dt,1) == 1 % this means that stream didn't stop properly
+    if size(dt,1) == 1 % this means that stream didn't stop properly / or that we jsut have one recrodings
+        deviceSettingsOut.recNum(u) = unqRecs(u);
+        deviceSettingsOut.timeStart(u) = dt.timeStart{1};
+        % assume time stop is end of file
+        timenum = DeviceSettings{end}.RecordInfo.HostUnixTime;
+        timeEnd = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+        deviceSettingsOut.timeStop(u) = timeEnd;
+        deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
+        for c = 1:4 % find sample rate
+            if ~strcmp(dt.tdDataStruc{1}(c).sampleRate,'disabled')
+                deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
+            end
+        end
+        for c = 1:4
+            fnuse = sprintf('chan%d',c);
+            deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+        end
+        deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
+
     else
         deviceSettingsOut.recNum(u) = unqRecs(u);
         deviceSettingsOut.timeStart(u) = dt.timeStart{1};
@@ -164,20 +183,20 @@ end
 %% load stimulation config
 % this code (re stim sweep part) assumes no change in stimulation from initial states
 % this code will fail for stim sweeps or if any changes were made to
-% stimilation 
+% stimilation
 % need to fix this to include stim changes and when the occured to color
 % data properly according to stim changes and when the took place for in
-% clinic testing 
+% clinic testing
 
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
 therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
-groups = [ 0 1 2 3]; 
-groupNames = {'A','B','C','D'}; 
-stimState = table(); 
-cnt = 1; 
-for g = 1:length(groups) 
+groups = [ 0 1 2 3];
+groupNames = {'A','B','C','D'};
+stimState = table();
+cnt = 1;
+for g = 1:length(groups)
     fn = sprintf('TherapyConfigGroup%d',groups(g));
     for p = 1:4
         if DeviceSettings{1}.TherapyConfigGroup0.programs(p).isEnabled==0
@@ -193,21 +212,21 @@ for g = 1:length(groups)
                 stimState.activeGroup(cnt) = 0;
                 stimState.stimulation_on(cnt) = 0;
             end
-            
+
             stimState.program(cnt) = p;
             stimState.pulseWidth_mcrSec(cnt) = DeviceSettings{1}.(fn).programs(p).pulseWidthInMicroseconds;
             stimState.amplitude_mA(cnt) = DeviceSettings{1}.(fn).programs(p).amplitudeInMilliamps;
             stimState.rate_Hz(cnt) = DeviceSettings{1}.(fn).rateInHz;
             elecs = DeviceSettings{1}.(fn).programs(p).electrodes.electrodes;
-            elecStr = ''; 
+            elecStr = '';
             for e = 1:length(elecs)
-                if elecs(e).isOff == 0 % electrode active 
+                if elecs(e).isOff == 0 % electrode active
                     if e == 17
-                        elecUse = 'c'; 
+                        elecUse = 'c';
                     else
                         elecUse = num2str(e-1);
                     end
-                    if elecs(e).electrodeType==1 % anode 
+                    if elecs(e).electrodeType==1 % anode
                         elecSign = '-';
                     else
                         elecSign = '+';
@@ -217,11 +236,11 @@ for g = 1:length(groups)
                 end
             end
 
-            stimState.electrodes{cnt} = elecStr; 
-            cnt = cnt + 1; 
+            stimState.electrodes{cnt} = elecStr;
+            cnt = cnt + 1;
         end
     end
-end 
+end
 if ~isempty(stimState)
     stimStatus = stimState(logical(stimState.activeGroup),:);
 else
@@ -229,29 +248,29 @@ else
 end
 
 %% Adaptive / detection config
-% detection settings first are reported in full (e.g. all fields) 
-% after this point, only changes are reported. 
+% detection settings first are reported in full (e.g. all fields)
+% after this point, only changes are reported.
 % to make analysis easier, each row in output table will contain the full
-% settings such that I copy over initial settings. 
+% settings such that I copy over initial settings.
 % this also assumes that you get a full report of the detection settings on
-% first connection. 
+% first connection.
 
 % the settings being changed in each adaptive state update will be noted
-% in a cell array as well 
+% in a cell array as well
 
 
 
 %%%
 %%%
 %%%
-% NEW CODE - first load initial settings that then get updates 
+% NEW CODE - first load initial settings that then get updates
 %%%
 %%%
 %%%
 
 f = 1;
 previosSettIdx = 0;
-currentSettIdx  = 1; 
+currentSettIdx  = 1;
 detectionConfig = table();
 adaptiveSettings = table();
 
@@ -264,7 +283,7 @@ if isfield(curStr,'DetectionConfig')
     lds_fn = {'Ld0','Ld1'};
     % start time and host unix time
     timenum = curStr.RecordInfo.HostUnixTime;
-    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS'); 
+    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
     detectionConfig.timeStart{f} = t;
     detectionConfig.HostUnixTime = curStr.RecordInfo.HostUnixTime;
     % bias term, etc...
@@ -289,9 +308,9 @@ if isfield(curStr,'AdaptiveConfig')
     adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
         'deltaLimitsValid','deltasValid'};
     adaptiveConfig = curStr.AdaptiveConfig;
-    
+
     % time
-    
+
     for a = 1:length(adaptive_fields)
         if isfield(adaptiveConfig,adaptive_fields{a})
             adaptiveSettings.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
@@ -326,9 +345,9 @@ if isfield(curStr,'AdaptiveConfig')
         % fill in previous settings.
     end
 end
-   
-% loop on rest of code and just report changes and when they happened 
-% don't copy things over for now 
+
+% loop on rest of code and just report changes and when they happened
+% don't copy things over for now
 
 % return;
 
@@ -340,14 +359,14 @@ end
 
 % f = 2;
 % previosSettIdx = 0;
-% currentSettIdx  = 1; 
+% currentSettIdx  = 1;
 % changesMade = struct();
-% 
+%
 % cntChangeTemp = 1;
 % cntchangeAdap = 1;
 % embeddedOn = 0;
 % adaptiveChanges = table();
-% 
+%
 % while f<length(DeviceSettings)
 %     fnms = fieldnames(DeviceSettings{f})
 %     curStr = DeviceSettings{f}
@@ -358,7 +377,7 @@ end
 %                 embeddedOn = 1;
 %                 % start time and host unix time
 %                 timenum = curStr.RecordInfo.HostUnixTime;
-%                 t =  datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS'); 
+%                 t =  datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 %                 adaptiveChanges.changeNum(cntChangeTemp) = cntchangeAdap;
 %                 adaptiveChanges.timeChange(cntChangeTemp) = t;
 %                 adaptiveChanges.adaptiveMode(cntChangeTemp) = 1;
@@ -376,7 +395,7 @@ end
 %     end
 %     f = f + 1;
 % end
-% 
+%
 % adaptiveChangesTemp = table();
 % nextRow = 0;
 % for j=1:size(adaptiveChanges,1)
@@ -386,26 +405,26 @@ end
 %     end
 % end
 % adaptiveChangesTemp
-    
-%%%%%%%%%% JUAN HERE 
-% 
+
+%%%%%%%%%% JUAN HERE
+%
 % loop for device setting structure
-% 
+%
 %     we need to get time
 %     stream is on, even if adaptive has changed
-%     
+%
 %         strean on, start
-%         
+%
 %         --- adaptive states (on/off)
-%         
+%
 %         stream off
-%     
+%
 %         e.g. adaptive off/stream on
 %         etc...
-%         
+%
 %         we can update adaptive parameter, but not start streaming
 %         same but we are not in adaptive group (group D on) / sth in settings to tell us that 'adaptive on' sth like this
-%         
+%
 %         time should be chnaged from unit to ins time
 
 
@@ -417,7 +436,7 @@ end
 %     det_fiels = {'blankingDurationUponStateChange',...
 %         'detectionEnable','detectionInputs','fractionalFixedPointValue',...
 %         'holdoffTime','onsetDuration','terminationDuration','updateRate'};
-%     if isfield(curStr,'DetectionConfig') 
+%     if isfield(curStr,'DetectionConfig')
 %         lds_fn = {'Ld0','Ld1'};
 %         for ll = 1:length(lds_fn)
 %             ldTable = table();
@@ -430,7 +449,7 @@ end
 %             for d = 1:length(det_fiels)
 %                 adaptiveChanges.([lds_fn{ll} '_' det_fiels{d}])  =  LD.(det_fiels{d});
 %             end
-%             else % fill in previous settings. 
+%             else % fill in previous settings.
 %                 warning('missing field on first itiration');
 %             end
 %         end
@@ -481,24 +500,24 @@ end
 
 
 %%%%
-%%% NEEED TO FIX STATES   - with is field for change detection 
-%%% 
+%%% NEEED TO FIX STATES   - with is field for change detection
 %%%
 %%%
 %%%
-% OLD CODE 
+%%%
+% OLD CODE
 %%%
 %%%
 %%%
 %{
 % DetectionConfig
 % AdaptiveConfig
-detectionSettings = struct(); detect_idx = 1; 
-adaptiveSettings  = struct(); adaptive_idx = 1; 
-stateSettings     = struct(); state_idx = 1; 
+detectionSettings = struct(); detect_idx = 1;
+adaptiveSettings  = struct(); adaptive_idx = 1;
+stateSettings     = struct(); state_idx = 1;
 f = 2;
 previosSettIdx = 0;
-currentSettIdx  = 1; 
+currentSettIdx  = 1;
 while f <= length(DeviceSettings)
     fnms = fieldnames(DeviceSettings{f});
     curStr = DeviceSettings{f};
@@ -520,7 +539,7 @@ while f <= length(DeviceSettings)
             end
                 detectionSettings(detect_idx).(lds_fn{ll}) = ldTable;
             else
-                % fill in previous settings. 
+                % fill in previous settings.
             end
         end
         detectionSettings(detect_idx).HostUnixTime = curStr.RecordInfo.HostUnixTime;
@@ -532,15 +551,15 @@ while f <= length(DeviceSettings)
             'deltaLimitsValid','deltasValid'};
         adaptiveTable = table();
         adaptiveConfig = curStr.AdaptiveConfig;
-        cntmissing = 1; 
+        cntmissing = 1;
         missingFields= {};
         for a = 1:length(adaptive_fields)
             if isfield(adaptiveConfig,adaptive_fields{a})
             adaptiveTable.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
             else
                 missingFields{cntmissing} = adaptive_fields{a};
-                cntmissing = cntmissing + 1; 
-                % fill in previous settings. 
+                cntmissing = cntmissing + 1;
+                % fill in previous settings.
 
             end
         end
@@ -548,7 +567,7 @@ while f <= length(DeviceSettings)
             adaptiveTable.fall_rate = [adaptiveConfig.deltas.fall];
             adaptiveTable.rise_rate = [adaptiveConfig.deltas.rise];
         else
-            
+
             missingFields{cntmissing} = 'deltas';
             cntmissing = cntmissing + 1;
             % fill in previous settings.
@@ -586,7 +605,7 @@ end
 %%%
 %%%
 %%%
-% OLD CODE 
+% OLD CODE
 %%%
 %%%
 %%%
@@ -647,7 +666,7 @@ for f = 1:length(outstruc)
             outstruc(f).minusInput = 'unexpected';
     end
     if ~strcmp(outstruc(f).minusInput,'floating') & ~strcmp(outstruc(f).minusInput,'unexpected')
-        if f > 2 % asssumes there is no bridging 
+        if f > 2 % asssumes there is no bridging
             outstruc(f).minusInput = num2str( str2num(outstruc(f).minusInput)+8);
         end
     end
@@ -679,16 +698,16 @@ for f = 1:length(outstruc)
               outstruc(f).plusInput = num2str( str2num(outstruc(f).plusInput)+8);
           end
       end
-    % sample rate 
+    % sample rate
     switch tdDat(f).sampleRate
         case 0
             outstruc(f).sampleRate = '250Hz';
         case 1
             outstruc(f).sampleRate = '500Hz';
-        case 2 
+        case 2
             outstruc(f).sampleRate = '1000Hz';
         case 240
-            outstruc(f).sampleRate = 'disabled';     
+            outstruc(f).sampleRate = 'disabled';
         otherwise
             outstruc(f).plusInput = 'unexpected';
     end

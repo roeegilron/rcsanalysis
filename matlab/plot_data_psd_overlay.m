@@ -4,14 +4,14 @@ close all;
 params.figdir  = dirname;
 params.figtype = '-djpeg';
 params.resolution = 300;
-params.closeafterprint = 1; 
+params.closeafterprint = 1;
 params.figname = 'dyskinesia_rcs06_stim_rate_rate_titrate_2_4';
 params.plotwidth = 17;
 params.plotheight = 12;
-%% set params norm 
-pnorm.norm    = 0; 
-pnorm.normUse = [0 100]; 
-pnorm.zscore  = 0; 
+%% set params norm
+pnorm.norm    = 0;
+pnorm.normUse = [0 100];
+pnorm.zscore  = 0;
 pnorm.mean  = 0;
 
 ff = findFilesBVQX(dirname,'*.mat');
@@ -42,84 +42,114 @@ include = {'dyskinesia_130hz_0.1ma','dyskinesia_130hz_0.5ma',...
 include = {'dyskinesia_150hz_0.5ma','dyskinesia_130hz_0.5ma',...
     'dyskinesia_180hz_0.5ma'};
 
+% RCS08 10 day 
+include = {'RCS08_10Day_rest_off_meds_Right_1','RCS08_10Day_rest_on_meds_Right_2'};
+params.figname = 'rest_10_day_on_off_Right';
+
+include = {'RCS08_10Day_rest_off_meds_Left_1','RCS08_10Day_rest_on_meds_Left_1'};
+params.figname = 'rest_10_day_on_off_Left';
+
+
+
+% RCS08 3 week 
+
+include = {'RCS08_3Week_rest_off_meds_Left_1','RCS08_3Week_rest_on_meds_Left_1'};
+params.figname = 'rest_3_week_on_off_left';
+
+% 
+% include = {'RCS08_3Week_rest_off_meds_Right_1','RCS08_3Week_rest_on_meds_Right_1'};
+% params.figname = 'rest_3_week_on_off_right';
+
 
 cns = 1:4;
-cns = [1 3];
-cns = [2 4];
-%% plot psd
-lgaxesLFP = [];
-lgttlsLFP = {};
-
-lgaxesECOG = [];
-lgttlsECOG = {};
-hfig = figure;
-% set up subplots 
-hsub(1) = subplot(1,2,1);
-hsub(2) = subplot(1,2,2);
-
-
-for i = 1:length(include)
-    fileload = findFilesBVQX(dirname,[include{i} '.mat']);
-    if ~isempty(fileload)
-        load(fileload{1});
-        outdatcomplete = outdatachunk;
-        times = outdatcomplete.derivedTimes;
-        srate = unique( outdatcomplete.samplerate );
-        nmplt = 1; 
-        for c = cns
-            if c > 2
-                nmpltuse = 2;
-                ttlstr = 'M1';
-            else
-                nmpltuse = 1;
-                ttlstr = 'STN';
+for ccc = 1:2
+    if ccc == 1
+        cns = [1 3];
+    elseif ccc == 2 
+        cns = [2 4];
+    end
+    %% plot psd
+    lgaxesLFP = [];
+    lgttlsLFP = {};
+    
+    lgaxesECOG = [];
+    lgttlsECOG = {};
+    hfig = figure;
+    % set up subplots
+    hsub(1) = subplot(1,2,1);
+    hsub(2) = subplot(1,2,2);
+    
+    
+    for i = 1:length(include)
+        fileload = findFilesBVQX(dirname,[include{i} '.mat'],struct('depth',1));
+        if ~isempty(fileload)
+            load(fileload{1});
+            outdatcomplete = outdatachunk;
+            times = outdatcomplete.derivedTimes;
+            
+            [fnn,pnn] = fileparts(fileload{1});
+            fprintf('filename:\t %s\n',fnn);
+            fprintf('pathname:\t %s\n',pnn);
+            fprintf('time %s \n',outdatachunk.derivedTimes(1)); 
+            
+            srate = unique( outdatcomplete.samplerate );
+            nmplt = 1;
+            for c = cns
+                if c > 2
+                    nmpltuse = 2;
+                    ttlstr = 'M1';
+                else
+                    nmpltuse = 1;
+                    ttlstr = 'STN';
+                end
+                axes(hsub(nmpltuse)); %only set up for 2 plots
+                hold on;
+                fnm = sprintf('key%d',c-1);
+                y = outdatcomplete.(fnm);
+                y = y - mean(y);
+                if pnorm.zscore
+                    y = zscore(y);
+                end
+                yout(:,c) = y';
+                [fftOut,f]   = pwelch(y,srate,srate/2,0:1:srate/2,srate,'psd');
+                if pnorm.norm
+                    idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
+                    divBy = std(fftOut(idxnorm));
+                    fftOut = fftOut./divBy;
+                end
+                if pnorm.mean
+                    idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
+                    divBy = mean(fftOut(idxnorm));
+                    fftOut = fftOut./divBy;
+                    
+                end
+                hplt(nmplt) = plot(f,log10(fftOut));
+                hplt(nmplt).LineWidth = 2;
+                %hplt.Color = [0 0 0.8 0.7];
+                hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
+                xlim([0 150]);
+                xlabel('Frequency (Hz)');
+                ylabel('Power  (log_1_0\muV^2/Hz)');
+                set(gca,'FontSize',20);
+                ttl(nmplt) = title(ttlstr,'FontSize',30);
+                clear y yout;
+                ttlout{nmplt} = [strrep( include{i}, '_',' ') outRec(1).tdData(c).chanOut];
+                % add legends
+                if c > 2
+                    lgaxesECOG = [lgaxesECOG hplt(nmplt)];
+                    lgttlsECOG = [lgttlsECOG ttlout(nmplt)];
+                else
+                    lgaxesLFP = [lgaxesLFP hplt(nmplt)];
+                    lgttlsLFP = [lgttlsLFP ttlout(nmplt)];
+                end
+                nmplt = nmplt + 1;
             end
-            axes(hsub(nmpltuse)); %only set up for 2 plots
-            hold on;
-            fnm = sprintf('key%d',c-1);
-            y = outdatcomplete.(fnm);
-            y = y - mean(y);
-            if pnorm.zscore 
-                y = zscore(y);
-            end
-            yout(:,c) = y';
-            [fftOut,f]   = pwelch(y,srate,srate/2,0:1:srate/2,srate,'psd');
-            if pnorm.norm 
-                idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
-                divBy = std(fftOut(idxnorm)); 
-                fftOut = fftOut./divBy; 
-            end
-            if pnorm.mean
-                idxnorm = f > pnorm.normUse(1) & f < pnorm.normUse(2);
-                divBy = mean(fftOut(idxnorm));
-                fftOut = fftOut./divBy;
-
-            end
-            hplt(nmplt) = plot(f,log10(fftOut));
-            hplt(nmplt).LineWidth = 2;
-            %hplt.Color = [0 0 0.8 0.7];
-            hplt(nmplt).Color = [hplt(nmplt).Color 0.75];
-            xlim([0 150]);
-            xlabel('Frequency (Hz)');
-            ylabel('Power  (log_1_0\muV^2/Hz)');
-            set(gca,'FontSize',20);
-            ttl(nmplt) = title(ttlstr,'FontSize',30);
-            clear y yout;   
-            ttlout{nmplt} = [strrep( include{i}, '_',' ') outRec(1).tdData(c).chanOut];
-            % add legends
-            if c > 2
-                lgaxesECOG = [lgaxesECOG hplt(nmplt)];
-                lgttlsECOG = [lgttlsECOG ttlout(nmplt)];
-            else
-                lgaxesLFP = [lgaxesLFP hplt(nmplt)];
-                lgttlsLFP = [lgttlsLFP ttlout(nmplt)];
-            end
-            nmplt = nmplt + 1;
         end
     end
+    legend(lgaxesLFP,lgttlsLFP,'FontSize',20);
+    legend(lgaxesECOG,lgttlsECOG,'FontSize',20);
+    hfig.Color = 'w';
+    plot_hfig(hfig,params)
+    params.figname = sprintf('%s_%d-%d',params.figname, (1),cns(2));
 end
-legend(lgaxesLFP,lgttlsLFP,'FontSize',20);
-legend(lgaxesECOG,lgttlsECOG,'FontSize',20);
-hfig.Color = 'w';
-plot_hfig(hfig,params)
 end

@@ -687,7 +687,7 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-%                 statesUse = {'off','on','sleep'};
+                statesUse = {'off','on','sleep'};
                 
             case 'RCS05'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
@@ -723,7 +723,7 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-%                 statesUse = {'off','on','sleep'};
+                statesUse = {'off','on','sleep'};
             case 'RCS07'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
                         cellfun(@(x) any(strfind(x,'on')),rawstates);
