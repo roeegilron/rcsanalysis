@@ -5,6 +5,18 @@ DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
+% create aux table to help sort Device settings 
+deviceSettingsTable = table(); 
+for ds = 1:length(DeviceSettings)
+    fieldNames = fieldnames(DeviceSettings{ds}); 
+    recInfo = DeviceSettings{ds}.RecordInfo; 
+    timenum = recInfo.HostUnixTime;
+    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    deviceSettingsTable.time{ds} = fieldNames{1};
+    deviceSettingsTable.fn1{ds} = fieldNames{1};
+    deviceSettingsTable.fn1{ds} = fieldNames{2};
+    deviceSettingsTable.struc{ds} = DeviceSettings{ds}; 
+end
 clc
 %% print raw device settings strucutre 
 for f = 1:length(DeviceSettings)
