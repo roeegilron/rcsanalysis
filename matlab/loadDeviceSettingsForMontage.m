@@ -12,11 +12,16 @@ for ds = 1:length(DeviceSettings)
     recInfo = DeviceSettings{ds}.RecordInfo; 
     timenum = recInfo.HostUnixTime;
     t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-    deviceSettingsTable.time{ds} = fieldNames{1};
+    deviceSettingsTable.time(ds) = t;
     deviceSettingsTable.fn1{ds} = fieldNames{1};
-    deviceSettingsTable.fn1{ds} = fieldNames{2};
+    deviceSettingsTable.fn2{ds} = fieldNames{2};
     deviceSettingsTable.struc{ds} = DeviceSettings{ds}; 
 end
+% get rid of telemetry and battery status (for now, not interesting for
+% most of our use cases) 
+idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2) | ... 
+                    cellfun(@(x) strcmp(x,'TelemetryModuleInfo'),deviceSettingsTable.fn2) ;
+deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:); 
 clc
 %% print raw device settings strucutre 
 for f = 1:length(DeviceSettings)
@@ -196,64 +201,102 @@ end
 % data properly according to stim changes and when the took place for in
 % clinic testing 
 
-if isstruct(DeviceSettings)
-    DeviceSettings = {DeviceSettings};
-end
-therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
-groups = [ 0 1 2 3]; 
-groupNames = {'A','B','C','D'}; 
-stimState = table(); 
-cnt = 1; 
-for g = 1:length(groups) 
-    fn = sprintf('TherapyConfigGroup%d',groups(g));
-    for p = 1:4
-        if DeviceSettings{1}.TherapyConfigGroup0.programs(p).isEnabled==0
-            stimState.group(cnt) = groupNames{g};
-            if (g-1) == therapyStatus.activeGroup
-                stimState.activeGroup(cnt) = 1;
-                if therapyStatus.therapyStatus
-                    stimState.stimulation_on(cnt) = 1;
+idxGroupChange = cellfun(@(x) any(strfind(x,'TherapyConfig')), deviceSettingsTable.fn2) | ...
+                 cellfun(@(x) any(strfind(x,'GeneralData')), deviceSettingsTable.fn2)  ;
+
+groupChangeTable = deviceSettingsTable(idxGroupChange,:); 
+
+% need to add something to check for stim changes as well in this table 
+% write not doesn't take into account stim changes 
+therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData; 
+
+cnt = 1;
+stimState = table();
+for gc = 1:size(groupChangeTable,1)
+    if ~any(strfind(groupChangeTable.fn2{gc},'Therapy'))
+        therapyStatus = groupChangeTable.struc{gc}.GeneralData.therapyStatusData;
+    else
+        
+        % find the group letter
+        timeGroupChange = groupChangeTable.time(gc);
+        groupNumber = str2num(groupChangeTable.fn2{gc}(end));
+        switch groupNumber
+            case 0
+                groupName = 'A';
+            case 1
+                groupName = 'B';
+            case 2
+                groupName = 'C';
+            case 3
+                groupName = 'D';
+        end
+        
+        groupStruc = groupChangeTable.struc{gc};
+
+        fnGroup = groupChangeTable.fn2{gc};
+        for p = 1:4
+            if groupStruc.(fnGroup).programs(p).isEnabled==0
+                stimState.time(cnt) = timeGroupChange; 
+                stimState.duration(cnt) = seconds(0); % place holder until loop through and fill out;
+                stimState.group(cnt) = groupName;
+                if groupNumber == therapyStatus.activeGroup
+                    stimState.activeGroup(cnt) = 1;
+                    if therapyStatus.therapyStatus
+                        stimState.stimulation_on(cnt) = 1;
+                    else
+                        stimState.stimulation_on(cnt) = 0;
+                    end
                 else
+                    stimState.activeGroup(cnt) = 0;
                     stimState.stimulation_on(cnt) = 0;
                 end
-            else
-                stimState.activeGroup(cnt) = 0;
-                stimState.stimulation_on(cnt) = 0;
-            end
-            
-            stimState.program(cnt) = p;
-            stimState.pulseWidth_mcrSec(cnt) = DeviceSettings{1}.(fn).programs(p).pulseWidthInMicroseconds;
-            stimState.amplitude_mA(cnt) = DeviceSettings{1}.(fn).programs(p).amplitudeInMilliamps;
-            stimState.rate_Hz(cnt) = DeviceSettings{1}.(fn).rateInHz;
-            elecs = DeviceSettings{1}.(fn).programs(p).electrodes.electrodes;
-            elecStr = ''; 
-            for e = 1:length(elecs)
-                if elecs(e).isOff == 0 % electrode active 
-                    if e == 17
-                        elecUse = 'c'; 
-                    else
-                        elecUse = num2str(e-1);
+                
+                stimState.program(cnt) = p;
+                stimState.pulseWidth_mcrSec(cnt) = groupStruc.(fnGroup).programs(p).pulseWidthInMicroseconds;
+                stimState.amplitude_mA(cnt) = groupStruc.(fnGroup).programs(p).amplitudeInMilliamps;
+                stimState.rate_Hz(cnt) = groupStruc.(fnGroup).rateInHz;
+                elecs = groupStruc.(fnGroup).programs(p).electrodes.electrodes;
+                elecStr = '';
+                for e = 1:length(elecs)
+                    if elecs(e).isOff == 0 % electrode active
+                        if e == 17
+                            elecUse = 'c';
+                        else
+                            elecUse = num2str(e-1);
+                        end
+                        if elecs(e).electrodeType==1 % anode
+                            elecSign = '-';
+                        else
+                            elecSign = '+';
+                        end
+                        elecSnippet = [elecSign elecUse ' '];
+                        elecStr = [elecStr elecSnippet];
                     end
-                    if elecs(e).electrodeType==1 % anode 
-                        elecSign = '-';
-                    else
-                        elecSign = '+';
-                    end
-                    elecSnippet = [elecSign elecUse ' '];
-                    elecStr = [elecStr elecSnippet];
                 end
+                
+                stimState.electrodes{cnt} = elecStr;
+                cnt = cnt + 1;
             end
-
-            stimState.electrodes{cnt} = elecStr; 
-            cnt = cnt + 1; 
+        end
+        if ~isempty(stimState)
+            stimStatus = stimState(logical(stimState.activeGroup),:);
+        else
+            stimStatus = [];
         end
     end
-end 
-if ~isempty(stimState)
-    stimStatus = stimState(logical(stimState.activeGroup),:);
-else
-    stimStatus = [];
 end
+% fill in durations 
+for gc = 1:size(stimState,1) 
+    if gc == 1 
+        stimState.duration(gc) = stimState.time(gc) - deviceSettingsTable.time(1) ;
+    elseif gc == size(stimState,1) 
+        stimState.duration(gc) = deviceSettingsTable.time(end) - stimState.time(gc);
+    else 
+        stimState.duration(gc) = stimState.time(gc+1) - stimState.time(gc);
+        
+    end
+end
+stimState.duration.Format = 'hh:mm:ss';
 
 %% Adaptive / detection config
 % detection settings first are reported in full (e.g. all fields) 
