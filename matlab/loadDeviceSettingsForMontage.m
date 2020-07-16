@@ -2,6 +2,7 @@ function [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontag
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 % fix issues with device settings sometiems being a cell array and
 % sometimes not 
+clc; 
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
@@ -275,6 +276,16 @@ for gc = 1:size(groupChangeTable,1)
                 end
                 
                 stimState.electrodes{cnt} = elecStr;
+                
+                % active / passive recharge 
+                activeRechargeRatio = groupStruc.(fnGroup).programs(p).miscSettings.activeRechargeRatio;
+                if activeRechargeRatio == 10 
+                    stimState.active_recharge(cnt) = 1;
+                elseif activeRechargeRatio == 0 
+                    stimState.active_recharge(cnt) = 0;
+                else
+                    stimState.active_recharge(cnt) = NaN; % unexpected value 
+                end
                 cnt = cnt + 1;
             end
         end
