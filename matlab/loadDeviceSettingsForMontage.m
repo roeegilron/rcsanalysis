@@ -25,21 +25,24 @@ idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2
 deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:); 
 clc
 %% print raw device settings strucutre 
-for f = 1:length(DeviceSettings)
-    curStr = DeviceSettings{f};
-    fieldnames1 = fieldnames(curStr); 
-    fprintf('[%0.3d]\n',f);
-    for f1 = 1:length(fieldnames1)
-       fprintf('\t%s\n',fieldnames1{f1});
-       curStr2 = curStr.(fieldnames1{f1});
-       if isstruct(curStr2)
-           fieldnames2 = fieldnames(curStr2);
-           for f2 = 1:length(fieldnames2)
-               fprintf('\t\t%s\n',fieldnames2{f2});
-           end
-       end
+printRawDeviceSettings = 0;
+if printRawDeviceSettings
+    for f = 1:length(DeviceSettings)
+        curStr = DeviceSettings{f};
+        fieldnames1 = fieldnames(curStr);
+        fprintf('[%0.3d]\n',f);
+        for f1 = 1:length(fieldnames1)
+            fprintf('\t%s\n',fieldnames1{f1});
+            curStr2 = curStr.(fieldnames1{f1});
+            if isstruct(curStr2)
+                fieldnames2 = fieldnames(curStr2);
+                for f2 = 1:length(fieldnames2)
+                    fprintf('\t\t%s\n',fieldnames2{f2});
+                end
+            end
+        end
+        fprintf('\n');
     end
-    fprintf('\n');
 end
 %%
 deviceSettingTable = table();

@@ -6,6 +6,7 @@ function print_stim_and_sense_settings_in_folders(varargin)
 % folder you are trying to open it will just re-open this
 % so if you have more data you sohuld delete stim_and_sense_settings_table.mat
 % from your folder and rerun
+warning('off','MATLAB:table:RowsAddedExistingVars');
 dirname = varargin{1};
 overwrite_file = 1; % don't load existing file  
 if size(varargin,2) == 2 
@@ -69,6 +70,13 @@ else
         jsonfn = fullfile(pn,'DeviceSettings.json');
         try 
             [deviceSettingsOut,stimStatus,stimState] = loadDeviceSettingsForMontage(jsonfn); % new version
+            stimStateRaw = stimState; 
+            stimState = table();
+            % choose the stim state with the longest duration and with an
+            % active group 
+            
+            sortedStates = sortrows(stimStateRaw,{'activeGroup','duration'},{'descend','descend'});
+            stimState = stimStateRaw(1,:); 
             deviceSettingsError = 0;
         catch 
             deviceSettingsError = 1;
@@ -137,6 +145,10 @@ else
                     sense_stim_table.amplitude_mA(cntbl) = NaN;
                     sense_stim_table.rate_Hz(cntbl) = NaN;
                     sense_stim_table.electrodes{cntbl} = 'NA';
+                    sense_stim_table.active_recharge(cntbl) = NaN;
+                    sense_stim_table.stimTable{cntbl}             = table();
+
+
                     
                     
                 else
@@ -153,6 +165,8 @@ else
                     sense_stim_table.amplitude_mA(cntbl) = stimTable.amplitude_mA;
                     sense_stim_table.rate_Hz(cntbl) = stimTable.rate_Hz;
                     sense_stim_table.electrodes{cntbl} = stimTable.electrodes{1};
+                    sense_stim_table.active_recharge(cntbl) = stimTable.active_recharge;
+                    sense_stim_table.stimTable{cntbl}              = stimStateRaw;
                     
                 end
                 cntbl = cntbl +1;
@@ -161,7 +175,7 @@ else
                     fnusechan = sprintf('chan%d',ccc);
                     fprintf(fid,'\t\t\t\t\t\t\t\t\t%s\n',deviceSettingsOut.(fnusechan){1});
                 end
-                fprintf(fid,'\n\n\');
+                fprintf(fid,'\n\n');
             else
                 
             end
@@ -246,6 +260,7 @@ for e = 1:length(stim_electrodes)
        fprintf(fid,'\t\t [%s] %.2f mA\n',sum(tbluse.duration(idxcur_use)),unqCurrents(uc));
    end
 end
+warning('on','MATLAB:table:RowsAddedExistingVars');
 
 
 fclose(fid);
