@@ -76,7 +76,7 @@ else
             % active group 
             
             sortedStates = sortrows(stimStateRaw,{'activeGroup','duration'},{'descend','descend'});
-            stimState = stimStateRaw(1,:); 
+            stimState = sortedStates(1,:); 
             deviceSettingsError = 0;
         catch 
             deviceSettingsError = 1;

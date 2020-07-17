@@ -1,8 +1,9 @@
-function [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontage(fn)
+function [deviceSettingsOut,stimStatus,stimState,fftTable,powerTable]  = loadDeviceSettingsForMontage(fn)
+warning('off','MATLAB:table:RowsAddedExistingVars');
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 % fix issues with device settings sometiems being a cell array and
 % sometimes not 
-clc; 
+
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
@@ -23,7 +24,7 @@ end
 idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2) | ... 
                     cellfun(@(x) strcmp(x,'TelemetryModuleInfo'),deviceSettingsTable.fn2) ;
 deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:); 
-clc
+
 %% print raw device settings strucutre 
 printRawDeviceSettings = 0;
 if printRawDeviceSettings
@@ -193,6 +194,114 @@ for u = 1:length(unqRecs)
             deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
         end
         deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
+    end
+end
+
+%% load power channel + fft config 
+idxSensingConfig = cellfun(@(x) any(strfind(x,'SensingConfig')), deviceSettingsTable.fn2);
+
+SensingConfigTable = deviceSettingsTable(idxSensingConfig,:); 
+fftTable = table(); 
+fftcnt = 1; 
+powerTable = table();
+pwrcnt = 1; 
+
+for ss = 1:size(SensingConfigTable)
+    strc = SensingConfigTable.struc{ss}.SensingConfig; 
+    % find the closest sampling rate (in time) 
+    % in the settings file 
+    % assume that this is the sample rate 
+    % this may be wrong assutmpiton 
+    time = SensingConfigTable.time(ss); 
+    [~,idx] = min(abs(time-deviceSettingsOut.timeStart));
+    sampleRate = deviceSettingsOut.samplingRate(idx);
+    if isfield(strc,'fftConfig')
+        fftConfig = strc.fftConfig;
+        fftTable.time(fftcnt)  = time;
+        switch fftConfig.size
+            case 0
+                fftTable.fftSize(fftcnt) = 64;
+            case 1
+                fftTable.fftSize(fftcnt)  = 256;
+            case 3
+                fftTable.fftSize(fftcnt)  = 1024;
+        end
+        fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
+        fftTable.config(fftcnt) = fftConfig.config;
+        fftTable.interval(fftcnt) = fftConfig.interval;
+        fftTable.size(fftcnt) = fftConfig.size;
+        fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
+        fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
+        fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
+    end
+    
+    
+    if isfield(strc,'powerChannels')
+        % find the closest fftSize (in time)
+        % in the fftTable 
+        % assume that this is the correct fftSize
+        % this may be wrong assutmpiton
+        powerTable.time(pwrcnt) = time;
+        time = powerTable.time(pwrcnt);
+        [~,idx] = min(abs(time-fftTable.time));
+        fftSize = fftTable.fftSize(idx);
+        
+        powerChannels = strc.powerChannels;
+        powerChannelsIdxs = [];
+        idxCnt = 1;
+        for c = 1:4
+            for b = 0:1
+                fieldStart = sprintf('band%dStart',b);
+                fieldStop = sprintf('band%dStop',b);
+                powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
+                powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
+                idxCnt = idxCnt+1;
+            end
+        end
+
+
+        %% get the bins to compute the power channels
+        fftSize = fftTable.fftSize(fftcnt);
+        numBins = fftSize/2;
+        binWidth = (sampleRate/2)/numBins;
+        i = 0;
+        bins = [];
+        while i < numBins
+            bins(i+1) = i*binWidth;
+            i =  i + 1;
+        end
+        FFTSize = fftSize; % can be 64  256  1024
+        sampleRate = sampleRate; % can be 250,500,1000
+        
+        numberOfBins = FFTSize/2;
+        binWidth = sampleRate/2/numberOfBins;
+        
+        for i = 0:(numberOfBins-1)
+            fftBins(i+1) = i*binWidth;
+            %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+        end
+        
+        lower(1) = 0;
+        for i = 2:length(fftBins)
+            valInHz = fftBins(i)-fftBins(2)/2;
+            lower(i) = valInHz;
+        end
+        
+        for i = 1:length(fftBins)
+            valInHz = fftBins(i)+fftBins(2)/2;
+            upper(i) = valInHz;
+        end
+        powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
+        powerBandInHz = {};
+        for pc = 1:size(powerChannelsIdxs,1)
+            powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
+                lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
+            fnUse = sprintf('band%dHz',pc);
+            powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
+            powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
+        end
+        powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
+
     end
 end
 
@@ -400,7 +509,7 @@ if isfield(curStr,'AdaptiveConfig')
         % fill in previous settings.
     end
 end
-
+warning('on','MATLAB:table:RowsAddedExistingVars');
 
 % loop on rest of code and just report changes and when they happened 
 % don't copy things over for now 
