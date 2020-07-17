@@ -151,9 +151,16 @@ end
     %% set up figure
     hfig = figure;
     hfig.Color = 'w';
+    hpanel = panel();
+    hpanel.pack('h',{10 []});
+    hpanel(2).pack(4,1);
+    hpanel.select('all');
+    hpanel.fontsize = 12;
+    %%
     nrows = 4;
     for i = 1:nrows
-        hsb(i) = subplot(nrows,1,i);
+        hpanel(2,i,1).select();
+        hsb(i) = gca; 
         hold(hsb(i),'on');
     end
     %% plot data 
@@ -194,7 +201,7 @@ end
             prctile_99 = prctile(ld0,99);
             prctile_1  = prctile(ld0,1);
             if prctile_1 > ld0_low(1)
-                prctile_1 = ld0_low * 0.9;
+                prctile_1 = ld0_low(1) * 0.9;
             end
             if prctile_99 < ld0_high(1) 
                 prctile_99 = ld0_high(1)*1.1;
@@ -245,6 +252,12 @@ end
     [y,m,d] = ymd(dbuse.startTime(1));
     ttlLarge{2,1} = sprintf('%.4d/%.2d/%.2d',y,m,d);
     sgtitle(ttlLarge,'FontSize',16);
+    
+    
+    strPrint = getAdaptiveHumanReadaleSettings(fnDeviceSettings,0);
+    if ~isempty(strPrint)
+        x = 2;
+    end
     % save figure; 
     fig_title = sprintf('%s_%d_%0.2d-%0.2d',dbuse.patient{1},y,m,d);
     prfig.plotwidth           = 20;

@@ -1,4 +1,4 @@
-function getAdaptiveHumanReadaleSettings(varargin)
+function strOut = getAdaptiveHumanReadaleSettings(varargin)
 % input - this function takes as input DeviceSettings.json
 % option additional input - plot (0 = no, default, 1 = plot) 
 
@@ -17,6 +17,11 @@ elseif length(varargin) == 2
 end
 
 [deviceSettingsOut,stimStatus,stimState,fftTable,powerTable]  = loadDeviceSettingsForMontage(fn);
+if isempty(powerTable)
+    warning('could not get adaptive settinsg from file'); 
+    strOut = {};
+    return;
+end
 adaptiveSettings =  loadAdaptiveSettings(fn);
 stimStateRaw = stimState;
 stimState = table();
