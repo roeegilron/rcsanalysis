@@ -26,7 +26,8 @@ idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2
 deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:); 
 
 %% print raw device settings strucutre 
-printRawDeviceSettings = 0;
+clc
+printRawDeviceSettings = 1;
 if printRawDeviceSettings
     for f = 1:length(DeviceSettings)
         curStr = DeviceSettings{f};
