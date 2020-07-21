@@ -1,5 +1,5 @@
 function plot_all_embedded_adaptive_from_database()
-close all; clc;
+close all; clc; clear all;
 %% load database
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 patientFolders  = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
@@ -17,7 +17,7 @@ params.stim  = 1;
 params.min_size = hours(1);
 
 %%
-reloadDB = 0;
+reloadDB = 1;
 
 if reloadDB
 
@@ -26,18 +26,54 @@ idxuse = strcmp(db.group,params.group) & ...
     db.duration >= params.min_size;
 dbAdapt = db(idxuse,:);
 
+dbAdapt = db;
+
 % loop on this databse and only plot files in which adaptive is actually
 % changing
 db = dbAdapt;
 for d = 1:size(db,1)
     start  = tic;
     patdir = findFilesBVQX(patientFolders,['*', db.patient{d} '*'],struct('dirs',1,'depth',1));
+    % don't give it SCBS dir cuz it can also be starr lab dir 
     scbsdir = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1));
-    patsid = findFilesBVQX(scbsdir,[db.patient{d} ,db.side{d}],struct('dirs',1));
-    sessdir = findFilesBVQX(patsid{1}, ['*',db.sessname{d} ,'*'],struct('dirs',1));
-    devdir  = findFilesBVQX(sessdir{1},'*evice*',struct('dirs',1,'depth',1));
+    patsid = findFilesBVQX(patdir{1},[db.patient{d} ,db.side{d}],struct('dirs',1));
+    for ii = 1:length(patsid)
+        sessdir = findFilesBVQX(patsid{ii}, ['*',db.sessname{d} ,'*'],struct('dirs',1));
+        if ~isempty(sessdir)
+            if any(strfind('SummitContinuousBilateralStreaming',sessdir{1}))
+                db.recordedUsingSCBS(d) = 1;
+            else
+                db.recordedUsingSCBS(d) = 0;
+            end
+            break;
+        end
+        
+    end
+    if length(sessdir) > 1 
+        if length(sessdir{1}) > length(sessdir{2})
+            sessuse = sessdir{2};
+        else
+            sessuse = sessdir{1};
+        end
+    else
+        sessuse = sessdir{1};
+    end
+    devdir  = findFilesBVQX(sessuse,'*evice*',struct('dirs',1,'depth',1));
     fnSettings = fullfile(devdir{1},'DeviceSettings.json');
+    fnAdaptive = fullfile(devdir{1},'AdaptiveLog.json');
     adaptiveSettings = loadAdaptiveSettings(fnSettings); 
+    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
+    if ~isempty(timeReport.startTime)
+        db.detectionStreaming(d) = 1; 
+        db.detectionTimeStart(d) = timeReport.startTime; 
+        db.detectionTimeEnd(d) = timeReport.endTime; 
+        db.detectionDuration(d) = timeReport.duration; 
+    else
+        db.detectionStreaming(d) = 0; 
+        db.detectionTimeStart(d) = NaT; 
+        db.detectionTimeEnd(d) = NaT; 
+        db.detectionDuration(d) = seconds(0); 
+    end
     cur(1,1) = adaptiveSettings.currentMa_state0(1);
     cur(1,2) = adaptiveSettings.currentMa_state1(1);
     cur(1,3) = adaptiveSettings.currentMa_state2(1);
@@ -49,11 +85,13 @@ for d = 1:size(db,1)
         db.AdaptiveCurrentChanging(d) = 0;
     end 
     fprintf('%d/%d done in %.2f \n',d,size(db,1),toc(start));
+    
 end
     save(fullfile(database_folder,'adaptive_database.mat'),'db');
 else
     load(fullfile(database_folder,'adaptive_database.mat'),'db');
 end
+return;
 %%
 % plot only 
 

@@ -1,4 +1,6 @@
 function adaptiveSettings =  loadAdaptiveSettings(fn)
+warning('off','MATLAB:table:RowsAddedExistingVars');
+
 % relies on access both to device settings and to the adaptive file 
 % this code assumes that adaptive settings are not being changed mid file 
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
@@ -29,21 +31,21 @@ deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:);
 idxAdatpive = cellfun(@(x) strcmp(x,'AdaptiveConfig'),deviceSettingsTable.fn2);
 adaptiveConfigTable = deviceSettingsTable(idxAdatpive,:); 
 for a = 1:size(adaptiveConfigTable,1)
-    adaptiveConfigTable.struc{a}.AdaptiveConfig
+    adaptiveConfigTable.struc{a}.AdaptiveConfig;
 end
 
 % sense config structure report 
 idxSensing = cellfun(@(x) strcmp(x,'SensingConfig'),deviceSettingsTable.fn2);
 sensingConfigTable = deviceSettingsTable(idxSensing,:); 
 for a = 1:size(sensingConfigTable,1)
-    sensingConfigTable.struc{a}.SensingConfig
+    sensingConfigTable.struc{a}.SensingConfig;
 end
 
 % sense config structure report 
 idxSensing = cellfun(@(x) strcmp(x,'GeneralData'),deviceSettingsTable.fn2);
 sensingConfigTable = deviceSettingsTable(idxSensing,:); 
 for a = 1:size(sensingConfigTable,1)
-    sensingConfigTable.struc{a}.GeneralData
+    sensingConfigTable.struc{a}.GeneralData;
 end
 
 
