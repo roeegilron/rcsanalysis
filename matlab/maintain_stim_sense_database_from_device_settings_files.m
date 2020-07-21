@@ -11,7 +11,7 @@ fprintf('took %.2f to find all device settings\n',toc(start));
 
 %% loop on device settings and get all the meta data from each session 
 masterTableOut = table();
-
+start = tic();
 cnt = 1; 
 bdfile = 1; 
 for a = 1:length(allDeviceSettingsOut)
@@ -26,4 +26,7 @@ for a = 1:length(allDeviceSettingsOut)
 end
 fnsave = fullfile(database_dir,'database_raw_from_device_settings.mat');
 save(fnsave,'*Out');
+timeTook = seconds(toc(start));
+timeTook.Format = 'hh:mm:ss';
+fprintf('finished all data base in %s\n',timeTook);
 end
