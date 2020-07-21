@@ -13,6 +13,7 @@ fileIsEmpty = 0; % assume that file is not empty until proven otherwise
 if length(text)<200 %  this is an empty time domain file 
     fileIsEmpty = 1; 
 end
+meta = table();
 if ~fileIsEmpty
     
     % get device ID: 
@@ -24,7 +25,7 @@ if ~fileIsEmpty
     % get start time
     rawtime = regexp(text,'(?<=,"HostUnixTime":)[0-9]+','match');
     timenum = str2num(rawtime{1});
-    meta.timeStart = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    meta.timeStart(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
     
     
     % now go to end of the file
@@ -33,21 +34,22 @@ if ~fileIsEmpty
     text = fread(fid, 8000,'uint8=>char')';
     rawtime = regexp(text,'(?<=,"HostUnixTime":)[0-9]+','match');
     timenum = str2num(rawtime{1});
-    meta.timeEnd = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 
-    meta.duration = meta.timeEnd - meta.timeStart;
+    meta.duration(1) = meta.timeEnd - meta.timeStart;
      
-    fclose(fid);
+    
     
 else
     
     meta.deviceID{1} = '';
-    meta.timeStart = NaT; 
-    meta.timeEnd = NaT; 
-    meta.duration = seconds(0); 
+    meta.timeStart(1) = NaT; 
+    meta.timeEnd(1) = NaT; 
+    meta.duration(1) = seconds(0); 
+    
 end
  
-
+fclose(fid);
 
 
 end

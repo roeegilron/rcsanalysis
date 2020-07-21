@@ -27,7 +27,7 @@ deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:);
 
 %% print raw device settings strucutre 
 clc
-printRawDeviceSettings = 1;
+printRawDeviceSettings = 0;
 if printRawDeviceSettings
     for f = 1:length(DeviceSettings)
         curStr = DeviceSettings{f};
