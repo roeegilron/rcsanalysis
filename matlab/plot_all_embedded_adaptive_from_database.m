@@ -8,6 +8,7 @@ database_folder = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data','database'
 figdir          = fullfile(database_folder,'figures_adaptive');
 
 load(fullfile(database_folder,'sense_stim_database.mat'));
+load(fullfile(database_folder,'database_raw_from_device_settings.mat'));
 %%
 db = sense_stim_database;
 
@@ -16,8 +17,8 @@ params.group = 'D';
 params.stim  = 1;
 params.min_size = hours(1);
 
-%%
-reloadDB = 1;
+%% old version of doing this 
+reloadDB = 0;
 
 if reloadDB
 
@@ -91,8 +92,8 @@ end
 else
     load(fullfile(database_folder,'adaptive_database.mat'),'db');
 end
-return;
 %%
+%% new version of doing this 
 % plot only 
 
 %% loop on adaptive database and create plots on a daily basis

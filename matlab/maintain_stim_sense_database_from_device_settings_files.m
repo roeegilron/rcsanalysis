@@ -19,9 +19,11 @@ for a = 1:length(allDeviceSettingsOut)
         deviceSettingsFn = allDeviceSettingsOut{a};
         masterTableOut(cnt,:) = get_meta_data_from_device_settings_file(deviceSettingsFn);
         cnt = cnt + 1;
+        fclose('all');
     catch
         badFilesOut{bdfile} = deviceSettingsFn;
         bdfile = bdfile + 1; 
+        fclose('all');
     end
 end
 fnsave = fullfile(database_dir,'database_raw_from_device_settings.mat');
