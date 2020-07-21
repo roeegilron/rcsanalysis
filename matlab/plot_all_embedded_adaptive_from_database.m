@@ -1,4 +1,5 @@
 function plot_all_embedded_adaptive_from_database()
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 close all; clc; clear all;
 %% load database
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
@@ -94,45 +95,63 @@ else
 end
 %%
 %% new version of doing this 
+reloadDB = 1;
+
+if reloadDB
+    idxDetection  = masterTableOut.detectionStreaming==1;
+    idxRcsPatient = cellfun(@(x) any(strfind(x,'RCS')),masterTableOut.patient);
+    idxuse        = idxDetection & idxRcsPatient; 
+    dbWithDetection = masterTableOut(idxuse,:); 
+    allFilesWithDetection = allDeviceSettingsOut(idxuse);
+    dbWithDetection.allFilesWithDetection = allFilesWithDetection;
+    % loop on the database with detection and make sure current is changing
+    for d = 1:size(dbWithDetection)
+        adaptiveSettings = dbWithDetection.adaptiveSettings{d};
+        cur(1,1) = adaptiveSettings.currentMa_state0(1);
+        cur(1,2) = adaptiveSettings.currentMa_state1(1);
+        cur(1,3) = adaptiveSettings.currentMa_state2(1);
+        dbWithDetection.cur(d,:) = cur; 
+    end
+    dbWithDetection.duration.Format = 'hh:mm:ss';
+    
+end
+%%
 % plot only 
 
 %% loop on adaptive database and create plots on a daily basis
 % ploy only adaptive with large chnages 
-idxLargeChangs = abs(db.CurrentStates(:,1) - db.CurrentStates(:,3)) > 0.2;
-dbAdapt = db(idxLargeChangs,:); 
-dbAdapt(:,{'rectime','patient','side','CurrentStates'})
-uniquePatients = unique(dbAdapt.patient);
+uniquePatients = unique(dbWithDetection.patient);
 for p = 1:length(uniquePatients)
-    patDB = dbAdapt(strcmp(dbAdapt.patient,uniquePatients{p}) , :);
+    patDB = dbWithDetection(strcmp(dbWithDetection.patient,uniquePatients{p}) , :);
     
     % find the unique days in each recordingt
     tbl = table();
-    [tbl.y,tbl.m,tbl.d] = ymd(patDB.startTime);
+    [tbl.y,tbl.m,tbl.d] = ymd(patDB.timeStart);
     unqDays = unique(tbl,'rows');
     % only look at 2020 data 
-    unqDays = tbl(tbl.y == 2020,:);
     for u = 1:size(unqDays,1)
-        idxPlot = year(patDB.startTime) == tbl.y(u) & ...
-            month(patDB.startTime) == tbl.m(u) & ...
-            day(patDB.startTime) == tbl.d(u);
+        idxPlot = year(patDB.timeStart) == tbl.y(u) & ...
+            month(patDB.timeStart) == tbl.m(u) & ...
+            day(patDB.timeStart) == tbl.d(u);
         aDBSplot = patDB(idxPlot,:);
-        plot_adbs_day(aDBSplot,patientFolders,figdir)
+        hasSCBSdata = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),aDBSplot.allFilesWithDetection) ;
+        totalTime = sum(aDBSplot.duration); 
+        totalTime.Format = 'hh:mm:ss';
+        if sum(hasSCBSdata) >= 1 & totalTime > params.min_size
+            plot_adbs_day(aDBSplot,figdir)
+        end
     end
 end
 end
 
-function plot_adbs_day(db,rootdir,figdir)
+function plot_adbs_day(db,figdir)
 close all;
 %% decide which files actually have current changes 
 %% and find all the files / load data 
 for s = 1:size(db,1) 
-    patdir = findFilesBVQX(rootdir,['*', db.patient{s} '*'],struct('dirs',1,'depth',1));
-    scbsdir = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1));
-    patsid = findFilesBVQX(scbsdir,[db.patient{s} ,db.side{s}],struct('dirs',1));
-    sessdir = findFilesBVQX(patsid{1}, ['*',db.sessname{s} ,'*'],struct('dirs',1));
-    devdir  = findFilesBVQX(sessdir{1},'*evice*',struct('dirs',1,'depth',1));
-    fnAdaptive = fullfile(devdir{1},'AdaptiveLog.json');
-    fnDeviceSettings = fullfile(devdir{1},'DeviceSettings.json');
+    [devdir,~]  = fileparts(db.allFilesWithDetection{s});
+    fnAdaptive = fullfile(devdir,'AdaptiveLog.json');
+    fnDeviceSettings = fullfile(devdir,'DeviceSettings.json');
     mintrim = 10;
     
     % load adapative 
@@ -187,127 +206,127 @@ for s = 1:size(db,1)
 
 end
 
-    %% set up figure
-    hfig = figure;
-    hfig.Color = 'w';
-    hpanel = panel();
-    hpanel.pack('h',{10 []});
-    hpanel(2).pack(4,1);
-    hpanel.select('all');
-    hpanel.fontsize = 12;
-    %%
-    nrows = 4;
-    for i = 1:nrows
-        hpanel(2,i,1).select();
-        hsb(i) = gca; 
-        hold(hsb(i),'on');
-    end
-    %% plot data 
+%% set up figure
+hfig = figure;
+hfig.Color = 'w';
+hpanel = panel();
+hpanel.pack('h',{10 [] 10});
+hpanel(2).pack(4,1);
+hpanel.select('all');
+hpanel.fontsize = 12;
+%%
+nrows = 4;
+for i = 1:nrows
+    hpanel(2,i,1).select();
+    hsb(i) = gca;
+    hold(hsb(i),'on');
+end
+%% plot data
+
+unqSides = unique(db.side);
+for ss = 1:length(unqSides)
     
-    unqSides = unique(db.side);
-    for ss = 1:length(unqSides)
+    idxuse = strcmp(db.side,unqSides{ss});
+    dbuse = db(idxuse,:);
+    for d = 1:size(dbuse,1)
+        % plot the detector
+        orderplot = [1 2 3 4];
+        if strcmp(dbuse.side(d),'L')
+            idxplot = 1;
+        elseif strcmp(dbuse.side(d),'R')
+            idxplot = 3;
+        end
+        timesUseDetector = dbuse.timesUseDetector{d};
+        ld0 = dbuse.ld0{d};
+        ld0_high = dbuse.ld0_high{d};
+        ld0_low = dbuse.ld0_low{d};
         
-        idxuse = strcmp(db.side,unqSides{ss});
-        dbuse = db(idxuse,:); 
-        for d = 1:size(dbuse,1)
-            % plot the detector
-            orderplot = [1 2 3 4];
-            if strcmp(dbuse.side(d),'L')
-                idxplot = 1; 
-            elseif strcmp(dbuse.side(d),'R')
-                idxplot = 3; 
-            end
-            timesUseDetector = dbuse.timesUseDetector{d};
-            ld0 = dbuse.ld0{d};
-            ld0_high = dbuse.ld0_high{d};
-            ld0_low = dbuse.ld0_low{d};
+        % remove outliers
+        outlierIdx = isoutlier(ld0);
+        ld0 = ld0(~outlierIdx);
+        ld0_high = ld0_high(~outlierIdx);
+        ld0_low = ld0_low(~outlierIdx);
+        timesUseDetector = timesUseDetector(~outlierIdx);
+        
+        
+        hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
+        hplt = plot(hsb(idxplot),timesUseDetector,ld0_high,'LineWidth',2,'Color',[0.8 0 0 ]);
+        hplt.LineStyle = '-.';
+        hplt.Color = [hplt.Color 0.7];
+        hplt = plot(hsb(idxplot),timesUseDetector,ld0_low,'LineWidth',2,'Color',[0.8 0 0]);
+        hplt.LineStyle = '-.';
+        hplt.Color = [hplt.Color 0.7];
+        prctile_99 = prctile(ld0,99);
+        prctile_1  = prctile(ld0,1);
+        if prctile_1 > ld0_low(1)
+            prctile_1 = ld0_low(1) * 0.9;
+        end
+        if prctile_99 < ld0_high(1)
+            prctile_99 = ld0_high(1)*1.1;
+        end
+        ylim(hsb(idxplot),[prctile_1 prctile_99]);
+        ttlus = sprintf('Control signal %s',unqSides{ss});
+        title(hsb(idxplot),ttlus);
+        ylabel(hsb(idxplot),'Control signal (a.u.)');
+        set(hsb(idxplot),'FontSize',16);
+        % plut the current
+        idxplot = idxplot + 1;
+        timesUseCur = dbuse.timesUseCur{d};
+        cur = dbuse.cur{d};
+        % remove outliers
+        outlierIdx = isoutlier(cur);
+        cur = cur(~outlierIdx);
+        timesUseCur = timesUseCur(~outlierIdx);
+        
+        
+        
+        plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
+        for i = 1:3
+            states{i} = sprintf('%0.1fmA',dbuse.CurrentStates(i));
             
-            % remove outliers 
-            outlierIdx = isoutlier(ld0);
-            ld0 = ld0(~outlierIdx);
-            ld0_high = ld0_high(~outlierIdx);
-            ld0_low = ld0_low(~outlierIdx);
-            timesUseDetector = timesUseDetector(~outlierIdx);
-            
-            
-            hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
-            hplt = plot(hsb(idxplot),timesUseDetector,ld0_high,'LineWidth',2,'Color',[0.8 0 0 ]);
-            hplt.LineStyle = '-.';
-            hplt.Color = [hplt.Color 0.7];
-            hplt = plot(hsb(idxplot),timesUseDetector,ld0_low,'LineWidth',2,'Color',[0.8 0 0]);
-            hplt.LineStyle = '-.';
-            hplt.Color = [hplt.Color 0.7];
-            prctile_99 = prctile(ld0,99);
-            prctile_1  = prctile(ld0,1);
-            if prctile_1 > ld0_low(1)
-                prctile_1 = ld0_low(1) * 0.9;
-            end
-            if prctile_99 < ld0_high(1) 
-                prctile_99 = ld0_high(1)*1.1;
-            end
-            ylim(hsb(idxplot),[prctile_1 prctile_99]);
-            ttlus = sprintf('Control signal %s',unqSides{ss});
-            title(hsb(idxplot),ttlus);
-            ylabel(hsb(idxplot),'Control signal (a.u.)');
-            set(hsb(idxplot),'FontSize',16);
-            % plut the current 
-            idxplot = idxplot + 1; 
-            timesUseCur = dbuse.timesUseCur{d};
-            cur = dbuse.cur{d};
-            % remove outliers 
-            outlierIdx = isoutlier(cur);
-            cur = cur(~outlierIdx);
-            timesUseCur = timesUseCur(~outlierIdx);
-
-            
-
-            plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
-            for i = 1:3 
-                states{i} = sprintf('%0.1fmA',dbuse.CurrentStates(i));
-
-                if i == 2 
-                    if dbuse.CurrentStates(i) == 25.5
-                        states{i} = 'HOLD';
-                    end
+            if i == 2
+                if dbuse.CurrentStates(i) == 25.5
+                    states{i} = 'HOLD';
                 end
             end
-            ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
-            title(hsb(idxplot) ,ttlus);
-            ylabel( hsb(idxplot) ,'Current (mA)');
-            set( hsb(idxplot),'FontSize',16);
-            
         end
+        ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
+        title(hsb(idxplot) ,ttlus);
+        ylabel( hsb(idxplot) ,'Current (mA)');
+        set( hsb(idxplot),'FontSize',16);
+        
     end
-    % get link axes to work - time zone issue with empty axes 
-    if strcmp(unique(dbuse.side),{'L'})
-        plot(hsb(3),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-        plot(hsb(4),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-    elseif strcmp(unique(dbuse.side),{'R'})
-        plot(hsb(1),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-        plot(hsb(2),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-    end
-    linkaxes(hsb,'x');
-    ttlLarge{1,1} = dbuse.patient{1}; 
-    [y,m,d] = ymd(dbuse.startTime(1));
-    ttlLarge{2,1} = sprintf('%.4d/%.2d/%.2d',y,m,d);
-    sgtitle(ttlLarge,'FontSize',16);
-    
-    
-    strPrint = getAdaptiveHumanReadaleSettings(fnDeviceSettings,0);
-    if ~isempty(strPrint)
-        x = 2;
-    end
-    % save figure; 
-    fig_title = sprintf('%s_%d_%0.2d-%0.2d',dbuse.patient{1},y,m,d);
-    prfig.plotwidth           = 20;
-    prfig.plotheight          = 9;
-    prfig.figdir              = figdir;
-    prfig.figtype             = '-djpeg';
-    prfig.closeafterprint     = 0;
-    prfig.resolution          = 300;
-    prfig.figname             = fig_title;
-    plot_hfig(hfig,prfig);
-    close(hfig);
+end
+% get link axes to work - time zone issue with empty axes
+if strcmp(unique(dbuse.side),{'L'})
+    plot(hsb(3),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+    plot(hsb(4),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+elseif strcmp(unique(dbuse.side),{'R'})
+    plot(hsb(1),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+    plot(hsb(2),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+end
+linkaxes(hsb,'x');
+ttlLarge{1,1} = dbuse.patient{1};
+[y,m,d] = ymd(dbuse.startTime(1));
+ttlLarge{2,1} = sprintf('%.4d/%.2d/%.2d',y,m,d);
+sgtitle(ttlLarge,'FontSize',16);
+
+
+strPrint = getAdaptiveHumanReadaleSettings(fnDeviceSettings,0);
+if ~isempty(strPrint)
+    x = 2;
+end
+% save figure;
+fig_title = sprintf('%s_%d_%0.2d-%0.2d',dbuse.patient{1},y,m,d);
+prfig.plotwidth           = 20;
+prfig.plotheight          = 9;
+prfig.figdir              = figdir;
+prfig.figtype             = '-djpeg';
+prfig.closeafterprint     = 0;
+prfig.resolution          = 300;
+prfig.figname             = fig_title;
+plot_hfig(hfig,prfig);
+close(hfig);
 
 
 end
