@@ -137,15 +137,21 @@ for p = 1:length(uniquePatients)
         hasSCBSdata = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),aDBSplot.allFilesWithDetection) ;
         totalTime = sum(aDBSplot.duration); 
         totalTime.Format = 'hh:mm:ss';
-        if sum(hasSCBSdata) >= 1 & totalTime > params.min_size
-            plot_adbs_day(aDBSplot,figdir)
+        if sum(hasSCBSdata) >= 1 
+            plot_adbs_day(aDBSplot,figdir,patDB)
         end
     end
 end
 end
 
-function plot_adbs_day(db,figdir)
+function plot_adbs_day(db,figdir,backupdb)
 close all;
+% db is what you will use to plot the aDBS session from one day 
+% fid dir is output 
+% backupdb is all aDBS session database for this subject 
+% this is in order to get prio settings (fft, power) in case they don't
+% exist in this days database since aDBS was not configured) 
+
 %% decide which files actually have current changes 
 %% and find all the files / load data 
 for s = 1:size(db,1) 
@@ -155,7 +161,6 @@ for s = 1:size(db,1)
     mintrim = 10;
     
     % load adapative 
-    [deviceSettingsOut,stimStatus,~]  = loadDeviceSettingsForMontage(fnDeviceSettings);
     res = readAdaptiveJson(fnAdaptive);
     cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
     timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
@@ -191,7 +196,7 @@ for s = 1:size(db,1)
     % trim start of file
     cur = cur(idxkeepcur);
     
-    db.cur{s} = cur; 
+    db.currentTimeSeries{s} = cur; 
     db.timesUseDetector{s} = timesUseDetector;
     db.timesUseCur{s} = timesUseCur;
     db.ld0{s} =  ld0;
@@ -210,27 +215,77 @@ end
 hfig = figure;
 hfig.Color = 'w';
 hpanel = panel();
-hpanel.pack('h',{10 [] 10});
-hpanel(2).pack(4,1);
+hpanel.pack('h',{15 [] 15});
+hpanel(2).pack({5 24 24 24 24});
 hpanel.select('all');
 hpanel.fontsize = 12;
 %%
-nrows = 4;
-for i = 1:nrows
-    hpanel(2,i,1).select();
-    hsb(i) = gca;
-    hold(hsb(i),'on');
+nrows = 5;
+cntpltPanel = 1; 
+titles = {'control signal L','current L', 'control signal R','current R'};
+for i = 2:nrows
+    hpanel(2,i).select();
+    hsb(cntpltPanel) = gca;
+    hold(hsb(cntpltPanel),'on');
+    title(titles{cntpltPanel});
+    cntpltPanel = cntpltPanel + 1;
 end
 %% plot data
+idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),db.allFilesWithDetection);
+dbTiming = db(idxSCBS,:);
+xAxisLimits = [min(dbTiming.timeStart) max(dbTiming.timeEnd)];
 
 unqSides = unique(db.side);
 for ss = 1:length(unqSides)
     
     idxuse = strcmp(db.side,unqSides{ss});
     dbuse = db(idxuse,:);
+    adbsSettings = struct();
+    adbsSettings.deviceSettings = dbuse.deviceSettings{end};
+    adbsSettings.stimStatus = dbuse.stimStatus{end};
+    adbsSettings.stimState = dbuse.stimState{end};
+    adbsSettings.adaptiveSettings = dbuse.adaptiveSettings{end};
+    % get the last power and fft table in this day 
+    idxFft = find(cellfun(@(x) (size(x,1)),dbuse.fftTable) == 1,1,'last');
+    if ~isempty(idxFft)
+        adbsSettings.ffTable = dbuse.fftTable{idxFft};
+    else
+        % need to find ffet settings from the backup database 
+        backupdbCorrectSide = backupdb( strcmp(backupdb.side,unqSides{ss}), :);
+        backupdbCorrectSide = sortrows(backupdbCorrectSide,'timeStart');
+        idxBaxkupBeforeThisSession = backupdbCorrectSide.timeStart < dbuse.timeStart(1);
+        backupUse = backupdbCorrectSide(idxBaxkupBeforeThisSession,:);
+        idxFft = find(cellfun(@(x) (size(x,1)),backupUse.fftTable) == 1,1,'last');
+        if isempty(idxFft)
+            % fft table missing 
+            adbsSettings.ffTable = table();
+        else
+            adbsSettings.ffTable = backupUse.fftTable{idxFft};
+        end
+    end
+    idxPower = find(cellfun(@(x) (size(x,1)),dbuse.powerTable) == 1,1,'last');
+    if ~isempty(idxPower)
+        adbsSettings.powerTable = dbuse.powerTable{idxPower};
+    else
+        % need to find ffet settings from the backup database
+        backupdbCorrectSide = backupdb( strcmp(backupdb.side,unqSides{ss}), :);
+        backupdbCorrectSide = sortrows(backupdbCorrectSide,'timeStart');
+        idxBaxkupBeforeThisSession = backupdbCorrectSide.timeStart < dbuse.timeStart(1);
+        backupUse = backupdbCorrectSide(idxBaxkupBeforeThisSession,:);
+        idxPower = find(cellfun(@(x) (size(x,1)),backupUse.powerTable) == 1,1,'last');
+        if isempty(idxPower)
+            % fft table missing
+            adbsSettings.powerTable = table();
+        else
+            adbsSettings.powerTable = backupUse.powerTable{idxPower};
+        end
+    end
+    
+    idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),dbuse.allFilesWithDetection);
+    dbuse = dbuse(idxSCBS,:);
+    % only plot data from 
     for d = 1:size(dbuse,1)
         % plot the detector
-        orderplot = [1 2 3 4];
         if strcmp(dbuse.side(d),'L')
             idxplot = 1;
         elseif strcmp(dbuse.side(d),'R')
@@ -240,86 +295,129 @@ for ss = 1:length(unqSides)
         ld0 = dbuse.ld0{d};
         ld0_high = dbuse.ld0_high{d};
         ld0_low = dbuse.ld0_low{d};
-        
-        % remove outliers
-        outlierIdx = isoutlier(ld0);
-        ld0 = ld0(~outlierIdx);
-        ld0_high = ld0_high(~outlierIdx);
-        ld0_low = ld0_low(~outlierIdx);
-        timesUseDetector = timesUseDetector(~outlierIdx);
-        
-        
-        hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
-        hplt = plot(hsb(idxplot),timesUseDetector,ld0_high,'LineWidth',2,'Color',[0.8 0 0 ]);
-        hplt.LineStyle = '-.';
-        hplt.Color = [hplt.Color 0.7];
-        hplt = plot(hsb(idxplot),timesUseDetector,ld0_low,'LineWidth',2,'Color',[0.8 0 0]);
-        hplt.LineStyle = '-.';
-        hplt.Color = [hplt.Color 0.7];
-        prctile_99 = prctile(ld0,99);
-        prctile_1  = prctile(ld0,1);
-        if prctile_1 > ld0_low(1)
-            prctile_1 = ld0_low(1) * 0.9;
-        end
-        if prctile_99 < ld0_high(1)
-            prctile_99 = ld0_high(1)*1.1;
-        end
-        ylim(hsb(idxplot),[prctile_1 prctile_99]);
-        ttlus = sprintf('Control signal %s',unqSides{ss});
-        title(hsb(idxplot),ttlus);
-        ylabel(hsb(idxplot),'Control signal (a.u.)');
-        set(hsb(idxplot),'FontSize',16);
-        % plut the current
-        idxplot = idxplot + 1;
-        timesUseCur = dbuse.timesUseCur{d};
-        cur = dbuse.cur{d};
-        % remove outliers
-        outlierIdx = isoutlier(cur);
-        cur = cur(~outlierIdx);
-        timesUseCur = timesUseCur(~outlierIdx);
-        
-        
-        
-        plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
-        for i = 1:3
-            states{i} = sprintf('%0.1fmA',dbuse.CurrentStates(i));
+        if ~isempty(ld0)
+            % remove outliers
+            outlierIdx = isoutlier(ld0);
+            ld0 = ld0(~outlierIdx);
+            ld0_high = ld0_high(~outlierIdx);
+            ld0_low = ld0_low(~outlierIdx);
+            timesUseDetector = timesUseDetector(~outlierIdx);
             
-            if i == 2
-                if dbuse.CurrentStates(i) == 25.5
-                    states{i} = 'HOLD';
+            
+            hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
+            hplt = plot(hsb(idxplot),timesUseDetector,ld0_high,'LineWidth',2,'Color',[0.8 0 0 ]);
+            hplt.LineStyle = '-.';
+            hplt.Color = [hplt.Color 0.7];
+            hplt = plot(hsb(idxplot),timesUseDetector,ld0_low,'LineWidth',2,'Color',[0.8 0 0]);
+            hplt.LineStyle = '-.';
+            hplt.Color = [hplt.Color 0.7];
+            prctile_99 = prctile(ld0,99);
+            prctile_1  = prctile(ld0,1);
+            if prctile_1 > ld0_low(1)
+                prctile_1 = ld0_low(1) * 0.9;
+            end
+            if prctile_99 < ld0_high(1)
+                prctile_99 = ld0_high(1)*1.1;
+            end
+            ylim(hsb(idxplot),[prctile_1 prctile_99]);
+            ttlus = sprintf('Control signal %s',unqSides{ss});
+            title(hsb(idxplot),ttlus);
+            ylabel(hsb(idxplot),'Control signal (a.u.)');
+            set(hsb(idxplot),'FontSize',12);
+            
+            % plot the current
+            if strcmp(dbuse.side(d),'L')
+                idxplot = 2;
+            elseif strcmp(dbuse.side(d),'R')
+                idxplot = 4;
+            end
+            timesUseCur = dbuse.timesUseCur{d};
+            cur = dbuse.currentTimeSeries{d};
+            % remove outliers
+            outlierIdx = isoutlier(cur);
+            cur = cur(~outlierIdx);
+            timesUseCur = timesUseCur(~outlierIdx);
+            
+            
+            
+            plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
+            for i = 1:3
+                states{i} = sprintf('%0.1fmA',dbuse.cur(d,i));
+                
+                if i == 2
+                    if dbuse.cur(d,i) == 25.5
+                        states{i} = 'HOLD';
+                    end
                 end
             end
+            ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
+            title(hsb(idxplot) ,ttlus);
+            ylabel( hsb(idxplot) ,'Current (mA)');
+            set( hsb(idxplot),'FontSize',16);
         end
-        ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
-        title(hsb(idxplot) ,ttlus);
-        ylabel( hsb(idxplot) ,'Current (mA)');
-        set( hsb(idxplot),'FontSize',16);
+    end
+    strPrint = getAdaptiveHumanReadaleSettings(adbsSettings,0);
+    if ~isempty(strPrint)
+        if strcmp(unqSides{ss},'L')
+            hpanel(1).select();
+            hsubUse = gca;
+            strPrint{1} = [strPrint{1} ' L'];
+        else
+            hpanel(3).select();
+            hsubUse = gca;
+            strPrint{1} = [strPrint{1} ' R'];
+        end
+        hsubUse = gca;
+        a = annotation('textbox', hsubUse.Position, 'String', "hi");
+        a.FontSize = 12;
         
+        set(gca,'FontSize',12);
+        set(gca, 'box','off','XTickLabel',[],'XTick',[],'YTickLabel',[],'YTick',[])
+        set(gca,'XColor','none')
+        set(gca,'YColor','none')
+        
+        
+        a.String = strPrint;
+        a.EdgeColor = 'none';
     end
 end
 % get link axes to work - time zone issue with empty axes
-if strcmp(unique(dbuse.side),{'L'})
-    plot(hsb(3),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-    plot(hsb(4),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-elseif strcmp(unique(dbuse.side),{'R'})
-    plot(hsb(1),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
-    plot(hsb(2),[timesUseCur(1) timesUseCur(end)],[0 0],'Color',[1 1 1]);
+for i  =  1:length(hsb)
+    if  ~ isdatetime(hsb(i).XLim)
+        plot(hsb(i),[xAxisLimits(1) xAxisLimits(1)],[ 0 0],'Color',[0 0 0 ]);
+    end
+    if i ~=4
+        set(hsb(i), 'box','off','XTick',[])
+        set(hsb(i),'XColor','none')
+    end
 end
 linkaxes(hsb,'x');
+hsb(1).XLim = xAxisLimits;
 ttlLarge{1,1} = dbuse.patient{1};
-[y,m,d] = ymd(dbuse.startTime(1));
+[y,m,d] = ymd(dbuse.timeStart(1));
+% use the top plot to plot the title 
+hpanel(2,1).select();
+hsbTitle = gca();
+set(gca,'FontSize',16);
+set(gca, 'box','off','XTickLabel',[],'XTick',[],'YTickLabel',[],'YTick',[])
+set(gca,'XColor','none')
+set(gca,'YColor','none')
 ttlLarge{2,1} = sprintf('%.4d/%.2d/%.2d',y,m,d);
-sgtitle(ttlLarge,'FontSize',16);
+title(hsbTitle,ttlLarge,'FontSize',16);
 
 
-strPrint = getAdaptiveHumanReadaleSettings(fnDeviceSettings,0);
-if ~isempty(strPrint)
-    x = 2;
-end
+hpanel.margintop = 15;
+hpanel.marginbottom = 15;
+hpanel.de.margin = 7;
+hpanel(1).marginright = 55;
+
+
+
+
 % save figure;
 fig_title = sprintf('%s_%d_%0.2d-%0.2d',dbuse.patient{1},y,m,d);
-prfig.plotwidth           = 20;
-prfig.plotheight          = 9;
+prfig.plotwidth           = 28;
+prfig.plotheight          = 12;
 prfig.figdir              = figdir;
 prfig.figtype             = '-djpeg';
 prfig.closeafterprint     = 0;
