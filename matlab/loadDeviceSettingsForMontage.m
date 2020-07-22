@@ -199,113 +199,223 @@ for u = 1:length(unqRecs)
 end
 
 %% load power channel + fft config 
+
+%  first part of code checks if there were any sense config evnets in the
+%  file. 
+% if not, you have to load these from the default "first" structure in the
+% code. 
+% the next part of the code tries to take acount of any changes in the
+% sensing or power channel config through out the device settings file. 
+% for example, if power has changed or the fft has changes to when
+% switching to adapative stimulation using either research facing or the
+% patient facing application. 
 idxSensingConfig = cellfun(@(x) any(strfind(x,'SensingConfig')), deviceSettingsTable.fn2);
-
-SensingConfigTable = deviceSettingsTable(idxSensingConfig,:); 
-fftTable = table(); 
-fftcnt = 1; 
-powerTable = table();
-pwrcnt = 1; 
-
-for ss = 1:size(SensingConfigTable)
-    strc = SensingConfigTable.struc{ss}.SensingConfig; 
-    % find the closest sampling rate (in time) 
-    % in the settings file 
-    % assume that this is the sample rate 
-    % this may be wrong assutmpiton 
-    time = SensingConfigTable.time(ss); 
-    [~,idx] = min(abs(time-deviceSettingsOut.timeStart));
-    sampleRate = deviceSettingsOut.samplingRate(idx);
-    if isfield(strc,'fftConfig')
-        fftConfig = strc.fftConfig;
-        fftTable.time(fftcnt)  = time;
-        switch fftConfig.size
-            case 0
-                fftTable.fftSize(fftcnt) = 64;
-            case 1
-                fftTable.fftSize(fftcnt)  = 256;
-            case 3
-                fftTable.fftSize(fftcnt)  = 1024;
+if sum(idxSensingConfig) == 0
+    % get the fft 
+    SensingConfigStruc = DeviceSettings{1}.SensingConfig;
+    % XXX 
+    % note that this is awful code - me being lazy 
+    % instead of creating a new subfunciton copying code over
+    % just trying to get this to work quickly 
+    % but this should be fixed as now any bugs have to be worked out in two
+    % places 
+    % XXX 
+    % since using the first data payload - just compute the first time
+    % point 
+    fftTable = table();
+    fftTable.time = deviceSettingsTable.time(1);
+    % get the sample rate from the first payload 
+    outstruc = translateTimeDomainChannelsStruct(SensingConfigStruc.timeDomainChannels);
+    sampleRate = str2num(outstruc(1).sampleRate(1:end-2));
+    % load fft default config 
+    
+    fftConfig = SensingConfigStruc.fftConfig;
+    fftcnt = 1;
+    powerTable = table();
+    pwrcnt = 1;
+    switch fftConfig.size
+        case 0
+            fftTable.fftSize(fftcnt) = 64;
+        case 1
+            fftTable.fftSize(fftcnt)  = 256;
+        case 3
+            fftTable.fftSize(fftcnt)  = 1024;
+    end
+    fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
+    fftTable.config(fftcnt) = fftConfig.config;
+    fftTable.interval(fftcnt) = fftConfig.interval;
+    fftTable.size(fftcnt) = fftConfig.size;
+    fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
+    fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
+    fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
+    
+    %% get the power 
+    powerTable.time(pwrcnt) = fftTable.time;
+    fftSize = fftTable.fftSize;
+    
+    powerChannels = SensingConfigStruc.powerChannels;
+    powerChannelsIdxs = [];
+    idxCnt = 1;
+    for c = 1:4
+        for b = 0:1
+            fieldStart = sprintf('band%dStart',b);
+            fieldStop = sprintf('band%dStop',b);
+            powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
+            powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
+            idxCnt = idxCnt+1;
         end
-        fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
-        fftTable.config(fftcnt) = fftConfig.config;
-        fftTable.interval(fftcnt) = fftConfig.interval;
-        fftTable.size(fftcnt) = fftConfig.size;
-        fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
-        fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
-        fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
     end
     
     
-    if isfield(strc,'powerChannels')
-        % find the closest fftSize (in time)
-        % in the fftTable 
-        % assume that this is the correct fftSize
+    %% get the bins to compute the power channels
+    fftSize = fftTable.fftSize(fftcnt);
+    numBins = fftSize/2;
+    binWidth = (sampleRate/2)/numBins;
+    i = 0;
+    bins = [];
+    while i < numBins
+        bins(i+1) = i*binWidth;
+        i =  i + 1;
+    end
+    FFTSize = fftSize; % can be 64  256  1024
+    sampleRate = sampleRate; % can be 250,500,1000
+    
+    numberOfBins = FFTSize/2;
+    binWidth = sampleRate/2/numberOfBins;
+    
+    for i = 0:(numberOfBins-1)
+        fftBins(i+1) = i*binWidth;
+        %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+    end
+    
+    lower(1) = 0;
+    for i = 2:length(fftBins)
+        valInHz = fftBins(i)-fftBins(2)/2;
+        lower(i) = valInHz;
+    end
+    
+    for i = 1:length(fftBins)
+        valInHz = fftBins(i)+fftBins(2)/2;
+        upper(i) = valInHz;
+    end
+    powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
+    powerBandInHz = {};
+    for pc = 1:size(powerChannelsIdxs,1)
+        powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
+            lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
+        fnUse = sprintf('band%dHz',pc);
+        powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
+        powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
+    end
+    powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
+
+
+else
+    SensingConfigTable = deviceSettingsTable(idxSensingConfig,:);
+    fftTable = table();
+    fftcnt = 1;
+    powerTable = table();
+    pwrcnt = 1;
+    
+    for ss = 1:size(SensingConfigTable)
+        strc = SensingConfigTable.struc{ss}.SensingConfig;
+        % find the closest sampling rate (in time)
+        % in the settings file
+        % assume that this is the sample rate
         % this may be wrong assutmpiton
-        powerTable.time(pwrcnt) = time;
-        time = powerTable.time(pwrcnt);
-        [~,idx] = min(abs(time-fftTable.time));
-        fftSize = fftTable.fftSize(idx);
-        
-        powerChannels = strc.powerChannels;
-        powerChannelsIdxs = [];
-        idxCnt = 1;
-        for c = 1:4
-            for b = 0:1
-                fieldStart = sprintf('band%dStart',b);
-                fieldStop = sprintf('band%dStop',b);
-                powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
-                powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
-                idxCnt = idxCnt+1;
+        time = SensingConfigTable.time(ss);
+        [~,idx] = min(abs(time-deviceSettingsOut.timeStart));
+        sampleRate = deviceSettingsOut.samplingRate(idx);
+        if isfield(strc,'fftConfig')
+            fftConfig = strc.fftConfig;
+            fftTable.time(fftcnt)  = time;
+            switch fftConfig.size
+                case 0
+                    fftTable.fftSize(fftcnt) = 64;
+                case 1
+                    fftTable.fftSize(fftcnt)  = 256;
+                case 3
+                    fftTable.fftSize(fftcnt)  = 1024;
             end
-        end
-
-
-        %% get the bins to compute the power channels
-        fftSize = fftTable.fftSize(fftcnt);
-        numBins = fftSize/2;
-        binWidth = (sampleRate/2)/numBins;
-        i = 0;
-        bins = [];
-        while i < numBins
-            bins(i+1) = i*binWidth;
-            i =  i + 1;
-        end
-        FFTSize = fftSize; % can be 64  256  1024
-        sampleRate = sampleRate; % can be 250,500,1000
-        
-        numberOfBins = FFTSize/2;
-        binWidth = sampleRate/2/numberOfBins;
-        
-        for i = 0:(numberOfBins-1)
-            fftBins(i+1) = i*binWidth;
-            %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+            fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
+            fftTable.config(fftcnt) = fftConfig.config;
+            fftTable.interval(fftcnt) = fftConfig.interval;
+            fftTable.size(fftcnt) = fftConfig.size;
+            fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
+            fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
+            fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
         end
         
-        lower(1) = 0;
-        for i = 2:length(fftBins)
-            valInHz = fftBins(i)-fftBins(2)/2;
-            lower(i) = valInHz;
-        end
         
-        for i = 1:length(fftBins)
-            valInHz = fftBins(i)+fftBins(2)/2;
-            upper(i) = valInHz;
+        if isfield(strc,'powerChannels')
+            % find the closest fftSize (in time)
+            % in the fftTable
+            % assume that this is the correct fftSize
+            % this may be wrong assutmpiton
+            powerTable.time(pwrcnt) = time;
+            time = powerTable.time(pwrcnt);
+            [~,idx] = min(abs(time-fftTable.time));
+            fftSize = fftTable.fftSize(idx);
+            
+            powerChannels = strc.powerChannels;
+            powerChannelsIdxs = [];
+            idxCnt = 1;
+            for c = 1:4
+                for b = 0:1
+                    fieldStart = sprintf('band%dStart',b);
+                    fieldStop = sprintf('band%dStop',b);
+                    powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
+                    powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
+                    idxCnt = idxCnt+1;
+                end
+            end
+            
+            
+            %% get the bins to compute the power channels
+            fftSize = fftTable.fftSize(fftcnt);
+            numBins = fftSize/2;
+            binWidth = (sampleRate/2)/numBins;
+            i = 0;
+            bins = [];
+            while i < numBins
+                bins(i+1) = i*binWidth;
+                i =  i + 1;
+            end
+            FFTSize = fftSize; % can be 64  256  1024
+            sampleRate = sampleRate; % can be 250,500,1000
+            
+            numberOfBins = FFTSize/2;
+            binWidth = sampleRate/2/numberOfBins;
+            
+            for i = 0:(numberOfBins-1)
+                fftBins(i+1) = i*binWidth;
+                %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+            end
+            
+            lower(1) = 0;
+            for i = 2:length(fftBins)
+                valInHz = fftBins(i)-fftBins(2)/2;
+                lower(i) = valInHz;
+            end
+            
+            for i = 1:length(fftBins)
+                valInHz = fftBins(i)+fftBins(2)/2;
+                upper(i) = valInHz;
+            end
+            powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
+            powerBandInHz = {};
+            for pc = 1:size(powerChannelsIdxs,1)
+                powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
+                    lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
+                fnUse = sprintf('band%dHz',pc);
+                powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
+                powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
+            end
+            powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
+            
         end
-        powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
-        powerBandInHz = {};
-        for pc = 1:size(powerChannelsIdxs,1)
-            powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
-                lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
-            fnUse = sprintf('band%dHz',pc);
-            powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
-            powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
-        end
-        powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
-
     end
 end
-
 
 %% load stimulation config
 % this code (re stim sweep part) assumes no change in stimulation from initial states
@@ -319,6 +429,10 @@ idxGroupChange = cellfun(@(x) any(strfind(x,'TherapyConfig')), deviceSettingsTab
                  cellfun(@(x) any(strfind(x,'GeneralData')), deviceSettingsTable.fn2)  ;
 
 groupChangeTable = deviceSettingsTable(idxGroupChange,:); 
+if size(groupChangeTable,1) == 0 % file doesn't have any group changes past initial config 
+    % just give the first structure 
+    groupChangeTable = deviceSettingsTable(1,:);
+end
 
 % need to add something to check for stim changes as well in this table 
 % write not doesn't take into account stim changes 
@@ -327,13 +441,31 @@ therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
 cnt = 1;
 stimState = table();
 for gc = 1:size(groupChangeTable,1)
-    if ~any(strfind(groupChangeTable.fn2{gc},'Therapy'))
+    % first try to get from talbe 
+    if sum(cellfun(@(x) any(strfind(x,'Therapy')), fieldnames(groupChangeTable.struc{gc}))) >=1
         therapyStatus = groupChangeTable.struc{gc}.GeneralData.therapyStatusData;
+    end
+    if sum(cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldnames(groupChangeTable.struc{gc}))) == 4 % this is the first payload 
+        % need to find the valid group 
+        fieldNamesGroupsRaw = fieldnames(groupChangeTable.struc{gc});
+        idxTherapyGroups = cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldNamesGroupsRaw);
+        fieldNamesTherapyGroups = fieldNamesGroupsRaw(idxTherapyGroups,:);
+        curStr = groupChangeTable.struc{gc};
+        groupNumber = therapyStatus.activeGroup;
+        onFirstStructure = 1;  % the first device setting structure 
     else
+        onFirstStructure = 0;
+    end
         
+    if sum(cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldnames(groupChangeTable.struc{gc}))) >= 1  % this is a later change 
         % find the group letter
-        timeGroupChange = groupChangeTable.time(gc);
-        groupNumber = str2num(groupChangeTable.fn2{gc}(end));
+        if onFirstStructure
+            timeGroupChange = groupChangeTable.time(gc);
+            groupNumber = groupNumber; % set above 
+        else
+            timeGroupChange = groupChangeTable.time(gc);
+            groupNumber = str2num(groupChangeTable.fn2{gc}(end));
+        end
         switch groupNumber
             case 0
                 groupName = 'A';
@@ -346,8 +478,11 @@ for gc = 1:size(groupChangeTable,1)
         end
         
         groupStruc = groupChangeTable.struc{gc};
-
-        fnGroup = groupChangeTable.fn2{gc};
+        if onFirstStructure
+            fnGroup = fieldNamesTherapyGroups{groupNumber+1};
+        else
+            fnGroup = groupChangeTable.fn2{gc};
+        end
         for p = 1:4
             if groupStruc.(fnGroup).programs(p).isEnabled==0
                 stimState.time(cnt) = timeGroupChange; 

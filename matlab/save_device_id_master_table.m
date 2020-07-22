@@ -5,6 +5,42 @@ dirSave = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
 clear masterTable;
 masterTable = table();
 cnt = 1; 
+% pain ins 1 
+masterTable.deviceId{cnt}  =  lower('NPC700355H');
+masterTable.patient{cnt}   = 'benchtop';
+masterTable.side{cnt}      = '1';
+masterTable.area{cnt}      = 'pain'; 
+masterTable.diagnosis{cnt} = 'i cant feel my body'; 
+cnt = cnt + 1;
+
+% pain ins 2
+masterTable.deviceId{cnt}  =  lower('NPC700353H');
+masterTable.patient{cnt}   = 'benchtop';
+masterTable.side{cnt}      = '2';
+masterTable.area{cnt}      = 'pain'; 
+masterTable.diagnosis{cnt} = 'i cant feel my body'; 
+cnt = cnt + 1;
+
+% UCSF ins 1
+masterTable.deviceId{cnt}  =  lower('NPC700354H');
+masterTable.patient{cnt}   = 'benchtop';
+masterTable.side{cnt}      = '1';
+masterTable.area{cnt}      = 'starr PD'; 
+masterTable.diagnosis{cnt} = 'first in the world!'; 
+cnt = cnt + 1;
+
+
+% UCSF ins 2
+masterTable.deviceId{cnt}  =  lower('NPC700378H');
+masterTable.patient{cnt}   = 'benchtop';
+masterTable.side{cnt}      = '2';
+masterTable.area{cnt}      = 'starr PD'; 
+masterTable.diagnosis{cnt} = 'second in the world!'; 
+cnt = cnt + 1;
+
+
+
+
 % rcs01
 masterTable.deviceId{cnt}  =  lower('NPC700395H');
 masterTable.patient{cnt}   = 'RCS01';

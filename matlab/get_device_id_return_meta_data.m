@@ -1,6 +1,7 @@
 function meta = get_device_id_return_meta_data(fn)
 %% this function takes a device settings.json file 
 %% and returns device ID and other meta data about the recording 
+warning('off','MATLAB:table:RowsAddedExistingVars');
 dirSave = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
 load(fullfile(dirSave, 'deviceIdMasterList.mat'),'masterTable'); 
 
@@ -33,13 +34,24 @@ if ~fileIsEmpty
     filesize = ftell(fid);
     text = fread(fid, 10000,'uint8=>char')';
     rawtime = regexp(text,'(?<=,"HostUnixTime":)[0-9]+','match');
-    timenum = str2num(rawtime{1});
-    meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    if ~isempty(rawtime) % can use text based methods (no json structure needed to get time end 
+        timenum = str2num(rawtime{1});
+        meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    else % need to try and open json file 
+        DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
+        % fix issues with device settings sometiems being a cell array and
+        % sometimes not
+        
+        if isstruct(DeviceSettings)
+            DeviceSettings = {DeviceSettings};
+            timenum = DeviceSettings{end}.RecordInfo.HostUnixTime
+            meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+        end
+    end
 
     meta.duration(1) = meta.timeEnd - meta.timeStart;
-     
-    
-    
+
 else
     
     meta.deviceID{1} = '';
