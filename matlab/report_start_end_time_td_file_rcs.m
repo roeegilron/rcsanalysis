@@ -21,7 +21,7 @@ if ~fileIsEmpty
     % now go to end of the file
     fseek(fid, -10000, 'eof');
     filesize = ftell(fid);
-    text = fread(fid, 8000,'uint8=>char')';
+    text = fread(fid, 10000,'uint8=>char')';
     rawtime = regexp(text,'(?<="timestamp":{"seconds":)[0-9]+','match');
     
     timeEnd = datetime(datevec(str2double(rawtime{end})./86400 + ...
