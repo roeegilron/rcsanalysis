@@ -241,10 +241,46 @@ for ss = 1:length(unqSides)
     idxuse = strcmp(db.side,unqSides{ss});
     dbuse = db(idxuse,:);
     adbsSettings = struct();
-    adbsSettings.deviceSettings = dbuse.deviceSettings{end};
+    % get the last device settings on this day
+    idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.deviceSettings) == 1,1,'last');
+    if ~isempty(idxDeviceSettings)
+        adbsSettings.deviceSettings = dbuse.deviceSettings{idxDeviceSettings};
+    else
+        % need to find ffet settings from the backup database
+        backupdbCorrectSide = backupdb( strcmp(backupdb.side,unqSides{ss}), :);
+        backupdbCorrectSide = sortrows(backupdbCorrectSide,'timeStart');
+        idxBaxkupBeforeThisSession = backupdbCorrectSide.timeStart < dbuse.timeStart(1);
+        backupUse = backupdbCorrectSide(idxBaxkupBeforeThisSession,:);
+        idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),backupUse.deviceSettings) == 1,1,'last');
+        if isempty(idxDeviceSettings)
+            % device settings  missing
+            adbsSettings.deviceSettings = table();
+        else
+            adbsSettings.deviceSettings = backupUse.deviceSettings{idxDeviceSettings};
+        end
+    end
+
+    % get the last stim status on this day 
     adbsSettings.stimStatus = dbuse.stimStatus{end};
-    adbsSettings.stimState = dbuse.stimState{end};
-    adbsSettings.adaptiveSettings = dbuse.adaptiveSettings{end};
+    idxStimSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.stimStatus) == 1,1,'last');
+    if ~isempty(idxStimSettings)
+        adbsSettings.stimStatus = dbuse.stimStatus{idxStimSettings};
+    end
+    
+    % get the last stim state on this day 
+    idxStimStatus = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.stimState) == 1,1,'last');
+    if ~isempty(idxStimStatus)
+        adbsSettings.stimState = dbuse.stimState{idxStimStatus};
+    end
+    
+     
+    % get the last adaptive settings on this day 
+    idxAdaptiveSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.adaptiveSettings) == 1,1,'last');
+    if ~isempty(idxAdaptiveSettings)
+        adbsSettings.adaptiveSettings = dbuse.adaptiveSettings{idxAdaptiveSettings};
+    end
+    
+    
     % get the last power and fft table in this day 
     idxFft = find(cellfun(@(x) (size(x,1)),dbuse.fftTable) == 1,1,'last');
     if ~isempty(idxFft)
