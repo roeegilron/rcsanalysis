@@ -124,15 +124,15 @@ uniquePatients = unique(dbWithDetection.patient);
 for p = 1:length(uniquePatients)
     patDB = dbWithDetection(strcmp(dbWithDetection.patient,uniquePatients{p}) , :);
     
-    % find the unique days in each recordingt
+    % find the unique days in each recordings
     tbl = table();
     [tbl.y,tbl.m,tbl.d] = ymd(patDB.timeStart);
     unqDays = unique(tbl,'rows');
     % only look at 2020 data 
     for u = 1:size(unqDays,1)
-        idxPlot = year(patDB.timeStart) == tbl.y(u) & ...
-            month(patDB.timeStart) == tbl.m(u) & ...
-            day(patDB.timeStart) == tbl.d(u);
+        idxPlot = year(patDB.timeStart) == unqDays.y(u) & ...
+            month(patDB.timeStart) == unqDays.m(u) & ...
+            day(patDB.timeStart) == unqDays.d(u);
         aDBSplot = patDB(idxPlot,:);
         hasSCBSdata = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),aDBSplot.allFilesWithDetection) ;
         totalTime = sum(aDBSplot.duration); 
