@@ -162,7 +162,7 @@ for s = 1:size(db,1)
     
     % load adapative 
     res = readAdaptiveJson(fnAdaptive);
-    cur = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
+    currentTimeSeries = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
     timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
     uxtimes = datetime(res.timing.PacketGenTime/1000,...
         'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
@@ -194,15 +194,15 @@ for s = 1:size(db,1)
     timesUseCur = timesUseCur(idxkeepcur);
     
     % trim start of file
-    cur = cur(idxkeepcur);
+    currentTimeSeriesTrimmed = currentTimeSeries(idxkeepcur);
     
-    db.currentTimeSeries{s} = cur; 
+    db.currentTimeSeries{s} = currentTimeSeriesTrimmed; 
     db.timesUseDetector{s} = timesUseDetector;
     db.timesUseCur{s} = timesUseCur;
     db.ld0{s} =  ld0;
     db.ld0_high{s}  = ld0_high;
     db.ld0_low{s} = ld0_low; 
-    uniqCurrents = unique(cur); 
+    uniqCurrents = unique(currentTimeSeriesTrimmed); 
     if length(uniqCurrents) == 1
         db.adaptive_running(s) = 0; 
     else
@@ -332,8 +332,8 @@ for ss = 1:length(unqSides)
         ld0_high = dbuse.ld0_high{d};
         ld0_low = dbuse.ld0_low{d};
         if ~isempty(ld0)
-            % remove outliers
-            outlierIdx = isoutlier(ld0);
+            % only remove outliers in the threshold 
+            outlierIdx = isoutlier(ld0_high);
             ld0 = ld0(~outlierIdx);
             ld0_high = ld0_high(~outlierIdx);
             ld0_low = ld0_low(~outlierIdx);
@@ -369,8 +369,9 @@ for ss = 1:length(unqSides)
             end
             timesUseCur = dbuse.timesUseCur{d};
             cur = dbuse.currentTimeSeries{d};
-            % remove outliers
-            outlierIdx = isoutlier(cur);
+            % don't  remove outliers for current
+            % but remove current above 10 as they are unlikely to be real 
+            outlierIdx = cur>10;
             cur = cur(~outlierIdx);
             timesUseCur = timesUseCur(~outlierIdx);
             
@@ -390,6 +391,12 @@ for ss = 1:length(unqSides)
             title(hsb(idxplot) ,ttlus);
             ylabel( hsb(idxplot) ,'Current (mA)');
             set( hsb(idxplot),'FontSize',16);
+            ylims = [min([dbuse.currentTimeSeries{:}]) max([dbuse.currentTimeSeries{:}])];
+            if ylims(1) == ylims(2) 
+               ylims(1) = ylims(1) * 0.9;
+               ylims(2) = ylims(2) * 1.1;
+            end
+            set(hsb(idxplot),'YLim',ylims);
         end
     end
     strPrint = getAdaptiveHumanReadaleSettings(adbsSettings,0);

@@ -9,19 +9,19 @@ function strOut = getAdaptiveHumanReadaleSettings(varargin)
 % no change is done
 % it can be adapted to mulitple changes given adaptive settings table
 if length(varargin) == 1 
-    adaptiveSettings = varargin{1}; 
+    adaptiveSettingsStruc = varargin{1}; 
     plotData = 0; 
 elseif length(varargin) == 2
-    adaptiveSettings = varargin{1}; 
+    adaptiveSettingsStruc = varargin{1}; 
     plotData = varargin{2}; 
 end
 
-deviceSettingsOut = adaptiveSettings.deviceSettings;
-stimStatus = adaptiveSettings.stimStatus;
-stimState = adaptiveSettings.stimState;
-fftTable = adaptiveSettings.ffTable;
-powerTable = adaptiveSettings.powerTable;
-adaptiveSettings = adaptiveSettings.adaptiveSettings;
+deviceSettingsOut = adaptiveSettingsStruc.deviceSettings;
+stimStatus = adaptiveSettingsStruc.stimStatus;
+stimState = adaptiveSettingsStruc.stimState;
+fftTable = adaptiveSettingsStruc.ffTable;
+powerTable = adaptiveSettingsStruc.powerTable;
+adaptiveSettings = adaptiveSettingsStruc.adaptiveSettings;
 
 stimStateRaw = stimState;
 stimState = table();
