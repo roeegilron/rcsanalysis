@@ -31,7 +31,7 @@ if ~fileIsEmpty
     % now go to end of the file
     fseek(fid, -10000, 'eof');
     filesize = ftell(fid);
-    text = fread(fid, 8000,'uint8=>char')';
+    text = fread(fid, 10000,'uint8=>char')';
     rawtime = regexp(text,'(?<=,"HostUnixTime":)[0-9]+','match');
     timenum = str2num(rawtime{1});
     meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
