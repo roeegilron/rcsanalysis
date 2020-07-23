@@ -1,5 +1,6 @@
 function check_meta_data_files_that_are_not_opened_properly()
 %% load data 
+clear all; close all; 
 rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/'; 
 database_dir = fullfile(rootdir,'database');
 fnsave = fullfile(database_dir,'database_raw_from_device_settings.mat');

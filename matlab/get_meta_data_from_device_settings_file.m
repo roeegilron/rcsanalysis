@@ -15,9 +15,8 @@ metaData.timeStart.TimeZone             = 'America/Los_Angeles';
 metaData.timeEnd(1)                     = NaT;
 metaData.timeEnd.TimeZone               = 'America/Los_Angeles';
 metaData.duration(1)                    = seconds(0); 
-metaData.deviceSettings{1}              = struct();
+metaData.senseSettings{1}               = struct();
 metaData.stimStatus{1}                  = struct();
-metaData.deviceSettings{1}              = struct();
 metaData.stimState{1}                   = struct();
 metaData.fftTable{1}                    = struct();
 metaData.powerTable{1}                  = struct();
@@ -27,6 +26,19 @@ metaData.powerStreaming(1)              = NaN;
 metaData.fftStreaming(1)                = NaN;
 metaData.timeDomainStreaming(1)         = NaN;
 metaData.accelerometryStreaming(1)      = NaN;
+
+% get session name 
+idxSession = strfind(lower(deviceSettingsFn),'session');
+metaData.session{1}                     = deviceSettingsFn( idxSession: idxSession + 19);
+% find out if recorded with SCBS or clinician application 
+if any(strfind(deviceSettingsFn,'SummitContinuousBilateralStreaming'));
+metaData.recordedWithScbs(1)            = 1; 
+metaData.recordedWithResearchApp(1)     = 0; 
+else
+metaData.recordedWithScbs(1)            = 0; 
+metaData.recordedWithResearchApp(1)     = 1; 
+end
+
 
 %% attempt to get actual values 
 % get the dirname to load other files that have meta data 
@@ -45,73 +57,53 @@ try
     metaData.duration(1)                    = masterDataId.duration(1);
 catch 
 end
-% more advances meta data 
-try 
-[deviceSettings,stimStatus,stimState,fftTable,powerTable] = loadDeviceSettingsForMontage(deviceSettingsFn);
-metaData.deviceSettings{1}              = deviceSettings;
-metaData.stimStatus{1}                  = stimStatus;
-metaData.stimState{1}                   = stimState;
-metaData.fftTable{1}                    = fftTable;
-metaData.powerTable{1}                  = powerTable;
-catch 
+% more advances meta data
+try
+    % load device settings
+    DeviceSettings = jsondecode(fixMalformedJson(fileread(deviceSettingsFn),'DeviceSettings'));
+    % fix issues with device settings sometiems being a cell array and
+    % sometimes not
+    
+    if isstruct(DeviceSettings)
+        DeviceSettings = {DeviceSettings};
+    end
+    
+    % load device settings from the first structure of device settings 
+    [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings]  = ...
+        loadDeviceSettingsFromFirstInitialStructure(DeviceSettings);
+    metaData.senseSettings{1}               = senseSettings;
+    metaData.stimStatus{1}                  = stimStatus;
+    metaData.stimState{1}                   = stimState;
+    metaData.fftTable{1}                    = fftTable;
+    metaData.powerTable{1}                  = powerTable;
+    metaData.adaptiveSettings{1}            = adaptiveSettings;
+    
+    % for each subsequent structure, need to write code that will estimate
+    % all settings changes within the file and update the total time for
+    % each settings 
+%     getSenseSettingsInDeviceSettingsStructure(DeviceSettings,metaData.senseSettings{1}); 
+catch
 end
 
-% get some adaptive settings
-try
-    metaData.adaptiveSettings{1}            = loadAdaptiveSettings(deviceSettingsFn);
-    % get some logical values to see whihh files have data in them.
-    fnAdaptive = fullfile(dirname,'AdaptiveLog.json');
-    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
-    if timeReport.duration > seconds(0)
-        metaData.detectionStreaming(1)      = 1;
-    else
-        metaData.detectionStreaming(1)      = 0;
+% check if files have data in them by opening 
+% each text file and looking for a unix time stamp at the start 
+% and at the end of the files 
+fileNamesCheck = {'AdaptiveLog','RawDataTD','RawDataPower','RawDataFFT','RawDataAccel'};
+fileNamesTable = {'detectionStreaming','timeDomainStreaming','powerStreaming','fftStreaming','accelerometryStreaming'};
+for fn = 1:length(fileNamesCheck)
+    try
+        % first set defaul value
+        metaData.(fileNamesTable{fn})(1)           = NaN;
+        fnUse = sprintf('%s.json',fileNamesCheck{fn});
+        fnCheck = fullfile(dirname,fnUse);
+        timeReport = report_start_end_time_td_file_rcs(fnCheck);
+        if timeReport.duration > seconds(0)
+            metaData.(fileNamesTable{fn})(1)       = 1;
+        else
+            metaData.(fileNamesTable{fn})(1)       = 0;
+        end
+    catch
     end
-catch
-end
-% check if td is streaming
-try
-    fnAdaptive = fullfile(dirname,'RawDataTD.json');
-    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
-    if timeReport.duration > seconds(0)
-        metaData.timeDomainStreaming(1)     = 1;
-    else
-        metaData.timeDomainStreaming(1)     = 0;
-    end
-catch
-end
-% check if power is streaming
-try
-    fnAdaptive = fullfile(dirname,'RawDataPower.json');
-    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
-    if timeReport.duration > seconds(0)
-        metaData.powerStreaming(1)          = 1;
-    else
-        metaData.powerStreaming(1)          = 0;
-    end
-catch
-end
-% check if fft is streaming
-try
-    fnAdaptive = fullfile(dirname,'RawDataFFT.json');
-    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
-    if timeReport.duration > seconds(0)
-        metaData.fftStreaming(1)            = 1;
-    else
-        metaData.fftStreaming(1)            = 0;
-    end
-catch
-end
-% check if acc is streaming
-try
-    metaData.accelerometryStreaming(1)      = NaN;
-    timeReport = report_start_end_time_td_file_rcs(fnAdaptive);
-    if timeReport.duration > seconds(0)
-        metaData.accelerometryStreaming(1)  = 1;
-    else
-        metaData.accelerometryStreaming(1)  = 0;
-    end
-catch
 end
 
 end
