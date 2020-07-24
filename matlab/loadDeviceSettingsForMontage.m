@@ -258,15 +258,8 @@ end
 % the settings being changed in each adaptive state update will be noted
 % in a cell array as well
 
+adaptiveChanges = getAdaptiveChanges(DeviceSettings)
 
-
-%%%
-%%%
-%%%
-% NEW CODE - first load initial settings that then get updates
-%%%
-%%%
-%%%
 
 f = 1;
 previosSettIdx = 0;
