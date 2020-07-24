@@ -228,11 +228,22 @@ for tg = 1:length( fieldNamesTherapyGroups )
     end
 end
 stimStatus = table();
-idxAcc
-stimStatus.time = time; 
-stimStatus.duration = seconds(0); 
-stimStatus = [stimStatus, stimState(logical(stimState.activeGroup),:);];
 
+idxValidGroupAndProgram = stimState.activeGroup & stimState.programEnabeled;
+if sum(idxValidGroupAndProgram) == 0 % no valid programs 
+    % report the first program as "valid" even thought it isn'tl 
+    stimStatus = stimState(1,:); 
+else
+    stimStatus = stimState(idxValidGroupAndProgram,:);
+    
+end
+for sss = 1:size(stimStatus,1)
+    stimStatus.time(sss) = time;
+    stimStatus.duration(sss) = seconds(0);
+end
+stimStatus = stimStatus(:,{'time','duration','group','stimulation_on','activeGroup','program','programEnabeled',...
+    'electrodes','amplitude_mA','rate_Hz','pulseWidth_mcrSec',...
+    'active_recharge'});
 
 
 
