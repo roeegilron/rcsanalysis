@@ -16,6 +16,9 @@ convert_all_files_from_mat_into_json();
 %% agregate stim and sense database for easy viewing and query 
 agregate_patient_databases()
 
+%% chop up data in 10 min chunk 
+process_data_into_10_minute_chunks();
+
 %% print some basic stats about the database 
 print_database_stats();
 

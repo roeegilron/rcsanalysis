@@ -76,13 +76,13 @@ rootfolder = findFilesBVQX(DROPBOX_PATH,'RC+S Patient Un-Synced Data',struct('di
 
 % exmaple selections: 
 %%
-patient = 'RCS08'; 
+patient = 'RCS03'; 
 patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
 % find the home data folder (SCBS fodler 
 scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
 % assumign you want the same settings for L and R side  
 pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'depth',1));
-for ss = 2:length(pat_side_folders)
+for ss = 1:length(pat_side_folders)
     % check if database file exists, if not create it 
     dbFile = fullfile(pat_side_folders{ss},'stim_and_sense_settings_table.mat');
     if exist(dbFile,'file')
@@ -105,6 +105,26 @@ for ss = 2:length(pat_side_folders)
     dbtype(databaseReport);
     
     %% this bit can be specific on a "per patient" basis 
+    sideUsed = unique(sense_stim_table.side);
+    if strcmp(patient,'RCS03') & strcmp(sideUsed{1},'L') 
+        idxuse = strcmp(sense_stim_table.chan1,'+1-0 lpf1-450Hz lpf2-1700Hz sr-500Hz') & ...
+            sense_stim_table.stimulation_on == 0;
+        stim_off_database = sense_stim_table(idxuse,:);
+        concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
+        
+        idxuse = strcmp(sense_stim_table.electrodes,'+2 -c ') & ...
+            sense_stim_table.stimulation_on == 1;
+        stim_on_database = sense_stim_table(idxuse,:);
+        concatenate_and_plot_TD_data_from_database_table(stim_on_database,pat_side_folders{ss},'after_stim_2-C');
+        
+        idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-100Hz lpf2-100Hz sr-250Hz') & ...
+            sense_stim_table.stimulation_on == 1;
+        stim_on_database = sense_stim_table(idxuse,:);
+        concatenate_and_plot_TD_data_from_database_table(stim_on_database,pat_side_folders{ss},'after_stim_1-C');
+    end
+    if strcmp(patient,'RCS03') & strcmp(sideUsed{1},'R') 
+    end
+    
     idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz') & ... 
              sense_stim_table.stimulation_on == 0; 
     stim_off_database = sense_stim_table(idxuse,:); 

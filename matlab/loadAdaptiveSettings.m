@@ -1,11 +1,54 @@
 function adaptiveSettings =  loadAdaptiveSettings(fn)
+warning('off','MATLAB:table:RowsAddedExistingVars');
+
+% relies on access both to device settings and to the adaptive file 
+% this code assumes that adaptive settings are not being changed mid file 
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
+
 % fix issues with device settings sometiems being a cell array and
 % sometimes not 
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
-clc;
+% create aux table to help sort Device settings 
+deviceSettingsTable = table(); 
+for ds = 1:length(DeviceSettings)
+    fieldNames = fieldnames(DeviceSettings{ds}); 
+    recInfo = DeviceSettings{ds}.RecordInfo; 
+    timenum = recInfo.HostUnixTime;
+    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    deviceSettingsTable.time(ds) = t;
+    deviceSettingsTable.fn1{ds} = fieldNames{1};
+    deviceSettingsTable.fn2{ds} = fieldNames{2};
+    deviceSettingsTable.struc{ds} = DeviceSettings{ds}; 
+end
+% get rid of telemetry and battery status (for now, not interesting for
+% most of our use cases) 
+idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2) | ... 
+                    cellfun(@(x) strcmp(x,'TelemetryModuleInfo'),deviceSettingsTable.fn2) ;
+deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:); 
+% adaptive config structure report 
+idxAdatpive = cellfun(@(x) strcmp(x,'AdaptiveConfig'),deviceSettingsTable.fn2);
+adaptiveConfigTable = deviceSettingsTable(idxAdatpive,:); 
+for a = 1:size(adaptiveConfigTable,1)
+    adaptiveConfigTable.struc{a}.AdaptiveConfig;
+end
+
+% sense config structure report 
+idxSensing = cellfun(@(x) strcmp(x,'SensingConfig'),deviceSettingsTable.fn2);
+sensingConfigTable = deviceSettingsTable(idxSensing,:); 
+for a = 1:size(sensingConfigTable,1)
+    sensingConfigTable.struc{a}.SensingConfig;
+end
+
+% sense config structure report 
+idxSensing = cellfun(@(x) strcmp(x,'GeneralData'),deviceSettingsTable.fn2);
+sensingConfigTable = deviceSettingsTable(idxSensing,:); 
+for a = 1:size(sensingConfigTable,1)
+    sensingConfigTable.struc{a}.GeneralData;
+end
+
+
 %% Adaptive / detection config
 % detection settings first are reported in full (e.g. all fields) 
 % after this point, only changes are reported. 

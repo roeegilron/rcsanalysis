@@ -1,30 +1,51 @@
-function [deviceSettingsOut,stimStatus,stimState]  = loadDeviceSettingsForMontage(fn)
-
+function [deviceSettingsOut,stimStatus,stimState,fftTable,powerTable]  = loadDeviceSettingsForMontage(fn)
+warning('off','MATLAB:table:RowsAddedExistingVars');
 DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 
 % fix issues with device settings sometiems being a cell array and
 % sometimes not
+
 if isstruct(DeviceSettings)
     DeviceSettings = {DeviceSettings};
 end
-clc
-%% print raw device settings strucutre
+% create aux table to help sort Device settings
+deviceSettingsTable = table();
+for ds = 1:length(DeviceSettings)
+    fieldNames = fieldnames(DeviceSettings{ds});
+    recInfo = DeviceSettings{ds}.RecordInfo;
+    timenum = recInfo.HostUnixTime;
+    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+    deviceSettingsTable.time(ds) = t;
+    deviceSettingsTable.fn1{ds} = fieldNames{1};
+    deviceSettingsTable.fn2{ds} = fieldNames{2};
+    deviceSettingsTable.struc{ds} = DeviceSettings{ds};
+end
+% get rid of telemetry and battery status (for now, not interesting for
+% most of our use cases)
+idxTelemBattery = cellfun(@(x) strcmp(x,'BatteryStatus'),deviceSettingsTable.fn2) | ...
+                    cellfun(@(x) strcmp(x,'TelemetryModuleInfo'),deviceSettingsTable.fn2) ;
+deviceSettingsTable = deviceSettingsTable(~idxTelemBattery,:);
 
-for f = 1:length(DeviceSettings)
-    curStr = DeviceSettings{f};
-    fieldnames1 = fieldnames(curStr);
-    fprintf('[%0.3d]\n',f);
-    for f1 = 1:length(fieldnames1)
-       fprintf('\t%s\n',fieldnames1{f1});
-       curStr2 = curStr.(fieldnames1{f1});
-       if isstruct(curStr2)
-           fieldnames2 = fieldnames(curStr2);
-           for f2 = 1:length(fieldnames2)
-               fprintf('\t\t%s\n',fieldnames2{f2});
-           end
-       end
+%% print raw device settings strucutre
+clc
+printRawDeviceSettings = 0;
+if printRawDeviceSettings
+    for f = 1:length(DeviceSettings)
+        curStr = DeviceSettings{f};
+        fieldnames1 = fieldnames(curStr);
+        fprintf('[%0.3d]\n',f);
+        for f1 = 1:length(fieldnames1)
+            fprintf('\t%s\n',fieldnames1{f1});
+            curStr2 = curStr.(fieldnames1{f1});
+            if isstruct(curStr2)
+                fieldnames2 = fieldnames(curStr2);
+                for f2 = 1:length(fieldnames2)
+                    fprintf('\t\t%s\n',fieldnames2{f2});
+                end
+            end
+        end
+        fprintf('\n');
     end
-    fprintf('\n');
 end
 
 %%
@@ -179,6 +200,224 @@ for u = 1:length(unqRecs)
     end
 end
 
+%% load power channel + fft config
+
+%  first part of code checks if there were any sense config evnets in the
+%  file.
+% if not, you have to load these from the default "first" structure in the
+% code.
+% the next part of the code tries to take acount of any changes in the
+% sensing or power channel config through out the device settings file.
+% for example, if power has changed or the fft has changes to when
+% switching to adapative stimulation using either research facing or the
+% patient facing application.
+idxSensingConfig = cellfun(@(x) any(strfind(x,'SensingConfig')), deviceSettingsTable.fn2);
+if sum(idxSensingConfig) == 0
+    % get the fft
+    SensingConfigStruc = DeviceSettings{1}.SensingConfig;
+    % XXX
+    % note that this is awful code - me being lazy
+    % instead of creating a new subfunciton copying code over
+    % just trying to get this to work quickly
+    % but this should be fixed as now any bugs have to be worked out in two
+    % places
+    % XXX
+    % since using the first data payload - just compute the first time
+    % point
+    fftTable = table();
+    fftTable.time = deviceSettingsTable.time(1);
+    % get the sample rate from the first payload
+    outstruc = translateTimeDomainChannelsStruct(SensingConfigStruc.timeDomainChannels);
+    sampleRate = str2num(outstruc(1).sampleRate(1:end-2));
+    % load fft default config
+
+    fftConfig = SensingConfigStruc.fftConfig;
+    fftcnt = 1;
+    powerTable = table();
+    pwrcnt = 1;
+    switch fftConfig.size
+        case 0
+            fftTable.fftSize(fftcnt) = 64;
+        case 1
+            fftTable.fftSize(fftcnt)  = 256;
+        case 3
+            fftTable.fftSize(fftcnt)  = 1024;
+    end
+    fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
+    fftTable.config(fftcnt) = fftConfig.config;
+    fftTable.interval(fftcnt) = fftConfig.interval;
+    fftTable.size(fftcnt) = fftConfig.size;
+    fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
+    fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
+    fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
+
+    %% get the power
+    powerTable.time(pwrcnt) = fftTable.time;
+    fftSize = fftTable.fftSize;
+
+    powerChannels = SensingConfigStruc.powerChannels;
+    powerChannelsIdxs = [];
+    idxCnt = 1;
+    for c = 1:4
+        for b = 0:1
+            fieldStart = sprintf('band%dStart',b);
+            fieldStop = sprintf('band%dStop',b);
+            powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
+            powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
+            idxCnt = idxCnt+1;
+        end
+    end
+
+
+    %% get the bins to compute the power channels
+    fftSize = fftTable.fftSize(fftcnt);
+    numBins = fftSize/2;
+    binWidth = (sampleRate/2)/numBins;
+    i = 0;
+    bins = [];
+    while i < numBins
+        bins(i+1) = i*binWidth;
+        i =  i + 1;
+    end
+    FFTSize = fftSize; % can be 64  256  1024
+    sampleRate = sampleRate; % can be 250,500,1000
+
+    numberOfBins = FFTSize/2;
+    binWidth = sampleRate/2/numberOfBins;
+
+    for i = 0:(numberOfBins-1)
+        fftBins(i+1) = i*binWidth;
+        %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+    end
+
+    lower(1) = 0;
+    for i = 2:length(fftBins)
+        valInHz = fftBins(i)-fftBins(2)/2;
+        lower(i) = valInHz;
+    end
+
+    for i = 1:length(fftBins)
+        valInHz = fftBins(i)+fftBins(2)/2;
+        upper(i) = valInHz;
+    end
+    powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
+    powerBandInHz = {};
+    for pc = 1:size(powerChannelsIdxs,1)
+        powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
+            lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
+        fnUse = sprintf('band%dHz',pc);
+        powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
+        powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
+    end
+    powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
+
+
+else
+    SensingConfigTable = deviceSettingsTable(idxSensingConfig,:);
+    fftTable = table();
+    fftcnt = 1;
+    powerTable = table();
+    pwrcnt = 1;
+
+    for ss = 1:size(SensingConfigTable)
+        strc = SensingConfigTable.struc{ss}.SensingConfig;
+        % find the closest sampling rate (in time)
+        % in the settings file
+        % assume that this is the sample rate
+        % this may be wrong assutmpiton
+        time = SensingConfigTable.time(ss);
+        [~,idx] = min(abs(time-deviceSettingsOut.timeStart));
+        sampleRate = deviceSettingsOut.samplingRate(idx);
+        if isfield(strc,'fftConfig')
+            fftConfig = strc.fftConfig;
+            fftTable.time(fftcnt)  = time;
+            switch fftConfig.size
+                case 0
+                    fftTable.fftSize(fftcnt) = 64;
+                case 1
+                    fftTable.fftSize(fftcnt)  = 256;
+                case 3
+                    fftTable.fftSize(fftcnt)  = 1024;
+            end
+            fftTable.bandFormationConfig(fftcnt) = fftConfig.bandFormationConfig;
+            fftTable.config(fftcnt) = fftConfig.config;
+            fftTable.interval(fftcnt) = fftConfig.interval;
+            fftTable.size(fftcnt) = fftConfig.size;
+            fftTable.streamOffsetBins(fftcnt) = fftConfig.streamOffsetBins;
+            fftTable.streamSizeBins(fftcnt) = fftConfig.streamSizeBins;
+            fftTable.windowLoad(fftcnt) = fftConfig.windowLoad;
+        end
+
+
+        if isfield(strc,'powerChannels')
+            % find the closest fftSize (in time)
+            % in the fftTable
+            % assume that this is the correct fftSize
+            % this may be wrong assutmpiton
+            powerTable.time(pwrcnt) = time;
+            time = powerTable.time(pwrcnt);
+            [~,idx] = min(abs(time-fftTable.time));
+            fftSize = fftTable.fftSize(idx);
+
+            powerChannels = strc.powerChannels;
+            powerChannelsIdxs = [];
+            idxCnt = 1;
+            for c = 1:4
+                for b = 0:1
+                    fieldStart = sprintf('band%dStart',b);
+                    fieldStop = sprintf('band%dStop',b);
+                    powerChannelsIdxs(idxCnt,1) = powerChannels(c).(fieldStart);
+                    powerChannelsIdxs(idxCnt,2) = powerChannels(c).(fieldStop);
+                    idxCnt = idxCnt+1;
+                end
+            end
+
+
+            %% get the bins to compute the power channels
+            fftSize = fftTable.fftSize(fftcnt);
+            numBins = fftSize/2;
+            binWidth = (sampleRate/2)/numBins;
+            i = 0;
+            bins = [];
+            while i < numBins
+                bins(i+1) = i*binWidth;
+                i =  i + 1;
+            end
+            FFTSize = fftSize; % can be 64  256  1024
+            sampleRate = sampleRate; % can be 250,500,1000
+
+            numberOfBins = FFTSize/2;
+            binWidth = sampleRate/2/numberOfBins;
+
+            for i = 0:(numberOfBins-1)
+                fftBins(i+1) = i*binWidth;
+                %     fprintf('bins numbers %.2f\n',fftBins(i+1));
+            end
+
+            lower(1) = 0;
+            for i = 2:length(fftBins)
+                valInHz = fftBins(i)-fftBins(2)/2;
+                lower(i) = valInHz;
+            end
+
+            for i = 1:length(fftBins)
+                valInHz = fftBins(i)+fftBins(2)/2;
+                upper(i) = valInHz;
+            end
+            powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
+            powerBandInHz = {};
+            for pc = 1:size(powerChannelsIdxs,1)
+                powerBandInHz{pc,1} = sprintf('%.2fHz-%.2fHz',...
+                    lower(powerChannelsIdxs(pc,1)),upper(powerChannelsIdxs(pc,2)));
+                fnUse = sprintf('band%dHz',pc);
+                powerTable.(fnUse)(pwrcnt,1) = lower(powerChannelsIdxs(pc,1));
+                powerTable.(fnUse)(pwrcnt,2) = upper(powerChannelsIdxs(pc,2));
+            end
+            powerTable.powerBandInHz{pwrcnt} = powerBandInHz;
+
+        end
+    end
+end
 
 %% load stimulation config
 % this code (re stim sweep part) assumes no change in stimulation from initial states
@@ -188,64 +427,137 @@ end
 % data properly according to stim changes and when the took place for in
 % clinic testing
 
-if isstruct(DeviceSettings)
-    DeviceSettings = {DeviceSettings};
+idxGroupChange = cellfun(@(x) any(strfind(x,'TherapyConfig')), deviceSettingsTable.fn2) | ...
+                 cellfun(@(x) any(strfind(x,'GeneralData')), deviceSettingsTable.fn2)  ;
+
+groupChangeTable = deviceSettingsTable(idxGroupChange,:);
+if size(groupChangeTable,1) == 0 % file doesn't have any group changes past initial config
+    % just give the first structure
+    groupChangeTable = deviceSettingsTable(1,:);
 end
+
+% need to add something to check for stim changes as well in this table
+% write not doesn't take into account stim changes
 therapyStatus = DeviceSettings{1}.GeneralData.therapyStatusData;
-groups = [ 0 1 2 3];
-groupNames = {'A','B','C','D'};
-stimState = table();
+
 cnt = 1;
-for g = 1:length(groups)
-    fn = sprintf('TherapyConfigGroup%d',groups(g));
-    for p = 1:4
-        if DeviceSettings{1}.TherapyConfigGroup0.programs(p).isEnabled==0
-            stimState.group(cnt) = groupNames{g};
-            if (g-1) == therapyStatus.activeGroup
-                stimState.activeGroup(cnt) = 1;
-                if therapyStatus.therapyStatus
-                    stimState.stimulation_on(cnt) = 1;
+stimState = table();
+for gc = 1:size(groupChangeTable,1)
+    % first try to get from talbe
+    if sum(cellfun(@(x) any(strfind(x,'Therapy')), fieldnames(groupChangeTable.struc{gc}))) >=1
+        therapyStatus = groupChangeTable.struc{gc}.GeneralData.therapyStatusData;
+    end
+    if sum(cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldnames(groupChangeTable.struc{gc}))) == 4 % this is the first payload
+        % need to find the valid group
+        fieldNamesGroupsRaw = fieldnames(groupChangeTable.struc{gc});
+        idxTherapyGroups = cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldNamesGroupsRaw);
+        fieldNamesTherapyGroups = fieldNamesGroupsRaw(idxTherapyGroups,:);
+        curStr = groupChangeTable.struc{gc};
+        groupNumber = therapyStatus.activeGroup;
+        onFirstStructure = 1;  % the first device setting structure
+    else
+        onFirstStructure = 0;
+    end
+
+    if sum(cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldnames(groupChangeTable.struc{gc}))) >= 1  % this is a later change
+        % find the group letter
+        if onFirstStructure
+            timeGroupChange = groupChangeTable.time(gc);
+            groupNumber = groupNumber; % set above
+        else
+            timeGroupChange = groupChangeTable.time(gc);
+            groupNumber = str2num(groupChangeTable.fn2{gc}(end));
+        end
+        switch groupNumber
+            case 0
+                groupName = 'A';
+            case 1
+                groupName = 'B';
+            case 2
+                groupName = 'C';
+            case 3
+                groupName = 'D';
+        end
+
+        groupStruc = groupChangeTable.struc{gc};
+        if onFirstStructure
+            fnGroup = fieldNamesTherapyGroups{groupNumber+1};
+        else
+            fnGroup = groupChangeTable.fn2{gc};
+        end
+        for p = 1:4
+            if groupStruc.(fnGroup).programs(p).isEnabled==0
+                stimState.time(cnt) = timeGroupChange;
+                stimState.duration(cnt) = seconds(0); % place holder until loop through and fill out;
+                stimState.group(cnt) = groupName;
+                if groupNumber == therapyStatus.activeGroup
+                    stimState.activeGroup(cnt) = 1;
+                    if therapyStatus.therapyStatus
+                        stimState.stimulation_on(cnt) = 1;
+                    else
+                        stimState.stimulation_on(cnt) = 0;
+                    end
                 else
+                    stimState.activeGroup(cnt) = 0;
                     stimState.stimulation_on(cnt) = 0;
                 end
-            else
-                stimState.activeGroup(cnt) = 0;
-                stimState.stimulation_on(cnt) = 0;
-            end
 
-            stimState.program(cnt) = p;
-            stimState.pulseWidth_mcrSec(cnt) = DeviceSettings{1}.(fn).programs(p).pulseWidthInMicroseconds;
-            stimState.amplitude_mA(cnt) = DeviceSettings{1}.(fn).programs(p).amplitudeInMilliamps;
-            stimState.rate_Hz(cnt) = DeviceSettings{1}.(fn).rateInHz;
-            elecs = DeviceSettings{1}.(fn).programs(p).electrodes.electrodes;
-            elecStr = '';
-            for e = 1:length(elecs)
-                if elecs(e).isOff == 0 % electrode active
-                    if e == 17
-                        elecUse = 'c';
-                    else
-                        elecUse = num2str(e-1);
+                stimState.program(cnt) = p;
+                stimState.pulseWidth_mcrSec(cnt) = groupStruc.(fnGroup).programs(p).pulseWidthInMicroseconds;
+                stimState.amplitude_mA(cnt) = groupStruc.(fnGroup).programs(p).amplitudeInMilliamps;
+                stimState.rate_Hz(cnt) = groupStruc.(fnGroup).rateInHz;
+                elecs = groupStruc.(fnGroup).programs(p).electrodes.electrodes;
+                elecStr = '';
+                for e = 1:length(elecs)
+                    if elecs(e).isOff == 0 % electrode active
+                        if e == 17
+                            elecUse = 'c';
+                        else
+                            elecUse = num2str(e-1);
+                        end
+                        if elecs(e).electrodeType==1 % anode
+                            elecSign = '-';
+                        else
+                            elecSign = '+';
+                        end
+                        elecSnippet = [elecSign elecUse ' '];
+                        elecStr = [elecStr elecSnippet];
                     end
-                    if elecs(e).electrodeType==1 % anode
-                        elecSign = '-';
-                    else
-                        elecSign = '+';
-                    end
-                    elecSnippet = [elecSign elecUse ' '];
-                    elecStr = [elecStr elecSnippet];
                 end
-            end
 
-            stimState.electrodes{cnt} = elecStr;
-            cnt = cnt + 1;
+                stimState.electrodes{cnt} = elecStr;
+
+                % active / passive recharge
+                activeRechargeRatio = groupStruc.(fnGroup).programs(p).miscSettings.activeRechargeRatio;
+                if activeRechargeRatio == 10
+                    stimState.active_recharge(cnt) = 1;
+                elseif activeRechargeRatio == 0
+                    stimState.active_recharge(cnt) = 0;
+                else
+                    stimState.active_recharge(cnt) = NaN; % unexpected value
+                end
+                cnt = cnt + 1;
+            end
+        end
+        if ~isempty(stimState)
+            stimStatus = stimState(logical(stimState.activeGroup),:);
+        else
+            stimStatus = [];
         end
     end
 end
-if ~isempty(stimState)
-    stimStatus = stimState(logical(stimState.activeGroup),:);
-else
-    stimStatus = [];
+% fill in durations
+for gc = 1:size(stimState,1)
+    if gc == 1
+        stimState.duration(gc) = stimState.time(gc) - deviceSettingsTable.time(1) ;
+    elseif gc == size(stimState,1)
+        stimState.duration(gc) = deviceSettingsTable.time(end) - stimState.time(gc);
+    else
+        stimState.duration(gc) = stimState.time(gc+1) - stimState.time(gc);
+
+    end
 end
+stimState.duration.Format = 'hh:mm:ss';
 
 %% Adaptive / detection config
 % detection settings first are reported in full (e.g. all fields)
@@ -338,158 +650,94 @@ if isfield(curStr,'AdaptiveConfig')
         % fill in previous settings.
     end
 end
+warning('on','MATLAB:table:RowsAddedExistingVars');
 
 % loop on rest of code and just report changes and when they happened
 % don't copy things over for now
 
-% return;
-
-%%%%%%%%%%                          output =
-%%%%%%%%%%                          getAdaptiveChanges(DeviceSettings) %%%%
-%%%%%%%%%% TODO NEXT
-%%%%%%%%%% addubg adaotipeSettings and detectorConfig settings to each
-%%%%%%%%%% Change
-
-% f = 2;
-% previosSettIdx = 0;
-% currentSettIdx  = 1;
-% changesMade = struct();
-%
-% cntChangeTemp = 1;
-% cntchangeAdap = 1;
-% embeddedOn = 0;
-% adaptiveChanges = table();
-%
-% while f<length(DeviceSettings)
-%     fnms = fieldnames(DeviceSettings{f})
-%     curStr = DeviceSettings{f}
-%     % if adaptive config && embedded
-%     if isfield(curStr,'AdaptiveConfig')
-%         if isfield(curStr.AdaptiveConfig,'adaptiveMode')
-%             if curStr.AdaptiveConfig.adaptiveMode == 2
-%                 embeddedOn = 1;
-%                 % start time and host unix time
-%                 timenum = curStr.RecordInfo.HostUnixTime;
-%                 t =  datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-%                 adaptiveChanges.changeNum(cntChangeTemp) = cntchangeAdap;
-%                 adaptiveChanges.timeChange(cntChangeTemp) = t;
-%                 adaptiveChanges.adaptiveMode(cntChangeTemp) = 1;
-%                 cntchangeAdap = cntchangeAdap + 1;
-%             else
-%                 embeddedOn = 0;
-%             end
-%         end
-%     end
-%     if isfield(curStr,'GeneralData') && embeddedOn
-%         adaptiveChanges.therapySatus(cntChangeTemp) = curStr.GeneralData.therapyStatusData.therapyStatus;
-%         adaptiveChanges.activeGroup(cntChangeTemp) = curStr.GeneralData.therapyStatusData.activeGroup;
-%         adaptiveChanges.INStime(cntChangeTemp) = curStr.GeneralData.deviceTime;
-%         cntChangeTemp = cntChangeTemp + 1;
-%     end
-%     f = f + 1;
-% end
-%
-% adaptiveChangesTemp = table();
-% nextRow = 0;
-% for j=1:size(adaptiveChanges,1)
-%     if ~isnat(adaptiveChanges.timeChange(j))
-%         nextRow = nextRow + 1;
-%         adaptiveChangesTemp(nextRow,:) = adaptiveChanges(j,:);
-%     end
-% end
-% adaptiveChangesTemp
-
-%%%%%%%%%% JUAN HERE
-%
-% loop for device setting structure
-%
-%     we need to get time
-%     stream is on, even if adaptive has changed
-%
-%         strean on, start
-%
-%         --- adaptive states (on/off)
-%
-%         stream off
-%
-%         e.g. adaptive off/stream on
-%         etc...
-%
-%         we can update adaptive parameter, but not start streaming
-%         same but we are not in adaptive group (group D on) / sth in settings to tell us that 'adaptive on' sth like this
-%
-%         time should be chnaged from unit to ins time
+return;
 
 
+f = 2;
+previosSettIdx = 0;
+currentSettIdx  = 1;
+changesMade = struct();
+cntchange = 1;
+while f <= length(DeviceSettings)
+    adaptiveChanges = table();
+    fnms = fieldnames(DeviceSettings{f});
+    curStr = DeviceSettings{f};
+    det_fiels = {'blankingDurationUponStateChange',...
+        'detectionEnable','detectionInputs','fractionalFixedPointValue',...
+        'holdoffTime','onsetDuration','terminationDuration','updateRate'};
+    if isfield(curStr,'DetectionConfig')
+        lds_fn = {'Ld0','Ld1'};
+        for ll = 1:length(lds_fn)
+            ldTable = table();
+            if isfield(curStr.DetectionConfig,lds_fn{ll})
+            LD = curStr.DetectionConfig.(lds_fn{ll});
+            adaptiveChanges.([lds_fn{ll} '_' 'biasTerm']) = LD.biasTerm';
+            adaptiveChanges.([lds_fn{ll} '_' 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
+            adaptiveChanges.([lds_fn{ll} '_' 'normalizationSubtractVector']) = [LD.features.normalizationSubtractVector];
+            adaptiveChanges.([lds_fn{ll} '_' 'weightVector']) = [LD.features.weightVector];
+            for d = 1:length(det_fiels)
+                adaptiveChanges.([lds_fn{ll} '_' det_fiels{d}])  =  LD.(det_fiels{d});
+            end
+            else % fill in previous settings.
+                warning('missing field on first itiration');
+            end
+        end
+        adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
+            'deltaLimitsValid','deltasValid'};
+        adaptiveConfig = curStr.AdaptiveConfig;
+        for a = 1:length(adaptive_fields)
+            if isfield(adaptiveConfig,adaptive_fields{a})
+                adaptiveChanges.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
+            else
+                warning('missing field on first itiration');
+            end
+        end
+        if isfield(adaptiveConfig,'deltas')
+            adaptiveChanges.fall_rate = [adaptiveConfig.deltas.fall];
+            adaptiveChanges.rise_rate = [adaptiveConfig.deltas.rise];
+        else
+            warning('missing field on first itiration');
+        end
+        adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
+    end
+    if isfield(curStr,'AdaptiveConfig')
+        % loop on states
+        if isfield(adaptiveConfig,'state0')
+            for s = 0:8
+                statefn = sprintf('state%d',s);
+                stateStruct = adaptiveConfig.(statefn);
+                adaptiveChanges.(['state' num2str(s)] ) = s;
+                adaptiveChanges.(['rate_hz_state' num2str(s)] ) = stateStruct.rateTargetInHz;
+                adaptiveChanges.(['isValid_state' num2str(s)] ) = stateStruct.isValid;
+                for p = 0:3
+                    progfn = sprintf('prog%dAmpInMilliamps',p);
+                    curr(p+1) = stateStruct.(progfn);
+                end
+                adaptiveChanges.(['currentMa_state' num2str(s)] )(1,:) = curr;
+            end
+        end
+    end
+    if ~isempty(adaptiveChanges)
+        changesMade(cntchange).adaptiveChanges = adaptiveChanges;
+        cntchange = cntchange + 1;
+    end
+    f = f +1;
+end
 
-% while f <= length(DeviceSettings)
-%     adaptiveChanges = table();
-%     fnms = fieldnames(DeviceSettings{f});
-%     curStr = DeviceSettings{f};
-%     det_fiels = {'blankingDurationUponStateChange',...
-%         'detectionEnable','detectionInputs','fractionalFixedPointValue',...
-%         'holdoffTime','onsetDuration','terminationDuration','updateRate'};
-%     if isfield(curStr,'DetectionConfig')
-%         lds_fn = {'Ld0','Ld1'};
-%         for ll = 1:length(lds_fn)
-%             ldTable = table();
-%             if isfield(curStr.DetectionConfig,lds_fn{ll})
-%             LD = curStr.DetectionConfig.(lds_fn{ll});
-%             adaptiveChanges.([lds_fn{ll} '_' 'biasTerm']) = LD.biasTerm';
-%             adaptiveChanges.([lds_fn{ll} '_' 'normalizationMultiplyVector']) = [LD.features.normalizationMultiplyVector];
-%             adaptiveChanges.([lds_fn{ll} '_' 'normalizationSubtractVector']) = [LD.features.normalizationSubtractVector];
-%             adaptiveChanges.([lds_fn{ll} '_' 'weightVector']) = [LD.features.weightVector];
-%             for d = 1:length(det_fiels)
-%                 adaptiveChanges.([lds_fn{ll} '_' det_fiels{d}])  =  LD.(det_fiels{d});
-%             end
-%             else % fill in previous settings.
-%                 warning('missing field on first itiration');
-%             end
-%         end
-%         adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
-%     end
-%     if isfield(curStr,'AdaptiveConfig')
-%         adaptive_fields = {'adaptiveMode','adaptiveStatus','currentState',...
-%             'deltaLimitsValid','deltasValid'};
-%         adaptiveConfig = curStr.AdaptiveConfig;
-%         for a = 1:length(adaptive_fields)
-%             if isfield(adaptiveConfig,adaptive_fields{a})
-%                 adaptiveChanges.(adaptive_fields{a}) = adaptiveConfig.(adaptive_fields{a});
-%             else
-%                 warning('missing field on first itiration');
-%             end
-%         end
-%         if isfield(adaptiveConfig,'deltas')
-%             adaptiveChanges.fall_rate = [adaptiveConfig.deltas.fall];
-%             adaptiveChanges.rise_rate = [adaptiveConfig.deltas.rise];
-%         else
-%             warning('missing field on first itiration');
-%         end
-%         adaptiveChanges.HostUnixTime = curStr.RecordInfo.HostUnixTime;
-%     end
-%     if isfield(curStr,'AdaptiveConfig')
-%         % loop on states
-%         if isfield(adaptiveConfig,'state0')
-%             for s = 0:8
-%                 statefn = sprintf('state%d',s);
-%                 stateStruct = adaptiveConfig.(statefn);
-%                 adaptiveChanges.(['state' num2str(s)] ) = s;
-%                 adaptiveChanges.(['rate_hz_state' num2str(s)] ) = stateStruct.rateTargetInHz;
-%                 adaptiveChanges.(['isValid_state' num2str(s)] ) = stateStruct.isValid;
-%                 for p = 0:3
-%                     progfn = sprintf('prog%dAmpInMilliamps',p);
-%                     curr(p+1) = stateStruct.(progfn);
-%                 end
-%                 adaptiveChanges.(['currentMa_state' num2str(s)] )(1,:) = curr;
-%             end
-%         end
-%     end
-%     if ~isempty(adaptiveChanges)
-%         changesMade(cntchange).adaptiveChanges = adaptiveChanges;
-%         cntchange = cntchange + 1;
-%     end
-%     f = f +1;
-% end
+
+
+
+
+
+
 
 
 %%%%
