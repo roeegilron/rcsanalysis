@@ -169,8 +169,8 @@ for tg = 1:length( fieldNamesTherapyGroups )
     end
     therapyGroup = initialStructure.(fieldNamesTherapyGroups{tg});
     for p = 1:4
-        if therapyGroup.programs(p).isEnabled==0
             stimState.group(cnt) = groupName;
+           
             if groupNumber == therapyStatus.activeGroup
                 stimState.activeGroup(cnt) = 1;
                 if therapyStatus.therapyStatus
@@ -184,6 +184,12 @@ for tg = 1:length( fieldNamesTherapyGroups )
             end
             
             stimState.program(cnt) = p;
+            if therapyGroup.programs(p).isEnabled==0 % 0 means enabled
+                stimState.programEnabeled(cnt) = 1;
+            else
+                stimState.programEnabeled(cnt) = 0;
+            end
+             stimState.group(cnt) = groupName;
             stimState.pulseWidth_mcrSec(cnt) = therapyGroup.programs(p).pulseWidthInMicroseconds;
             stimState.amplitude_mA(cnt) = therapyGroup.programs(p).amplitudeInMilliamps;
             stimState.rate_Hz(cnt) = therapyGroup.rateInHz;
@@ -218,10 +224,11 @@ for tg = 1:length( fieldNamesTherapyGroups )
                 stimState.active_recharge(cnt) = NaN; % unexpected value
             end
             cnt = cnt + 1;
-        end
+        
     end
 end
 stimStatus = table();
+idxAcc
 stimStatus.time = time; 
 stimStatus.duration = seconds(0); 
 stimStatus = [stimStatus, stimState(logical(stimState.activeGroup),:);];
