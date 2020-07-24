@@ -44,7 +44,7 @@ if ~fileIsEmpty
         
         if isstruct(DeviceSettings)
             DeviceSettings = {DeviceSettings};
-            timenum = DeviceSettings{end}.RecordInfo.HostUnixTime
+            timenum = DeviceSettings{end}.RecordInfo.HostUnixTime;
             meta.timeEnd(1) = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
 
         end

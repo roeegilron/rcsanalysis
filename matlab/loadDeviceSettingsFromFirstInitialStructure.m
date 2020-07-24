@@ -120,7 +120,7 @@ end
 
 for i = 1:length(fftBins)
     valInHz = fftBins(i)+fftBins(2)/2;
-    upper(i) = valInHz;
+    upper(i) = valInHz; 
 end
 powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.
 powerBandInHz = {};

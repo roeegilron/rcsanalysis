@@ -4,7 +4,7 @@ function rcsAtHome_figures_figure5()
 %% 
 % panel a bar graph of total hours awake / alseep
 % panel b - PSD and coherence at home - average state estimate across subjects (median average)
-% panel c - AUC for all subjects 
+% panel c - AUC for all subjects -
 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 %%
@@ -16,7 +16,7 @@ p(1,2).pack(3,1);
 p.select('all');
 p.fontsize = 30;
 p.identify();
-plotpanels = 0;
+plotpanels = 1;
 % p(1,1).repack(0.3);
 %%
 
@@ -60,17 +60,18 @@ end
 fprintf('wake time mean %.2f max %.2f  %.2f\n',mean(recTime(:,1)),max(recTime(:,1)),min(recTime(:,1)));
 fprintf('sleep time mean %.2f max %.2f  %.2f\n',mean(recTime(:,2)),max(recTime(:,2)),min(recTime(:,2)));
 if plotpanels
+    cntplt = 1;
     hfig = figure;
     hfig.Color = 'w'; 
     hsb = subplot(1,1,1);
-    hsb(cntplt) = subplot; 
+    hsb(cntplt) = hsb; 
 else
     hpanel(1,1,1,1).select();
     hsb = gca();
 end
 
 hbar = bar(recTime);
-altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04'};
+altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
 hsb.XTickLabel = altPatientNames;
 hsb.YLabel.String = 'Hours recoreded'; 
 hsb.Title.String = 'Hours recorded at home / patient'; 
@@ -104,6 +105,10 @@ if plotpanels
     hfig.Color = 'w';
 end
 pdb = patientPSD_at_home;
+
+% temp add patient RCS08 
+% in the future need to redo the whole analysis to add the new database
+% file 
 
 
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats 

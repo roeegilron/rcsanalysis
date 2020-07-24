@@ -47,7 +47,9 @@ pkgDB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-timeBefore = datetime('2020-03-03');
+
+timeBefore = datetime('2020-03-03'); % only using second data sprint of PKG 
+timeBefore = datetime('2020-02-01'); % using both data sprints 
 timeAfer =   datetime('2020-03-14');
 patient = 'RCS08';
 patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
@@ -117,7 +119,7 @@ for sd = 1:length(sides)
     % create rootdir 
     rootdir = pat_side_folders{1};
     
-    savefn = sprintf('%s%s_pkg_and_rcs_dat_synced_10_min.mat',patient,sides{sd});
+    savefn = sprintf('%s%s_pkg-%s_and_rcs_dat_synced_10_min.mat',patient,sides{sd},sidesPKG{sd});
     %%
     
     %% loop on pkg data to creat one strucutre
@@ -173,7 +175,7 @@ for sd = 1:length(sides)
         
         if ~isempty(matchingPsdTimes)
             duration = matchingPsdTimes(end) - matchingPsdTimes(1);
-            maxGap   = max(diff(matchingPsdTimes));
+             maxGap   = max(diff(matchingPsdTimes));
             if duration >= minutes(5) & maxGap < minutes(1)
                 allDataPkgRcsAcc.key0fftOut(cnt,:) = mean(psdResults.key0fftOut(:,idxMatch)',1);
                 allDataPkgRcsAcc.key1fftOut(cnt,:) = mean(psdResults.key1fftOut(:,idxMatch)',1);

@@ -81,7 +81,7 @@ figdirout = figdircreate;
 
 %% decide what to plot 
 plotComparisonRCS_ACC_PKG = 0;
-plotStates = 0;
+plotStates = 1;
 plost_states_base_on_coherence = 1;
 plotTremor = 0;
 plotBKDKcorr = 0;
