@@ -13,6 +13,7 @@ end
 % check if a database folder exists, if not run  the MAIN_repot function:
 if ~exist(fullfile(dirname,'database.mat'),'file')
     MAIN_report_data_in_folder(dirname);
+    create_database_from_device_settings_files(dirname);
 end
 
 % now only choose folders that are above a certain duration 

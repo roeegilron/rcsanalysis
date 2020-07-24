@@ -110,9 +110,15 @@ end
 idxPatient = strcmp(masterTable.patient,'RCS08');
 masterTablePatient = masterTable(idxPatient,:);
 idxDataExtractedProperly = cellfun(@(x) istable(x),masterTablePatient.stimState);
-masterTableProblems = masterTablePatient(~idxDataExtractedProperly,:);
-masterTableProblems.duration.Format = 'hh:mm:ss';
-masterTableProblems = sortrows(masterTableProblems,'duration');
+% what percent of RCS08 was recorded before stimaultiion 
+masterTablePatient.duration.Format = 'hh:mm:ss';
+db  = masterTablePatient(idxDataExtractedProperly,:);
+idxUse = ~cellfun(@(x) x.stimulation_on,db.stimStatus) & ... 
+                  db.timeDomainStreaming & ... 
+                  db.recordedWithScbs & ... 
+                  strcmp(db.side,'L');
+sum(db.duration(idxUse))
+%%
 
 meta = get_meta_data_from_device_settings_file(masterTableProblems.fileLocs{end});
 
