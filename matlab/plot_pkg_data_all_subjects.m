@@ -12,6 +12,7 @@ globalparams.normalizeData = 1; % normalize the data along psd rows (normalize e
 
 
 pkgdatdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/processed_data';
+pkgdatdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/results/processed_data';
 figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures';
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 load(fullfile(pkgdatdir,'pkgDataBaseProcessed.mat'),'pkgDB');
@@ -19,6 +20,28 @@ load(fullfile(pkgdatdir,'pkgDataBaseProcessed.mat'),'pkgDB');
 
 
 cnt = 1;
+% RCS08
+dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/data_dump/SummitContinuousBilateralStreaming/RCS06L/processedData.mat';
+psdrFiles{cnt}  = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS08 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS08L/RCS08L_pkg-R_and_rcs_dat_synced_10_min.mat';
+dateChoose{cnt} = datetime('Oct 30 2019','Format','MMM dd yyyy');
+peaks(cnt,:)  = [18 22];
+channel(cnt) = 1;
+patient{cnt} = 'RCS08 L';
+side{cnt} = 'L';
+cnt = cnt+1;
+
+
+% RCS08
+dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/data_dump/SummitContinuousBilateralStreaming/RCS06L/processedData.mat';
+psdrFiles{cnt}  = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS08 Un-Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS08R/RCS08R_pkg-L_and_rcs_dat_synced_10_min.mat';
+dateChoose{cnt} = datetime('Oct 30 2019','Format','MMM dd yyyy');
+peaks(cnt,:)  = [18 22];
+channel(cnt) = 1;
+patient{cnt} = 'RCS08 R';
+side{cnt} = 'R';
+cnt = cnt+1;
+
+
 % RCS06
 dataFiles{cnt}  = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/data_dump/SummitContinuousBilateralStreaming/RCS06L/processedData.mat';
 psdrFiles{cnt}  = '/Volumes/RCS_DATA/RCS06/v10_3_week_before_stimon/data_dump/SummitContinuousBilateralStreaming/RCS06L/psdResults.mat';
@@ -112,7 +135,7 @@ cohResTbl = struct2table(cohResTbl);
 
 %% decide what to plot 
 plotComparisonRCS_ACC_PKG = 0;
-plotStates = 0;
+plotStates = 1;
 plost_states_base_on_coherence = 1;
 plotTremor = 0;
 plotBKDKcorr = 0;
@@ -137,10 +160,17 @@ for dd = 1:length(psdrFiles)
     % load(psdrFiles{dd});
     
     %% load the coherence files 
-    idxuse = strcmp(cohResTbl.patient,patient{dd}(1:5)) & ... 
-        strcmp(cohResTbl.side,patient{dd}(end));
-    fnmloadcoherence = cohResTbl.fileload{idxuse};
-    load(fnmloadcoherence,'coherenceResultsTd');
+    if strcmp(patient{dd}(1:5),'RCS08')
+        coherenceResultsTd = allDataPkgRcsAcc;
+        coherenceResultsTd.ff = allDataPkgRcsAcc.ffCoh;
+        coherenceResultsTd.srate = 250;
+        
+    else
+        idxuse = strcmp(cohResTbl.patient,patient{dd}(1:5)) & ...
+            strcmp(cohResTbl.side,patient{dd}(end));
+        fnmloadcoherence = cohResTbl.fileload{idxuse};
+        load(fnmloadcoherence,'coherenceResultsTd');
+    end
     %%
     
     %% load the processed PKGs
@@ -736,6 +766,17 @@ for dd = 1:length(psdrFiles)
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
                 statesUse = {'off','on','sleep'};
+            case 'RCS08'
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates(onidx) = {'on'};
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
         end
     else
         allstates = allDataPkgRcsAcc.states; 
@@ -884,6 +925,18 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
+            case 'RCS08'
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates(onidx) = {'on'};
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+
 
         end
         colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
