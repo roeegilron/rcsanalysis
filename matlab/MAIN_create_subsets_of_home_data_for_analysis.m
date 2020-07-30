@@ -76,7 +76,7 @@ rootfolder = findFilesBVQX(DROPBOX_PATH,'RC+S Patient Un-Synced Data',struct('di
 
 % exmaple selections: 
 %%
-patient = 'RCS03'; 
+patient= 'RCS03'; 
 patdir = findFilesBVQX(rootfolder{1},[patient '*'],struct('dirs',1,'depth',1));
 % find the home data folder (SCBS fodler 
 scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struct('dirs',1,'depth',2));
@@ -122,13 +122,14 @@ for ss = 1:length(pat_side_folders)
         stim_on_database = sense_stim_table(idxuse,:);
         concatenate_and_plot_TD_data_from_database_table(stim_on_database,pat_side_folders{ss},'after_stim_1-C');
     end
-    if strcmp(patient,'RCS03') & strcmp(sideUsed{1},'R') 
+    if strcmp(patient,'RCS08') 
+        idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz') & ...
+            sense_stim_table.stimulation_on == 0;
+        stim_off_database = sense_stim_table(idxuse,:);
+        concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
+
     end
     
-    idxuse = strcmp(sense_stim_table.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz') & ... 
-             sense_stim_table.stimulation_on == 0; 
-    stim_off_database = sense_stim_table(idxuse,:); 
-    concatenate_and_plot_TD_data_from_database_table(stim_off_database,pat_side_folders{ss},'before_stim');
     % just added coherence to above function 
     
 end

@@ -53,6 +53,12 @@ timeBefore = datetime('2020-02-01'); % using both data sprints
 timeAfer =   datetime('2020-03-14');
 patient = 'RCS08';
 patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
+
+timeBefore = datetime('2019-06-19'); % only using second data sprint of PKG 
+timeAfer =   datetime('2019-07-10');
+patient = 'RCS03';
+patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
+
 % will have a suffix chosenn during the creation process
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%

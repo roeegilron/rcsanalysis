@@ -1,6 +1,6 @@
 function create_database_from_device_settings_files(dirname)
 %% find all the device settings files 
-close all; clear all; clc; 
+close all; clc; 
 warning('off','MATLAB:table:RowsAddedExistingVars');
 
 start = tic; 

@@ -9,6 +9,24 @@ figdir = '/Users/roee/Box/movement_task_data_at_home/figures'; % laptop
 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
+%% make database to find if active recharge was used 
+load('/Users/roee/Box/movement_task_data_at_home/data/database_from_device_settings.mat')
+cnt = 1; 
+tblOut = table(); 
+idxuse = cellfun(@(x) istable(x), masterTableOut.stimState) & ...
+        (masterTableOut.timeEnd - masterTableOut.timeStart) > seconds(10);
+    masterTableOut = masterTableOut(idxuse,:);
+
+for i = 1:size(masterTableOut,1) 
+    partialTable = masterTableOut(i,1:7);
+    stimStatus = masterTableOut.stimStatus{i};
+    if istable(stimStatus)
+        tblOut(cnt,:) = [partialTable, stimStatus];
+        cnt = cnt + 1; 
+    end
+end
+idxStimOn = tblOut.stimulation_on & ~tblOut.active_recharge 
+tblStim = tblOut(logical(idxStimOn),:);
 %% make database
 plot_spects = 1;
 if plot_spects
