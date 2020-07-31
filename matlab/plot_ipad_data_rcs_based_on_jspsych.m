@@ -2,7 +2,7 @@ function plot_ipad_data_rcs_based_on_jspsych()
 % this is basing RC+S ipad allignment based on the beeps from the ipad task
 % and not on deslys allignemtn
 clc;
-createFileDatabase = 0;
+createFileDatabase = 1;
 
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % dektop
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % laptop
