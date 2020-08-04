@@ -4,6 +4,9 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+
 plotpanels = 1;
 % original function:
 % plot_pkg_data_all_subjects
@@ -21,6 +24,9 @@ datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 sides = {'L','R'};
 uniquePatients = {'RCS02','RCS06','RCS05','RCS07','RCS08'};
 cntOut = 1;
+tremorAnalysis = 0; 
+sleepAnalysis = 1; 
+strUse = 'sleep_vs_off_vs_on';
 for p = 1:length(uniquePatients) % loop on patients
     for s = 1:2 % loop on side
         
@@ -39,11 +45,37 @@ for p = 1:length(uniquePatients) % loop on patients
                     cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>10;
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on','sleep'};
+                    
+%                     idxNotSleep = ~strcmp(allstates,'sleep');
+%                     allstates(idxNotSleep) = {'not sleep'};
+                    statesUse = {'not sleep','sleep'};
+                    statesUse = {'off','on','sleep'};
+
+                    strUse = 'tremor_analysis';
+                    strUse = 'sleep_vs_off_vs_on';
+                elseif sleepAnalysis                    
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    strUse = 'sleep_vs_off_vs_on';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
             case 'RCS05'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
                 freqs =  [27 27 27 27 61 61 61 61];
@@ -53,11 +85,35 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>10;
+                    statesUse = {'off','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    
+                    idxNotSleep = ~strcmp(allstates,'sleep');
+                    allstates(idxNotSleep) = {'not sleep'};
+                    statesUse = {'not sleep','sleep'};
+
+                    strUse = 'tremor_analysis';
+                    strUse = 'sleep_vs_not';
+                elseif sleepAnalysis
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    strUse = 'sleep_vs_off_vs_on';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                    
+                end
                 
             case 'RCS06'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -68,11 +124,34 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>10;
+                    statesUse = {'off','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    
+                    idxNotSleep = ~strcmp(allstates,'sleep');
+                    allstates(idxNotSleep) = {'not sleep'};
+                    statesUse = {'not sleep','sleep'};
+
+                    strUse = 'tremor_analysis';
+                    strUse = 'sleep_vs_not';
+                elseif sleepAnalysis
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    strUse = 'sleep_vs_off_vs_on';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
                 
             case 'RCS07'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -83,11 +162,34 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>10;
+                    statesUse = {'off','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    
+                    idxNotSleep = ~strcmp(allstates,'sleep');
+                    allstates(idxNotSleep) = {'not sleep'};
+                    statesUse = {'not sleep','sleep'};
+
+                    strUse = 'tremor_analysis';
+                    strUse = 'sleep_vs_not';
+                elseif sleepAnalysis
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    strUse = 'sleep_vs_off_vs_on';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
                 
             case 'RCS08'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -98,11 +200,34 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>10;
+                    statesUse = {'off','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    
+                    idxNotSleep = ~strcmp(allstates,'sleep');
+                    allstates(idxNotSleep) = {'not sleep'};
+                    statesUse = {'not sleep','sleep'};
+
+                    strUse = 'tremor_analysis';
+                    strUse = 'sleep_vs_not';
+                elseif sleepAnalysis
+                    statesUse = {'off','on','sleep'};
+                    allstates(offidx) = {'off'};
+                    allstates(onidx) = {'on'};
+                    allstates(sleeidx) = {'sleep'};
+                    strUse = 'sleep_vs_off_vs_on';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
         end
 
         % psd 
@@ -225,6 +350,11 @@ for pp = 1:length(unqPatients)
                         colorUse = [0.8 0 0.2];
                     elseif strcmp(tablePlot.medstate{tt},'on')
                         colorUse = [0 0.8 0.2];
+                    elseif strcmp(tablePlot.medstate{tt},'sleep')
+                        colorUse = [0 0 0.2];
+                    elseif strcmp(tablePlot.medstate{tt},'not sleep')
+                        colorUse = [0.8 0 0.2];
+                        
                     end
                     if plotShaded
                         hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
@@ -246,6 +376,8 @@ for pp = 1:length(unqPatients)
                     ttlsuse = sprintf('%s %s %s',tablePlot.patient{tt}, strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt});
                     title(ttlsuse);
                     xlim([3 100]);
+                    grid on; 
+                    hsb.XTick = [10:10:100];
 
                 end
             end
@@ -254,12 +386,21 @@ for pp = 1:length(unqPatients)
     prfig.plotwidth           = 12;
     prfig.plotheight          = 9;
     prfig.figdir             = figdirout;
-    prfig.figname             = sprintf('%s_individ_psd_states',tablePlot.patient{tt});
+    prfig.figname             = sprintf('%s_%s_individ_psd_states',tablePlot.patient{tt},strUse);
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     close(hfig);
 
 end
+return
+
+
+
+
+
+
+
+
 
 %%
 outputTable = table();

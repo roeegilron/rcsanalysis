@@ -1,4 +1,4 @@
-function [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings]  = loadDeviceSettingsFromFirstInitialStructure(DeviceSettings)
+function [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple]  = loadDeviceSettingsFromFirstInitialStructure(DeviceSettings)
 warning('off','MATLAB:table:RowsAddedExistingVars');
 
 timenum = DeviceSettings{1}.RecordInfo.HostUnixTime;
@@ -21,7 +21,177 @@ for c = 1:4
     senseSettings.(fnuse){1} = tdDataStruc(c).chanFullStr;
 end
 senseSettings.TimeDomainDataStruc{1} = tdDataStruc;
+% load all the sense settings in the whole file 
 
+try
+    deviceSettingTable = table();
+    recNum = 1;
+    f = 1;
+    strCnt = 1;
+    strmStopCnt = 1;
+    senseStopCnt = 1;
+    instream = 0;
+    while f <= length(DeviceSettings)
+        fnms = fieldnames(DeviceSettings{f});
+        curStr = DeviceSettings{f};
+        if isfield(curStr,'SensingConfig')
+            if isfield(curStr.SensingConfig,'timeDomainChannels')
+                tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
+                timenum = curStr.RecordInfo.HostUnixTime;
+                t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                outRec(recNum).timeStart = t;
+                outRec(recNum).unixtimeStart  = timenum;
+                outRec(recNum).tdData = tdData;
+                deviceSettingTable.action{recNum} = 'sense config';
+                deviceSettingTable.recNum(recNum) = NaN;
+                deviceSettingTable.timeStart{recNum} = t;
+                for c = 1:4
+                    fnuse = sprintf('chan%d',c);
+                    deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+                end
+                deviceSettingTable.tdDataStruc{recNum} = tdData;
+                recNum = recNum + 1;
+            end
+        end
+        % check if streaming started
+        if isfield(curStr,'StreamState')
+            if curStr.StreamState.TimeDomainStreamEnabled
+                if ~instream % if not instream then streaming is starting
+                    timenum = curStr.RecordInfo.HostUnixTime;
+                    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                    actionuse = sprintf('stream start %d',strCnt);
+                    deviceSettingTable.action{recNum} = actionuse;
+                    deviceSettingTable.recNum(recNum) = strCnt;
+                    deviceSettingTable.timeStart{recNum} = t;
+                    for c = 1:4
+                        fnuse = sprintf('chan%d',c);
+                        deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+                    end
+                    deviceSettingTable.tdDataStruc{recNum} = tdData;
+                    strCnt = strCnt + 1;
+                    recNum = recNum + 1;
+                    instream = 1;
+                end
+            end
+        end
+        % check if streaming stopped -
+        % it can either be stopped by turning streaming off
+        % or it can be stopped by turning sensing off
+        % option 1 - stream has been turned off
+        if isfield(curStr,'StreamState')
+            if instream % streaming is happening detect it's stop
+                if ~curStr.StreamState.TimeDomainStreamEnabled
+                    timenum = curStr.RecordInfo.HostUnixTime;
+                    t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                    actionuse = sprintf('stop stream %d',strmStopCnt);
+                    deviceSettingTable.action{recNum} = actionuse;
+                    deviceSettingTable.recNum(recNum) = strmStopCnt;
+                    deviceSettingTable.timeStart{recNum} = t;
+                    for c = 1:4
+                        fnuse = sprintf('chan%d',c);
+                        deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+                    end
+                    deviceSettingTable.tdDataStruc{recNum} = tdData;
+                    instream = 0;
+                    strmStopCnt = strmStopCnt + 1;
+                    recNum = recNum + 1;
+                end
+            end
+        end
+        % option 2 sense has been turned off
+        if isfield(curStr,'SenseState')
+            if instream % streaming is happening detect it's stop
+                if isfield(curStr.SenseState,'state')
+                    sensestat = dec2bin(curStr.SenseState.state,4);
+                    % blow is assuming we only care about time domain streaming
+                    % starting / stopping, see:
+                    % enum
+                    % Medtronic.NeuroStim.Olympus.DataTypes.Sensing.SenseStates : byte
+                    % for details re what the binary number means
+                    if strcmp(sensestat(4),'0') % time domain off
+                        timenum = curStr.RecordInfo.HostUnixTime;
+                        t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                        actionuse = sprintf('stop sense %d',senseStopCnt);
+                        deviceSettingTable.action{recNum} = actionuse;
+                        deviceSettingTable.recNum(recNum) = senseStopCnt;
+                        deviceSettingTable.timeStart{recNum} = t;
+                        for c = 1:4
+                            fnuse = sprintf('chan%d',c);
+                            deviceSettingTable.(fnuse){recNum} = tdData(c).chanFullStr;
+                        end
+                        deviceSettingTable.tdDataStruc{recNum} = tdData;
+                        instream = 0;
+                        senseStopCnt = senseStopCnt + 1;
+                        recNum = recNum + 1;
+                    end
+                end
+            end
+        end
+        f = f+1;
+    end
+    
+    % loop on deviceSettigs and extract the start and stop time for each
+    % recording in the file.
+    deviceSettingsOut = table();
+    idxnotnan = ~isnan(deviceSettingTable.recNum);
+    unqRecs = unique(deviceSettingTable.recNum(idxnotnan));
+    for u = 1:length(unqRecs)
+        idxuse = deviceSettingTable.recNum == unqRecs(u);
+        dt = deviceSettingTable(idxuse,:);
+        if size(dt,1) == 1 % this means that stream didn't stop properly / or that we jsut have one recrodings
+            deviceSettingsOut.recNum(u) = unqRecs(u);
+            deviceSettingsOut.timeStart(u) = dt.timeStart{1};
+            % assume time stop is end of file
+            timenum = DeviceSettings{end}.RecordInfo.HostUnixTime;
+            timeEnd = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+            
+            deviceSettingsOut.timeStop(u) = timeEnd;
+            deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
+            for c = 1:4 % find sample rate
+                if ~strcmp(dt.tdDataStruc{1}(c).sampleRate,'disabled')
+                    deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
+                end
+            end
+            for c = 1:4
+                fnuse = sprintf('chan%d',c);
+                deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+            end
+            deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
+            
+        else
+            deviceSettingsOut.recNum(u) = unqRecs(u);
+            deviceSettingsOut.timeStart(u) = dt.timeStart{1};
+            deviceSettingsOut.timeStop(u) = dt.timeStart{2};
+            deviceSettingsOut.duration(u) = deviceSettingsOut.timeStop(u) - deviceSettingsOut.timeStart(u);
+            for c = 1:4 % find sample rate
+                if ~strcmp(dt.tdDataStruc{1}(c).sampleRate,'disabled')
+                    deviceSettingsOut.samplingRate(u) = str2num(dt.tdDataStruc{1}(c).sampleRate(1:end-2));
+                end
+            end
+            for c = 1:4
+                fnuse = sprintf('chan%d',c);
+                deviceSettingsOut.(fnuse){u} = dt.(fnuse){1};
+            end
+            deviceSettingsOut.TimeDomainDataStruc{u} = dt.tdDataStruc{1};
+        end
+    end
+    if size(deviceSettingsOut,1) >=1
+        % get settings that were "maxed out" throughout
+        [~,idx] = max(deviceSettingsOut.duration);
+        deviceSettingsOut = deviceSettingsOut(idx,:);
+        senseSettings.time = deviceSettingsOut.timeStart;
+        senseSettings.duration = deviceSettingsOut.duration;
+        senseSettings.samplingRate = deviceSettingsOut.samplingRate;
+        senseSettings.chan1 = deviceSettingsOut.chan1;
+        senseSettings.chan2 = deviceSettingsOut.chan2;
+        senseSettings.chan3 = deviceSettingsOut.chan3;
+        senseSettings.chan4 = deviceSettingsOut.chan4;
+        senseSettings.TimeDomainDataStruc  = deviceSettingsOut.TimeDomainDataStruc;
+    end
+    senseSettingsMultiple = deviceSettingsOut;
+catch
+    senseSettingsMultiple = table();
+end
 %% load power channel + fft config 
 
 %  first part of code checks if there were any sense config evnets in the

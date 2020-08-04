@@ -2,7 +2,7 @@ function plot_ipad_data_rcs_based_on_jspsych()
 % this is basing RC+S ipad allignment based on the beeps from the ipad task
 % and not on deslys allignemtn
 clc;
-createFileDatabase = 1;
+createFileDatabase = 0;
 
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % dektop
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % laptop
@@ -40,6 +40,9 @@ if createFileDatabase == 1
             cntTasks = cntTasks + 1;
         end
     end
+    % only keep tasks above a minimum size 
+    idxKeep = cellfun(@(x) size(x,1),taskDataLocs.taskTable) > 100; % min task size 
+    taskDataLocs = taskDataLocs(idxKeep,:);
     % create patient database
     create_database_from_device_settings_files(boxdir)
     load(fullfile(boxdir,'database_from_device_settings.mat'));
@@ -69,7 +72,7 @@ if createFileDatabase == 1
     masterTableUse.duration.Format = 'hh:mm:ss';
     [masterTableUse, idxsort] = sortrows(masterTableUse,{'patient','timeStart'});
     
-    %% get computer unix time start and stop time for these tasks
+    %% get computer unix time start and stop time for these tasks, also find out which hand was used (if tasks lists hand used) 
     for ss = 1:size(masterTableUse,1)
         [pn,fn] = fileparts(masterTableUse.allDeviceSettingsOut{ss});
         [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(pn);
@@ -83,6 +86,18 @@ if createFileDatabase == 1
             masterTableUse.unixTimeStart(ss) = NaT;
             masterTableUse.unixTimeEnd(ss) = NaT;
         end
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc right hand')),eventTable.EventSubType)) > 0
+            masterTableUse.handUsedForTask {ss} = 'right';
+        end
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc left hand')),eventTable.EventSubType)) > 0
+            masterTableUse.handUsedForTask {ss} = 'left';
+        end
+        % if the task isn't "new enough" to have a hand used, then assume
+        % the right hand hand was used 
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
+            masterTableUse.handUsedForTask {ss} = 'right';
+        end
+
     end
     
     % save this database to results
@@ -98,19 +113,30 @@ sides = {'L','R'};
 % XXXX
 % XXXX
 [y,m,d] = ymd(taskDataLocs.taskStart);
-idsUse = strcmp(taskDataLocs.patient,'RCS06') & ...
-    taskDataLocs.taskDuration > seconds(30) & ...
-    d == 28;
+idsUse = taskDataLocs.taskDuration > seconds(30) & ...
+    d >= 28;
 
 [y,m,d] = ymd(masterTableUse.timeStart);
-idxUseRcs =  strcmp(masterTableUse.patient,'RCS06') & ...
-    d == 28;
+idxUseRcs =  d >= 28;
 masterTableUse = masterTableUse(idxUseRcs,:);
 
 
+for m =1:size(masterTableUse,1)
+    masterTableUse.chan4{m} = masterTableUse.senseSettings{m}.chan4{1};
+    masterTableUse.active_recharge(m) = masterTableUse.stimStatus{m}.active_recharge(1);
+    masterTableUse.stimulation_on(m) = masterTableUse.stimStatus{m}.stimulation_on(1);
+end 
+masterTableUse = sortrows(masterTableUse,{'patient','unixTimeStart'})
+masterTableUse(:,{'patient','side', 'unixTimeStart','chan4','active_recharge','stimulation_on'})
 taskDataLocs = taskDataLocs(idsUse,:);
+
 % XXXX
 % XXXX
+idsUse = strcmp(taskDataLocs.patient,'RCS07') | strcmp(taskDataLocs.patient,'RCS08');
+
+idsUse = strcmp(taskDataLocs.patient,'RCS07');
+taskDataLocs = taskDataLocs(idsUse,:);
+
 handBrainRelation = {'contralateral','ipsilateral'};
 ccc = 1;
 for ttt = 1:size(taskDataLocs)
@@ -155,7 +181,8 @@ for ttt = 1:size(taskDataLocs)
     handUsed  = unqHandUsed{1};
     patient  = rcsDataMeta.patient{1};
     if any(strfind(rcsDataMeta.senseSettings{1}.chan4{1},'250Hz'))
-        break;
+        x = 2;
+        fprintf('%s %s %s is %s\n',rcsDataMeta.patient{1},rcsDataMeta.side{1},rcsDataMeta.timeStart(1),rcsDataMeta.senseSettings{1}.chan4{1});
     end
     
     if rcsDataMeta.stimStatus{1}.stimulation_on
@@ -425,7 +452,7 @@ switch analysisType
         timeparams.extralines                  = 1; % plot extra line
         timeparams.extralinesec                = 2000; % extra line location in seconds
         timeparams.analysis                    = analysisType;
-        timeparams.filtertype                  = 'fir1' ; % 'ifft-gaussian' or 'fir1'
+        timeparams.filtertype                  = 'ifft-gaussian' ; % 'ifft-gaussian' or 'fir1'
         
         
     case 'center_move'

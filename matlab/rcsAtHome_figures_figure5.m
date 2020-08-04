@@ -16,25 +16,30 @@ p(1,2).pack(3,1);
 p.select('all');
 p.fontsize = 30;
 p.identify();
-plotpanels = 1;
+plotpanels = 0; % plot the big figure;
 % p(1,1).repack(0.3);
 %%
 
 close all;
 
 if ~plotpanels
+    %%
     hfig = figure;
     hfig.Color = 'w';
     hpanel = panel();
     hpanel.pack(1,2);
-    hpanel(1,1).pack(2,1);
+    hpanel(1,1).pack('v',{0.3,0.8});
     hpanel(1,2).pack(3,1);
+%     hpanel.select('all');
+%     hpanel.identify();
+    %%
 end
 % plot panel a in the first column, 3 subplots 
 % plot panel b and c in the seceond column 2 subplots 
 %% panel a bar graph of total hours awake / alseep 
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 % origina funciton used: plot_pkg_data_all_subjects
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
 ff = findFilesBVQX(resultsdir,'RCS*.mat'); 
@@ -66,7 +71,7 @@ if plotpanels
     hsb = subplot(1,1,1);
     hsb(cntplt) = hsb; 
 else
-    hpanel(1,1,1,1).select();
+    hpanel(1,1,1).select();
     hsb = gca();
 end
 
@@ -367,7 +372,10 @@ for a = 1:length(areas)
         ff = pdb.ff(idxkeep);
         ff = ff{1};
         % plot(ff,psds,'LineWidth',1,'Color',[0 0.8 0 0.3]);
-        hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+%         hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+        y = psds;
+        x = ff;
+        hsbH = shadedErrorBar(x,y,{@median,@(yy) std(yy)./sqrt(size(yy,1))});
         hsbH.mainLine.Color = colorsUse(m,:); 
         hsbH.mainLine.LineWidth = 1;
         hsbH.edge(1).Color = [1 1 1]; 
@@ -420,12 +428,17 @@ for m = 1:length(medstate)
     ff = pdb.ff_coh(1);
     ff = ff{1}; 
     errs = []; 
-    meancoh = mean(cohs); 
-    errs(:,1) = mean(cohs) + std(cohs);
-    errs(:,2) = mean(cohs) - std(cohs);
-    errs(errs(:,2)<0,2) = meancoh(errs(:,2)<0);
+    meancoh = mean(cohs);   
+    % using standard deviation 
+%     errs(:,1) = mean(cohs) + std(cohs);
+%     errs(:,2) = mean(cohs) - std(cohs);
+    % using standard error 
+    errs(:,1) = mean(cohs) + (std(cohs)./sqrt(size(cohs,1)));
+    errs(:,2) = mean(cohs) - (std(cohs)./sqrt(size(cohs,1)));
+    
     errs = errs';
-%     hsbH = shadedErrorBar(ff,cohs,{@mean,@(x) std(x)*1});
+
+
     hsbH = shadedErrorBar(ff,mean(cohs),errs); 
     hsbH.mainLine.Color = colorsUse(m,:);
     hsbH.mainLine.LineWidth = 1;
@@ -537,6 +550,8 @@ datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/'
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+
 
 ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
 for f = 1:length(ff)
@@ -628,7 +643,7 @@ if plotpanels
     hfig.Color = 'w';
     hsb = subplot(1,1,1);
 else
-    hpanel(1,1,2,1).select();
+    hpanel(1,1,2).select();
     hold on;
     hsb = gca();
 end
@@ -663,12 +678,13 @@ for i = 1:length(xvalsUse)
         xpat = xdat(idxpat); 
         ypat = ydat(idxpat); 
         ppat = pvalsdat(idxpat); 
-        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),50,'filled','o','MarkerFaceColor',colorsSubs(p,:));
-        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),50,'filled','s','MarkerFaceColor',colorsSubs(p,:));
+        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),60,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.5);
+        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),60,'filled','s','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.5);
     end
 end
-legend(hsact,unqpat);
-hsb.XLim = [ 0 7];
+hLegend = legend(hsact,altPatientNames);
+hLegend.Box = 'off';
+hsb.XLim = [ 0 7.5];
 if plotpanels
     % save fig as
     set(gca,'FontSize',16);
@@ -686,7 +702,6 @@ end
 if ~plotpanels
     
     hpanel.fontsize = 12;
-    
     hpanel(1).de.margin = 30;
     hpanel.marginbottom = 40;
     hpanel(1,2).de.margin = 10;
@@ -708,9 +723,8 @@ return;
 close all force;clear all;clc;
 fignum = 4; % NA - it's a supplementary figure 
 addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS02 L pkg R.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS06 R pkg L.mat');
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Figs1_raw_data_across_subs';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs1_raw_data_across_subs';
 titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
 labelsCheck = [];
 combineareas = 1;
@@ -722,8 +736,8 @@ hfig = figure;
 hfig.Color = 'w';
 hfig.Position = [1000         194        1387        1144];
 hpanel = panel();
-hpanel.pack(4,3); 
-hsb = gobjects(4,3);
+hpanel.pack(5,3); 
+hsb = gobjects(5,3);
 
 ff = findFilesBVQX(rootdir,'coherence_and_psd*.mat');
 cntplt = 1; 
@@ -731,14 +745,14 @@ nrows  = 4;
 ncols =  3; 
 datuse = {};
 
-linewidths = [0.2 0.6 0.03 0.03];
+linewidths = [0.2 0.6 0.03 0.03 0.2];
 areatitls = {'STN','motor cortex'};
 for f = 1:length(ff)
     [pn,fn,ext] = fileparts(ff{f}); 
     patients{f} = fn(19:23);     
 end
 uniquePatients = unique(patients); 
-patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04'};
+patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04','RCS05'};
 for p = 1:length(uniquePatients)
     fpts = ff(strcmp(uniquePatients{p},patients));
     stndata = [];
@@ -774,8 +788,13 @@ for p = 1:length(uniquePatients)
         else
             dat = m1_data;
         end
-        
-        idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+        if strcmp(uniquePatients{p},'RCS08')
+            idxnormalize = allDataPkgRcsAcc.ffPSD > 3 &  allDataPkgRcsAcc.ffPSD <90;
+            frequency = allDataPkgRcsAcc.ffPSD';
+        else
+            idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+            frequency = psdResults.ff';
+        end
         meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
         % the absolute is to make sure 1/f curve is not flipped
         % since PSD values are negative
@@ -784,11 +803,10 @@ for p = 1:length(uniquePatients)
         r = ceil(size(dat,1) .* rand(720,1))
         r = 1:5:size(dat,1);
         normalizedPSD = dat(r,:);
-        frequency = psdResults.ff';
         idxsleep = strcmp(allDataPkgRcsAcc.states,'sleep');
         % idxsleep = allDataPkgRcsAcc.bkVals <= -110;
         lw = linewidths(p);
-                reduce_plot(psdResults.ff', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
+                reduce_plot(frequency', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
         xlim([3 100]);
         if p == 4
             xlabel('Frequency (Hz)');
@@ -815,7 +833,12 @@ for p = 1:length(uniquePatients)
     hold on;
     r = ceil(size(coh_dat,1) .* rand(720,1))
     r = 1:5:size(coh_dat,1);
-    reduce_plot(cohResults.ff', coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
+    if strcmp(uniquePatients{p},'RCS08')
+        freqsCoh = allDataPkgRcsAcc.ffCoh;
+    else
+        freqsCoh = cohResults.ff'
+    end
+    reduce_plot(freqsCoh, coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
     ylims = hsb(p,msr-1).YLim;
 %     plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
     plot([13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);

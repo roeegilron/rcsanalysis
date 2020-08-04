@@ -147,7 +147,7 @@ if plotpanels
 end
 %% psd data at in clinic - average acros patients and montages for STN 
 if plotpanels
-    clc; close all; clear all;
+    clc; close all; 
 end
 addpath(genpath(fullfile(pwd,'toolboxes','GEEQBOX')));
 fignum = 4; 
@@ -178,11 +178,20 @@ end
 
 % loop on area 
 areas = {'STN 1-3','M1 8-10'}; 
+titlesUse = {'STN contacts','M1 contacts'};
+areas = {'STN 1-3'}; 
+if length(areas) == 2 
+    hpanel(2,2).pack(2,1);
+end
 medstatecheck = {'on','off'};
 colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
-for a = 1%:length(areas)
+for a = 1:length(areas)
     if ~plotpanels
-        hsb(e,1) = hpanel(2,2).select(); cntplt = cntplt + 1;
+        if length(areas) == 2 
+            hsb(e,2) = hpanel(2,2,a,1).select(); cntplt = cntplt + 1;
+        else
+            hsb(e,1) = hpanel(2,2).select(); cntplt = cntplt + 1;
+        end
     else
         subplot(1,1,a);
     end
@@ -192,7 +201,14 @@ for a = 1%:length(areas)
         idxkeep = strcmp(pdb.electrode,areas{a}) &  strcmp(pdb.medstate,medstatecheck{m});
         idxkeepout(:,m) = idxkeep;
         fftout  = psdall(idxkeep,:); 
-        hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1});
+        
+        x = freqschecking; 
+        y = fftout; 
+        % stadnard error or mean 
+        hsbH = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
+        % 1 std 
+%       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1}); 
+
         hsbH.mainLine.Color = colorsuse(m,:);
         hsbH.mainLine.LineWidth = 3;
         hsbH.patch.FaceAlpha = 0.1;
@@ -286,14 +302,14 @@ for a = 1%:length(areas)
     xlim([5 90]);
     xlabel('Frequency (Hz)');
     ylabel('Norm. frequency');
-    title('STN contacts');
+    title(titlesUse{a});
     set(gca,'FontSize',16);
 end
 
 
 
 if plotpanels
-    sgtitle('Defined on/off in clinic (8 STNs, 4 patients)','FontSize',12);
+    sgtitle('Defined on/off in clinic (8 STNs, 5 patients)','FontSize',12);
     
     prfig.plotwidth           = 4.4;
     prfig.plotheight          = 4.4;
@@ -343,7 +359,7 @@ ttlsuse{1,1} = 'Movement related cortical activity';
 ttlsuse{1,2} = 'motor cortex 8-10'; 
 title(ttlsuse); 
 % to plot vecot uncomment this 
-% delete(hp);
+delete(hp);
 % to plot jpeg on comment this: 
 delete(hline); 
 hsb.Box = 'off';
@@ -358,7 +374,7 @@ hsb.YAxis.Visible = 'off';
 %% 
 if ~plotpanels
     %% plot all 
-    figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig3_data_examples_in_clinic';
+    figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig3_data_examples_in_clinic';
     hpanel.fontsize = 10;
     hpanel.margin = [20 20 27 12];
     hpanel(1,1).marginright = 30;
@@ -370,8 +386,8 @@ if ~plotpanels
     prfig.plotwidth           = 7;
     prfig.plotheight          = 7;
     prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig3_all_nomovement';
-    prfig.figtype             = '-djpeg';
+    prfig.figname             = 'Fig3_all_nomovement_just_stn_vector';
+    prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
 
 end

@@ -1,11 +1,9 @@
-function plot_subject_specific_frequency_results_home_data()
+function plot_subject_specific_data_correlations_psd_coherence_home_data()
 addpath(genpath(fullfile('toolboxes','GEEQBOX')));
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
-figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
-
 plotpanels = 1;
 % original function:
 % plot_pkg_data_all_subjects
@@ -23,6 +21,9 @@ datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 sides = {'L','R'};
 uniquePatients = {'RCS02','RCS06','RCS05','RCS07','RCS08'};
 cntOut = 1;
+tremorAnalysis = 0; 
+scoreAnalysis = 1; 
+strUse = 'off_vs_on';
 for p = 1:length(uniquePatients) % loop on patients
     for s = 1:2 % loop on side
         
@@ -41,11 +42,35 @@ for p = 1:length(uniquePatients) % loop on patients
                     cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>0;
+                    statesUse = {'off','sleep'};
+                    statesUse = {'off'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+
+                    strUse = 'tremor_analysis';
+                elseif scoreAnalysis
+                    tremoridx = allDataPkgRcsAcc.tremorScore>0;
+                    bkidx     = abs(allDataPkgRcsAcc.bkVals) > 26  & abs(allDataPkgRcsAcc.bkVals) < 80 ;
+                    dkidx     = log10(abs(allDataPkgRcsAcc.dkVals)) > log10(7)  & abs(allDataPkgRcsAcc.bkVals) < 26 ;
+                    trmdkoverlap = sum(dkidx & tremoridx);
+                    statesUse = {'tremor','bradykinesia','dyskinesia'};
+                    allstates(bkidx) = {'bradykinesia'};
+                    allstates(dkidx) = {'dyskinesia'};
+                    allstates(tremoridx) = {'tremor'};
+
+                    strUse = 'score_correaltion_analysis';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
             case 'RCS05'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
                 freqs =  [27 27 27 27 61 61 61 61];
@@ -55,11 +80,36 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>0;
+                    statesUse = {'off','sleep'};
+                    statesUse = {'off'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+
+                    strUse = 'tremor_analysis';
+                elseif scoreAnalysis
+                    tremoridx = allDataPkgRcsAcc.tremorScore>0;
+                    bkidx     = abs(allDataPkgRcsAcc.bkVals) > 26  & abs(allDataPkgRcsAcc.bkVals) < 80 ;
+                    dkidx     = log10(abs(allDataPkgRcsAcc.dkVals)) > log10(7)  & abs(allDataPkgRcsAcc.bkVals) < 26 ;
+                    trmdkoverlap = sum(dkidx & tremoridx);
+                    statesUse = {'tremor','bradykinesia','dyskinesia'};
+                    allstates(bkidx) = {'bradykinesia'};
+                    allstates(dkidx) = {'dyskinesia'};
+                    allstates(tremoridx) = {'tremor'};
+                    
+                    strUse = 'score_correaltion_analysis';
+
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
                 
             case 'RCS06'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -70,11 +120,36 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>0;
+                    statesUse = {'off','sleep'};
+                    statesUse = {'off'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+
+                    strUse = 'tremor_analysis';
+                elseif scoreAnalysis
+                    tremoridx = allDataPkgRcsAcc.tremorScore>0;
+                    bkidx     = abs(allDataPkgRcsAcc.bkVals) > 26  & abs(allDataPkgRcsAcc.bkVals) < 80 ;
+                    dkidx     = log10(abs(allDataPkgRcsAcc.dkVals)) > log10(7)  & abs(allDataPkgRcsAcc.bkVals) < 26 ;
+                    trmdkoverlap = sum(dkidx & tremoridx);
+                    statesUse = {'tremor','bradykinesia','dyskinesia'};
+                    allstates(bkidx) = {'bradykinesia'};
+                    allstates(dkidx) = {'dyskinesia'};
+                    allstates(tremoridx) = {'tremor'};
+                    
+                    strUse = 'score_correaltion_analysis';
+
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
                 
             case 'RCS07'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -85,11 +160,36 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>0;
+                    statesUse = {'off','sleep'};
+                    statesUse = {'off'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                elseif scoreAnalysis
+                    tremoridx = allDataPkgRcsAcc.tremorScore>0;
+                    bkidx     = abs(allDataPkgRcsAcc.bkVals) > 26  & abs(allDataPkgRcsAcc.bkVals) < 80 ;
+                    dkidx     = log10(abs(allDataPkgRcsAcc.dkVals)) > log10(7)  & abs(allDataPkgRcsAcc.bkVals) < 26 ;
+                    trmdkoverlap = sum(dkidx & tremoridx);
+                    statesUse = {'tremor','bradykinesia','dyskinesia'};
+                    allstates(bkidx) = {'bradykinesia'};
+                    allstates(dkidx) = {'dyskinesia'};
+                    allstates(tremoridx) = {'tremor'};
+                    
+                    strUse = 'score_correaltion_analysis';
+
+
+                    strUse = 'tremor_analysis';
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
                 
             case 'RCS08'
                 cnls  =  [0  1  2  3  0  1  2  3  ];
@@ -100,11 +200,36 @@ for p = 1:length(uniquePatients) % loop on patients
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates = rawstates;
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                allstates = rawstates; % make syre all states is "raw slate". 
+                for aaa = 1:length(allstates)
+                    allstates{aaa} = 'NA';
+                end
+                if tremorAnalysis
+                    offidx = allDataPkgRcsAcc.tremorScore>0;
+                    statesUse = {'off','sleep'};
+                    statesUse = {'off'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+
+                    strUse = 'tremor_analysis';
+                elseif scoreAnalysis
+                    tremoridx = allDataPkgRcsAcc.tremorScore>0;
+                    bkidx     = abs(allDataPkgRcsAcc.bkVals) > 26  & abs(allDataPkgRcsAcc.bkVals) < 80 ;
+                    dkidx     = log10(abs(allDataPkgRcsAcc.dkVals)) > log10(7)  & abs(allDataPkgRcsAcc.bkVals) < 26 ;
+                    trmdkoverlap = sum(dkidx & tremoridx);
+                    statesUse = {'tremor','bradykinesia','dyskinesia'};
+                    allstates(bkidx) = {'bradykinesia'};
+                    allstates(dkidx) = {'dyskinesia'};
+                    allstates(tremoridx) = {'tremor'};
+                    
+                    strUse = 'score_correaltion_analysis';
+
+                else
+                    allstates(onidx) = {'on'};
+                    allstates(offidx) = {'off'};
+                    allstates(sleeidx) = {'sleep'};
+                    statesUse = {'off','on'};
+                end
         end
 
         % psd 
@@ -120,17 +245,27 @@ for p = 1:length(uniquePatients) % loop on patients
                 % save the mean data
                 
                 rawdat = allDataPkgRcsAcc.(fn);
+                bkScores = allDataPkgRcsAcc.bkVals(labels,:);
+                dkScores = allDataPkgRcsAcc.dkVals(labels,:);
+                tremorScores = allDataPkgRcsAcc.tremorScore(labels,:);
                 rawdat = rawdat(labels,:);
+                
                 fftLogged = mean(rawdat,1);
                 patientPSD_at_home.patient{cntOut} = uniquePatients{p};
                 patientPSD_at_home.side{cntOut} = sides{s};
                 patientPSD_at_home.cnls{cntOut} = cnls;
                 patientPSD_at_home.freqs{cntOut} = freqs;
                 patientPSD_at_home.ttls{cntOut} = ttls;
+                patientPSD_at_home.bkScores{cntOut} = bkScores;
+                patientPSD_at_home.dkScores{cntOut} = dkScores;
+                patientPSD_at_home.tremorScores{cntOut} = tremorScores;
+
+                                
                 
                 patientPSD_at_home.medstate{cntOut} = statesUse{ss};
                 patientPSD_at_home.electrode{cntOut} = titles{c};
                 patientPSD_at_home.ff{cntOut} = psdResults.ff;
+                patientPSD_at_home.fftOutRawData{cntOut} = rawdat;
                 patientPSD_at_home.fftOut{cntOut} = fftLogged;
                 patientPSD_at_home.srate(cntOut) = 250;
                 idxnorm = psdResults.ff >=5 & psdResults.ff <=90;
@@ -155,6 +290,10 @@ for p = 1:length(uniquePatients) % loop on patients
                 
                 rawdat = allDataPkgRcsAcc.(fn);
                 rawdat = rawdat(labels,:);
+                bkScores = allDataPkgRcsAcc.bkVals(labels,:);
+                dkScores = allDataPkgRcsAcc.dkVals(labels,:);
+                tremorScores = allDataPkgRcsAcc.tremorScore(labels,:);
+
                 ms_coherence = mean(rawdat,1);
                 patientPSD_at_home.patient{cntOut} = uniquePatients{p};
                 patientPSD_at_home.side{cntOut} = sides{s};
@@ -162,22 +301,142 @@ for p = 1:length(uniquePatients) % loop on patients
                 patientPSD_at_home.electrode{cntOut} = titles_coh{c};
                 patientPSD_at_home.ff_coh{cntOut} = patientCOH_at_home.ff{1};
                 patientPSD_at_home.ms_coherence{cntOut} = ms_coherence;
+                patientPSD_at_home.ms_coherence_RawData{cntOut} = rawdat;
                 patientPSD_at_home.cnls{cntOut} = cnls;
                 patientPSD_at_home.freqs{cntOut} = freqs;
                 patientPSD_at_home.ttls{cntOut} = ttls;
+                patientPSD_at_home.bkScores{cntOut} = bkScores;
+                patientPSD_at_home.dkScores{cntOut} = dkScores;
+                patientPSD_at_home.tremorScores{cntOut} = tremorScores;
+
 
                 cntOut = cntOut + 1;
             end
         end
     end
 end
-% psds 
+%% psds 
+close all; 
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 pdb = patientPSD_at_home ;
 freqUse = {'beta','gamma'};
 window  = 10; % hz from each side 
 areas = {'STN','M1'};
 medstates = {'off','on'};
 cntbl = 1; 
+unqPatients = unique(patientPSD_at_home.patient); 
+areaStr = {'STN','M1','coh'};
+plotShaded = 1;
+for pp = 1:length(unqPatients)
+    idxPatient = strcmp(patientPSD_at_home.patient,unqPatients{pp});
+    patientTable = patientPSD_at_home(idxPatient,:);
+    % figure out number of multiple comparisons 
+    numberComparisons = sum(cellfun(@(x) size(x,2),patientTable.fftOutRawData)) + ...
+        sum(cellfun(@(x) size(x,2),patientTable.ms_coherence_RawData));
+    hfig = figure;
+    hfig.Color = 'w';
+    p = panel();
+    p.pack(4,4);
+    for a = 1:length(areaStr) 
+        idxArea = cellfun(@(x) any(strfind(x,areaStr{a})),patientTable.electrode);
+        cntPltColumn = 1; 
+        tableArea = patientTable(idxArea,:);
+        uniqueElectrodes = unique(tableArea.electrode);
+        uniqueSides      = unique(tableArea.side);
+        aUse = a;
+        for e = 1:length(uniqueElectrodes)
+            for s = 1:length(uniqueSides)
+                idxSides = strcmp(tableArea.electrode,uniqueElectrodes{e}) & ... 
+                    strcmp(tableArea.side,uniqueSides{s}); 
+                tablePlot = tableArea(idxSides,:);
+                if cntPltColumn == 5 & a == 3
+                    cntPltColumn = 1;
+                    aUse = a +1;
+                end
+                hsb = p(aUse,cntPltColumn).select();
+                hold(hsb,'on');
+
+                cntPltColumn = cntPltColumn + 1;
+                
+                    
+                
+                for tt = 1:size(tablePlot,1)
+                    if strcmp(areaStr{a},'coh')
+                        x = tablePlot.ff_coh{tt};
+                        y = tablePlot.ms_coherence_RawData{tt};
+                    else
+                        x = tablePlot.ff{tt};
+                        y = tablePlot.fftOutRawData{tt};
+                    end
+                    if strcmp(tablePlot.medstate{tt},'off')
+                        colorUse = [0.8 0 0.2];
+                        behScores = tablePlot.tremorScores{tt};
+                    elseif strcmp(tablePlot.medstate{tt},'on')
+                        colorUse = [0 0.8 0.2];
+                        behScores = tablePlot.bkScores{tt};
+                    elseif strcmp(tablePlot.medstate{tt},'sleep')
+                        colorUse = [0 0 0.2];
+                        behScores = tablePlot.bkScores{tt};
+                    elseif strcmp(tablePlot.medstate{tt},'tremor')
+                        colorUse = [0.1 0.0 0.8];
+                        behScores = tablePlot.bkScores{tt};
+                    elseif strcmp(tablePlot.medstate{tt},'bradykinesia')
+                        colorUse = [0.8 0 0.1];
+                        behScores = tablePlot.bkScores{tt};
+                    elseif strcmp(tablePlot.medstate{tt},'dyskinesia')
+                        colorUse = [0 0.8 0.1];
+                        behScores = tablePlot.bkScores{tt};
+
+                    end
+                    if plotShaded
+                        clear pVals corrScores
+                        for frq = 1:size(y,2)
+                            [corrScores(frq), pVals(frq)] = corr(behScores,y(:,frq));
+                        end
+                        idxKeepPvals = pVals < (0.05/numberComparisons);
+                        hplt(tt) = scatter(x(idxKeepPvals),corrScores(idxKeepPvals),20,'filled');
+                        hplt(tt).MarkerFaceColor = colorUse ;
+                        hplt(tt).MarkerFaceAlpha =  0.4;
+
+                    else
+                        hplt = plot(x,y);
+                        for hh = 1:length(hplt)
+                            hplt(hh).Color = [colorUse 0.4];
+                        end
+                    end
+                    ttlsuse = sprintf('%s %s %s (%d)',tablePlot.patient{tt}, strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt},...
+                        length(behScores));
+                    title(ttlsuse);
+                    xlim([3 100]);
+                    grid on; 
+                    hsb.XTick = [10:10:100];
+
+                end
+            end
+        end
+    end
+    % set axis 
+    cntplt = 1; 
+    for ii = 1:4 
+        for jj = 1:4
+            hsb(cntplt) = p(ii,jj).select();
+            cntplt = cntplt + 1; 
+        end
+    end
+    linkaxes(hsb,'y');
+    prfig.plotwidth           = 12;
+    prfig.plotheight          = 9;
+    prfig.figdir             = figdirout;
+    prfig.figname             = sprintf('%s_%s_correlations_individ_psd_states',tablePlot.patient{tt},strUse);
+    prfig.figtype             = '-dpdf';
+    plot_hfig(hfig,prfig)
+    close(hfig);
+
+end
+
+return
+
+%%
 outputTable = table();
 for f = 1:length(freqUse)
     for a = 1:length(areas)
@@ -290,7 +549,7 @@ for f = 1:length(freqUse)
     
 end
 %% plot 
-plotShaded = 1;
+plotShaded = 0;
 hfig = figure; 
 hfig.Color = 'w'; 
 p = panel();
@@ -400,14 +659,6 @@ p.marginleft = 30;
 p.margintop = 30;
 % p.de.margin = 15;
 p.fontsize = 15;
-
-prfig.plotwidth           = 10;
-prfig.plotheight          = 10;
-prfig.figdir             = figdirout;
-prfig.figtype             = '-dpdf';
-prfig.figname             = sprintf('AUC_vs_updrs');
-plot_hfig(hfig,prfig)
-
 %%
 
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats 

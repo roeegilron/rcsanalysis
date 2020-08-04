@@ -34,7 +34,7 @@ for f = 1:length(ff)
     datTbl.ff{f} = ff{f}; 
 end
 
-patients = {'RCS02','RCS05','RCS06','RCS07'};
+patients = {'RCS02','RCS05','RCS06','RCS07','RCS08'};
 types    = {'rest_off_meds','rest_on_meds'};
 sides    = {'L','R'};
 medstates = {'on','off'}; 
@@ -112,6 +112,7 @@ if plotthis
 end
 fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
 save(fnmsave,'patientPSD_in_clinic');
+return
 %% plot PAC 
 dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
 fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
