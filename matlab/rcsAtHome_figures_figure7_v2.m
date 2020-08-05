@@ -94,6 +94,7 @@ clear hsb*
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 
 hfig = figure;
+hfig.Position = [1281          80        1280        1265]
 lineWidth = 0.5;
 
 globalFontSize = 20;
@@ -182,13 +183,18 @@ else
 end
 
 
+% a bunch of hacky fixes: 
+%
+%
+%
+
 
 
 hsb2(1) = hpanel(2,1).select(); % zoom in 
 hsb2(2) = hpanel(2,2).select(); % zoom in 
 plot_adbs_in_pair_of_subplots(dbuse,hsb2); 
 hsb2(1).Title.String = '8 hours of aDBS using cortical gamma control signal';
-hsb2(2).Title.String = 'Current - ZOOM';
+hsb2(2).Title.String = 'Current';
 set(hsb2(1),'FontSize',globalFontSize);
 set(hsb2(2),'FontSize',globalFontSize);
 hsb2(1).XTickLabel = '';
@@ -226,6 +232,16 @@ for h = 1:length(hLines)
     hplt.XData = hplt.XData(idxXKeep);
     hplt.YData = hplt.YData(idxXKeep);
 end
+% change scale of detector labels from 0-1 (it's a hack, but easier this
+% way).
+ylimit = haxDet.YLim(2);
+haxDet.YTick = [0 ylimit*0.25 ylimit*0.5 ylimit*0.75 ylimit];
+newYLabels = rescale(haxDet.YTick,0,1);
+for y = 1:length(newYLabels)
+    newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+end
+haxDet.YTickLabel = newLabels;
+
 % fix current 
 haxCur = hpanel(1,2).select();
 hLines = haxCur.Children;
@@ -239,7 +255,10 @@ end
 xlimitsZoom = datetime({'20-Apr-2020 09:00:00.000', '20-Apr-2020 19:00:00.000'});
 xlimitsZoom.TimeZone  = dbuse.timeStart.TimeZone;
 haxCur.XLim = xlimitsZoom;
+haxCur.XTick = haxCur.XTick(2):hours(2):haxCur.XTick(end-1);
 ylim(haxCur,[-0.1 1.5]);
+
+
 % fix RCS02  plot to go from 10am - 6pm 
 % and axis limits to go from 9am-7pm. 
 % fix detector 
@@ -254,6 +273,14 @@ for h = 1:length(hLines)
     hplt.YData = hplt.YData(idxXKeep);
 end
 ylim(haxDet,[0 4000]);
+% change scale of detector labels from 0-1 (it's a hack, but easier this
+% way).
+haxDet.YTick = [0 haxDet.YTick(end)*0.25 haxDet.YTick(end)*0.5 haxDet.YTick(end)*0.75 haxDet.YTick(end)];
+newYLabels = rescale(haxDet.YTick,0,1);
+for y = 1:length(newYLabels)
+    newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+end
+haxDet.YTickLabel = newLabels;
 
 % fix current 
 haxCur = hpanel(2,2).select();
@@ -269,6 +296,7 @@ linkaxes([haxCur haxDet],'x');
 xlimitsZoom = datetime({'27-Apr-2020 09:00:00.000', '27-Apr-2020 19:00:00.000'});
 xlimitsZoom.TimeZone  = dbuse.timeStart.TimeZone;
 haxCur.XLim = xlimitsZoom;
+haxCur.XTick = haxCur.XTick(2):hours(2):haxCur.XTick(end-1);
 
 
 
@@ -276,6 +304,18 @@ haxCur.XLim = xlimitsZoom;
 % fix zoom on detector zoom: 
 haxDet = hpanel(2,4).select();
 ylim(haxDet,[0 4000]);
+haxDet.YTick = [0 haxDet.YTick(end)*0.25 haxDet.YTick(end)*0.5 haxDet.YTick(end)*0.75 haxDet.YTick(end)];
+newYLabels = rescale(haxDet.YTick,0,1);
+for y = 1:length(newYLabels)
+    newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+end
+haxDet.YTickLabel = newLabels;
+
+
+% fix x ticks on current zoom 
+haxCur = hpanel(2,5).select();
+haxCur.XTick = haxCur.XTick(1):minutes(20):haxCur.XTick(end);
+
 
 
 zoomAx = hpanel(2,3).select();
@@ -289,15 +329,14 @@ hpanel.margin = [40 20 20 20];
 hpanel.de.margin = 10 ;
 hpanel(1).marginbottom = 50;
 hpanel(2,2).marginbottom = 5;
-datetick(hpanel(1,2).select(),'x',15,'keepticks');
-datetick(hpanel(2,2).select(),'x',15,'keepticks');
-datetick(hpanel(2,5).select(),'x',15);
+datetick(hpanel(1,2).select(),'x',15,'keepticks','keeplimits');
+datetick(hpanel(2,2).select(),'x',15,'keepticks','keeplimits');
+datetick(hpanel(2,5).select(),'x',15,'keepticks','keeplimits');
 
-% get rid of some lables etc. 
-hsb(1)       = hpanel(1,2).select();
-hsb(1).XTick = hsb(1).XTick(2:2:end-1);
 
-hsb(2).XTick = hsb(2).XTick(2:2:end-1);
+
+
+
 
 
 hfig.Renderer='Painters';
@@ -307,7 +346,7 @@ prfig.resolution = 600;
 prfig.closeafterprint = 0;
 prfig.plotwidth           = 9;
 prfig.plotheight          = 9*1.5;
-prfig.figname             = 'figuer_7_v2_new_adaptive_full_day_run_v3';
+prfig.figname             = 'figuer_7_v2_new_adaptive_full_day_run_v4';
 plot_hfig(hfig,prfig)
 
 
@@ -397,7 +436,7 @@ for d = 1:size(dbuse,1)
     hold(hsb(idxplot),'on');
     if ~isempty(ld0)
         % only remove outliers in the threshold
-        outlierIdx = isoutlier(ld0_high);
+        outlierIdx = isoutlier(ld0_high,'movmedian',200);
         ld0 = ld0(~outlierIdx);
         ld0_high = ld0_high(~outlierIdx);
         ld0_low = ld0_low(~outlierIdx);
