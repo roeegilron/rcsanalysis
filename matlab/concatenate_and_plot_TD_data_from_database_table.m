@@ -66,7 +66,7 @@ for f = 1:length(ffTD)
     clear processedData
     fprintf('time domain file %d/%d done\n',f,length(ffTD));
 end
-fnsave = sprintf('processedData__%s.mat',label);
+fnsave = sprintf('%s_%s_processedData__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
 %%%%%%%%%%
 %%%%%%%%%%
@@ -135,7 +135,7 @@ for f = 1:length(ffAcc)
     fprintf('acc file %d/%d done\n',f,length(ffAcc));
     clear accData;
 end
-fnsave = sprintf('processedDataAcc__%s.mat',label);
+fnsave = sprintf('%s_%s_processedDataAcc__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
 
 %%%%%%%%%%
@@ -204,7 +204,7 @@ set(gca,'FontSize',16);
 ttluse = sprintf('Continous Chronic Recording at Home (%s hours)',sum(timeDomainFileDur(:,2) - timeDomainFileDur(:,1))); 
 title(ttluse);
 set(gcf,'Color','w'); 
-prfig.figname  = sprintf('continous recording report __ %s',label);
+prfig.figname  = sprintf('%s_%s_continous recording report __ %s',database.patient{1},database.side{1}, label);
 
 plot_hfig(hfig,prfig); 
 
@@ -248,7 +248,7 @@ for c = 1:4
 end
 idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ; 
 close(hfig)
-fnsave = sprintf('psdResults__%s.mat',label);
+fnsave = sprintf('%s_%s_psdResults__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
 
 %% process actigraphy data 
@@ -280,7 +280,7 @@ if ~isempty(fieldnames( accProcDat))
     idxkeepAcc = idxWhisker;
     close(hfig)
     
-    fnsave = sprintf('accResults__%s.mat',label);
+    fnsave = sprintf('accResults__%s.mat',database.patient{1},database.side{1}, label);
     save( fullfile(patdir,fnsave),'params','accResults','idxkeepAcc','timeDomainFileDur','database')
 end
 
@@ -385,7 +385,7 @@ coherenceResultsTd.timeEnd = [tdProcDat.timeEnd];
 
 
 
-fnsave = sprintf('coherenceResults__%s.mat',label);
+fnsave = sprintf('%s_%s_coherenceResults__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'params','coherenceResultsTd','timeDomainFileDur','database')
 
 
