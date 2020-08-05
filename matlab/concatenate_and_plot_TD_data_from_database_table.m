@@ -89,8 +89,8 @@ save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database
 cnttime = 1; 
 
 for ss = 1:size(database,1) 
-    sessionDir = findFilesBVQX(patdir,database.sessname{ss},struct('dirs',1,'depth',1));
-    ff = findFilesBVQX(sessionDir{1}, 'processedAccData.mat');
+    [pn,fn] = fileparts( database.allDeviceSettingsOut{ss});
+    ff = findFilesBVQX(pn, 'processedAccData.mat');
     if ~isempty(ff)
         processedActigraphyFiles{ss,1} = ff{1};
         database.AccExist(ss) = 1; 
