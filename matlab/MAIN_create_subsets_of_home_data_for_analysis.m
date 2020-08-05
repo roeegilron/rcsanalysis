@@ -3,6 +3,15 @@ function MAIN_create_subsets_of_home_data_for_analysis()
 % it uses previous functions to concatenate the data (listed below) and
 % process it into small chunks. 
 
+% note this readme is out of date as of aug 4 2020 and now doing this a new
+% way
+% will try and update these directions sooon 
+% below directions refer to previous way of doing databasing 
+% this has now changes to a more robust method using device settings to
+% determin settings 
+% this method is still in flux and will eventually will consist of a new
+% data organization structure 
+
 % pre reqs: 
 %% data converstion and databasing functions 
 % MAIN_report_data_in_folder 
@@ -67,6 +76,37 @@ function MAIN_create_subsets_of_home_data_for_analysis()
 % interpolation to PSD results 
 
 %% data selection: 
+%% load the database
+clear all; clc; close all; 
+dropboxdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
+reportsDir = fullfile(dropboxdir,'reports');
+databaseFile = fullfile(dropboxdir,'database_from_device_settings.mat');
+load(databaseFile);
+masterTableOut.allDeviceSettingsOut = allDeviceSettingsOut;
+idxkeep  = cellfun(@(x) istable(x),masterTableOut.stimStatus) & logical(masterTableOut.recordedWithScbs);
+dbUse    = masterTableOut(idxkeep,:); 
+dbUse.duration.Format = 'hh:mm:ss';
+
+%%
+outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+idxpat       = strcmp(dbUse.patient,'RCS02');
+idxside      = strcmp(dbUse.side,'L');
+idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-100Hz lpf2-100Hz sr-250Hz');
+idxstim      = dbUse.stimulation_on == 1;
+idxstimLev   = dbUse.amplitude_mA == 2.2;
+idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+
+idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm; 
+patDBtoConcat = dbUse(idxconcat,:);
+concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_2.2');
+%%
+
+
+
+return 
+%% old way of doing things 
+
 dropboxdir = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
 DROPBOX_PATH = dropboxdir; 
 

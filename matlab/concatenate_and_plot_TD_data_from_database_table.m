@@ -9,6 +9,74 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 
 
 
+%% time domain data 
+%%%%%%%%%%
+%%%%%%%%%%
+% START TD 
+% START TD 
+% START TD 
+%%%%%%%%%%
+%%%%%%%%%%
+%%%%%%%%%%
+cnttime = 1; 
+
+for ss = 1:size(database,1) 
+    [pn,fn] = fileparts( database.allDeviceSettingsOut{ss});
+    ff = findFilesBVQX(pn, 'proc*TD*.mat');
+    if ~isempty(ff)
+        processedTDFiles{ss,1} = ff{1};
+        database.TdExist(ss) = 1; 
+    else
+        database.TdExist(ss) = 0; 
+    end
+end
+database.processedTDFiles = processedTDFiles;
+totalHours = sum(database.duration);
+existHours = sum(database.duration(logical(database.TdExist)));
+missingHours = sum(database.duration(~logical(database.TdExist))); 
+fprintf('for patient dir:\n%s\n',patdir); 
+fprintf('total database size is %s\n',totalHours); 
+fprintf('actigraphy files exist for %s\n', existHours);
+fprintf('actigraphy files missing for %s\n',missingHours);
+fprintf('files exist for %%%1.6f of data\n',(existHours/totalHours)*100); 
+
+tdProcDat = struct();
+timeDomainFileDur = NaT;
+ffTD = database.processedTDFiles(logical(database.TdExist));
+for f = 1:length(ffTD)
+    %     process and analyze acc data
+    load(ffTD{f},'processedData','params');
+    
+    if isempty(fieldnames(tdProcDat))
+        if isstruct(processedData)
+            tdProcDat = processedData;
+            timeDomainFileDur.TimeZone = processedData(1).timeStart.TimeZone;
+            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
+            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
+            cnttime = cnttime+1;
+        end
+    else
+        if ~isempty(processedData)
+            tdProcDat = [tdProcDat processedData];
+            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
+            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
+            cnttime = cnttime+1;
+        end
+    end
+    clear processedData
+    fprintf('time domain file %d/%d done\n',f,length(ffTD));
+end
+fnsave = sprintf('processedData__%s.mat',label);
+save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
+%%%%%%%%%%
+%%%%%%%%%%
+% END TD 
+% END TD 
+% END TD 
+%%%%%%%%%%
+%%%%%%%%%%
+%%%%%%%%%%
+
 %% actigraphy data 
 %%%%%%%%%%
 %%%%%%%%%%
@@ -82,73 +150,6 @@ save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
 
 
 
-%% time domain data 
-%%%%%%%%%%
-%%%%%%%%%%
-% START TD 
-% START TD 
-% START TD 
-%%%%%%%%%%
-%%%%%%%%%%
-%%%%%%%%%%
-cnttime = 1; 
-
-for ss = 1:size(database,1) 
-    sessionDir = findFilesBVQX(patdir,database.sessname{ss},struct('dirs',1,'depth',1));
-    ff = findFilesBVQX(sessionDir{1}, 'proc*TD*.mat');
-    if ~isempty(ff)
-        processedTDFiles{ss,1} = ff{1};
-        database.TdExist(ss) = 1; 
-    else
-        database.TdExist(ss) = 0; 
-    end
-end
-database.processedTDFiles = processedTDFiles;
-totalHours = sum(database.duration);
-existHours = sum(database.duration(logical(database.TdExist)));
-missingHours = sum(database.duration(~logical(database.TdExist))); 
-fprintf('for patient dir:\n%s\n',patdir); 
-fprintf('total database size is %s\n',totalHours); 
-fprintf('actigraphy files exist for %s\n', existHours);
-fprintf('actigraphy files missing for %s\n',missingHours);
-fprintf('files exist for %%%1.6f of data\n',(existHours/totalHours)*100); 
-
-tdProcDat = struct();
-timeDomainFileDur = NaT;
-ffTD = database.processedTDFiles(logical(database.TdExist));
-for f = 1:length(ffTD)
-    %     process and analyze acc data
-    load(ffTD{f},'processedData','params');
-    
-    if isempty(fieldnames(tdProcDat))
-        if isstruct(processedData)
-            tdProcDat = processedData;
-            timeDomainFileDur.TimeZone = processedData(1).timeStart.TimeZone;
-            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
-            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
-            cnttime = cnttime+1;
-        end
-    else
-        if ~isempty(processedData)
-            tdProcDat = [tdProcDat processedData];
-            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
-            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
-            cnttime = cnttime+1;
-        end
-    end
-    clear processedData
-    fprintf('time domain file %d/%d done\n',f,length(ffTD));
-end
-fnsave = sprintf('processedData__%s.mat',label);
-save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
-%%%%%%%%%%
-%%%%%%%%%%
-% END TD 
-% END TD 
-% END TD 
-%%%%%%%%%%
-%%%%%%%%%%
-%%%%%%%%%%
 
 %% plot recording duration to see how much data was recoded per day  
 % split up recordings that are not in the samy day 

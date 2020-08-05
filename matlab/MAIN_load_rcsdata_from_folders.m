@@ -11,13 +11,15 @@ else
     dirname  = varargin{1};
 end
 % check if a database folder exists, if not run  the MAIN_repot function:
-if ~exist(fullfile(dirname,'database.mat'),'file')
-    MAIN_report_data_in_folder(dirname);
+if ~exist(fullfile(dirname,'database_from_device_settings.mat'),'file')
+    % MAIN_report_data_in_folder(dirname); old way of doing this - created
+    % a database file 
     create_database_from_device_settings_files(dirname);
 end
 
 % now only choose folders that are above a certain duration 
-load(fullfile(dirname,'database.mat'),'tblout'); 
+load(fullfile(dirname,'database_from_device_settings.mat')); 
+tblout = masterTableOut;
 if iscell(tblout.duration)
     idxnotEmpty = cellfun(@(x) ~isempty(x),tblout.duration); 
 else
@@ -25,10 +27,10 @@ else
 end
 
 tbluse = tblout(idxnotEmpty,:);
-if iscell(tblout.duration)
+if iscell(tbluse.duration)
     idxRecordingsOver30Seconds = cellfun(@(x) x > seconds(30), tbluse.duration);
 else
-    idxRecordingsOver30Seconds = tblout.duration > seconds(30); 
+    idxRecordingsOver30Seconds = tbluse.duration > seconds(30); 
 end
 tbluse = tbluse(idxRecordingsOver30Seconds,:); 
 %%%%%%%%%%%%%%%%%%%%%%
@@ -57,7 +59,7 @@ tbluse = tbluse(idxRecordingsOver30Seconds,:);
 
 for f = 1:size(tbluse,1)
     try
-        ff = findFilesBVQX(dirname,tbluse.sessname{f},struct('dirs',1));
+        ff = findFilesBVQX(dirname,tbluse.session{f},struct('dirs',1));
         foldername = findFilesBVQX(ff{1},'Device*',struct('dirs',1)); 
 
         start = tic;

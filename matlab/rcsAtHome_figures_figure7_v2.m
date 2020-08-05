@@ -20,8 +20,7 @@ if ~plotpanels
 end
 figdir = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig7.1_new_adaptive';
 dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/adaptive_results_figure';
-
-
+dirsave = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive/adaptive_results_figure';
 %% panel A plot adaptive data
 close all; clc;
 loadBigDB = 0;
@@ -152,7 +151,6 @@ hsb(1).Title.String = '8 hours of aDBS using STN beta';
 hsb(2).Title.String = 'Current';
 set(hsb(1),'FontSize',globalFontSize);
 set(hsb(2),'FontSize',globalFontSize);
-
 
 
 
@@ -294,6 +292,12 @@ hpanel(2,2).marginbottom = 5;
 datetick(hpanel(1,2).select(),'x',15,'keepticks');
 datetick(hpanel(2,2).select(),'x',15,'keepticks');
 datetick(hpanel(2,5).select(),'x',15);
+
+% get rid of some lables etc. 
+hsb(1)       = hpanel(1,2).select();
+hsb(1).XTick = hsb(1).XTick(2:2:end-1);
+
+hsb(2).XTick = hsb(2).XTick(2:2:end-1);
 
 
 hfig.Renderer='Painters';

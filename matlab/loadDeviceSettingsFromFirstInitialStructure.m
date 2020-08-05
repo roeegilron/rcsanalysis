@@ -188,7 +188,7 @@ try
         senseSettings.chan4 = deviceSettingsOut.chan4;
         senseSettings.TimeDomainDataStruc  = deviceSettingsOut.TimeDomainDataStruc;
     end
-    senseSettingsMultiple = deviceSettingsOut;
+    senseSettingsMultiple = deviceSettingTable;
 catch
     senseSettingsMultiple = table();
 end
