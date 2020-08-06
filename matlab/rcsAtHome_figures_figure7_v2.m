@@ -19,6 +19,7 @@ if ~plotpanels
     
 end
 figdir = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig7.1_new_adaptive';
+figdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive';
 dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/adaptive_results_figure';
 dirsave = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive/adaptive_results_figure';
 %% panel A plot adaptive data
@@ -338,7 +339,7 @@ datetick(hpanel(2,5).select(),'x',15,'keepticks','keeplimits');
 
 
 
-
+hpanel.fontsize = 16;
 hfig.Renderer='Painters';
 prfig.figdir = figdir;
 prfig.figtype = '-dpdf';

@@ -4,8 +4,8 @@ function rcsAtHome_figures_figure7()
 % panel b plot violin plots of average beta power 
 % panel c - plot embedded adaptive data 
 close all;
-
-plotpanels = 0;
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7_effect_of_stim_and_adaptive/subject_speciific_plots';
+plotpanels = 1;
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 if ~plotpanels
     hfig = figure;
@@ -20,99 +20,423 @@ if ~plotpanels
 end
 
 %% panel A - single subject - on , off and chornic stim 
-dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/results/long_term_stim_on_stim_off'; 
-load(fullfile(dirsave,'psd_at_home_stim_on_vs_stim_off.mat'),'psdResultsBoth'); 
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/pkg_states RCS02 R pkg L _10_min_avgerage.mat')
-addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
-if plotpanels
-    hfig = figure();
-    hfig.Color = 'w';
-end
-% on stim vs off stim 
-% d = 1 - 
-stimstate = {'off stim','on chronic stim'}; 
-statesuse = {'off','on'};
-colorsUse = [0.5 0.5 0.5;
-          0   0.8   0];
-titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
-cntplt = 1;
-if ~plotpanels
-    hSub = gobjects(3,1);
-end
-for c = [2 4]
+dontRun = 1;
+if ~dontRun
+    dirsave = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/RCS02/results/long_term_stim_on_stim_off';
+    load(fullfile(dirsave,'psd_at_home_stim_on_vs_stim_off.mat'),'psdResultsBoth');
+    load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/pkg_states RCS02 R pkg L _10_min_avgerage.mat')
+    addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
     if plotpanels
-        hSub(cntplt) = subplot(2,2,cntplt); cntplt = cntplt+1;
-    else
-        hpanel(1,1,cntplt).select(); cntplt = cntplt + 1; 
-        hSub(cntplt,1) = gca;
+        hfig = figure();
+        hfig.Color = 'w';
     end
-            
-    
-    hold on; 
-    for d = 1:2
-        fn = sprintf('key%dfftOut',c-1);
-        if d == 2   % on stim 
-            psdResults = psdResultsBoth(2);
-            fftOut = psdResults.(fn)(psdResults.idxkeep,:);
-            ff = psdResults.ff;
+    % on stim vs off stim
+    % d = 1 -
+    stimstate = {'off stim','on chronic stim'};
+    statesuse = {'off','on'};
+    colorsUse = [0.5 0.5 0.5;
+        0   0.8   0];
+    titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+    cntplt = 1;
+    if ~plotpanels
+        hSub = gobjects(3,1);
+    end
+    for c = [2 4]
+        if plotpanels
+            hSub(cntplt) = subplot(2,2,cntplt); cntplt = cntplt+1;
         else
-            fftOut = allDataPkgRcsAcc.(fn); 
-            ff = psdResults.ff;
+            hpanel(1,1,cntplt).select(); cntplt = cntplt + 1;
+            hSub(cntplt,1) = gca;
         end
-        idxusefreq = ff >= 13 &  ff <= 30; 
-        
-        % normalize the data 
-        dat = fftOut;
-        idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
-        meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
-        % the absolute is to make sure 1/f curve is not flipped
-        % since PSD values are negative
-        meanmat = repmat(meandat,1,size(dat,2));
-        dat = dat./meanmat;
-        fftOut = dat;
-        
-        meanbetafreq{c,d} = mean(fftOut(:,idxusefreq),2);
-        
-        idxusefreq = ff >= 65 &  ff <= 85;
-        meangammafreq{c,d} = mean(fftOut(:,idxusefreq),2);
-
         
         
-        hsb = shadedErrorBar(ff,fftOut,{@median,@(x) std(x)*2});
-        hsb.mainLine.Color = [colorsUse(d,:) 0.5];
-        hsb.mainLine.LineWidth = 2;
-        hsb.patch.MarkerFaceColor = colorsUse(d,:);
-        hsb.patch.FaceColor = colorsUse(d,:);
-        hsb.patch.EdgeColor = colorsUse(d,:);
-        hsb.edge(1).Color = [colorsUse(d,:) 0.1];
-        hsb.edge(2).Color = [colorsUse(d,:) 0.1];
-        hsb.patch.EdgeAlpha = 0.1;
-        hsb.patch.FaceAlpha = 0.1;
-        xlabel('Frequency (Hz)');
-        ylabel('Norm. power (a.u.)');
-        title(titles{c}); 
-        set(gca,'FontSize',16); 
-        hlines(d) = hsb.mainLine;
-        xlim([3 100]);
+        hold on;
+        for d = 1:2
+            fn = sprintf('key%dfftOut',c-1);
+            if d == 2   % on stim
+                psdResults = psdResultsBoth(2);
+                fftOut = psdResults.(fn)(psdResults.idxkeep,:);
+                ff = psdResults.ff;
+            else
+                fftOut = allDataPkgRcsAcc.(fn);
+                ff = psdResults.ff;
+            end
+            idxusefreq = ff >= 13 &  ff <= 30;
+            
+            % normalize the data
+            dat = fftOut;
+            idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+            meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
+            % the absolute is to make sure 1/f curve is not flipped
+            % since PSD values are negative
+            meanmat = repmat(meandat,1,size(dat,2));
+            dat = dat./meanmat;
+            fftOut = dat;
+            
+            meanbetafreq{c,d} = mean(fftOut(:,idxusefreq),2);
+            
+            idxusefreq = ff >= 65 &  ff <= 85;
+            meangammafreq{c,d} = mean(fftOut(:,idxusefreq),2);
+            
+            
+            
+            hsb = shadedErrorBar(ff,fftOut,{@median,@(x) std(x)*2});
+            hsb.mainLine.Color = [colorsUse(d,:) 0.5];
+            hsb.mainLine.LineWidth = 2;
+            hsb.patch.MarkerFaceColor = colorsUse(d,:);
+            hsb.patch.FaceColor = colorsUse(d,:);
+            hsb.patch.EdgeColor = colorsUse(d,:);
+            hsb.edge(1).Color = [colorsUse(d,:) 0.1];
+            hsb.edge(2).Color = [colorsUse(d,:) 0.1];
+            hsb.patch.EdgeAlpha = 0.1;
+            hsb.patch.FaceAlpha = 0.1;
+            xlabel('Frequency (Hz)');
+            ylabel('Norm. power (a.u.)');
+            title(titles{c});
+            set(gca,'FontSize',16);
+            hlines(d) = hsb.mainLine;
+            xlim([3 100]);
+        end
+        legend(hlines,stimstate);
+        %     totalhours = (length(psdResults.timeStart(psdResults.idxkeep))*10)/60;
+        %     fprintf('total hours %d %s\n',totalhours,stimstate{d});
     end
-    legend(hlines,stimstate); 
-%     totalhours = (length(psdResults.timeStart(psdResults.idxkeep))*10)/60;
-%     fprintf('total hours %d %s\n',totalhours,stimstate{d});
-end
-if plotpanels
-    sgtitle('RCS02 L','FontSize',25);
-    
-    figname = sprintf('on stim vs off stim_ %s %s v2','RCS02','L');
-    prfig.plotwidth           = 15;
-    prfig.plotheight          = 10;
-    prfig.figname             = figname;
-    prfig.figdir              = dirsave;
-    plot_hfig(hfig,prfig)
+    if plotpanels
+        sgtitle('RCS02 L','FontSize',25);
+        
+        figname = sprintf('on stim vs off stim_ %s %s v2','RCS02','L');
+        prfig.plotwidth           = 15;
+        prfig.plotheight          = 10;
+        prfig.figname             = figname;
+        prfig.figdir              = dirsave;
+        plot_hfig(hfig,prfig)
+    end
 end
 %% 
 
 %% panel b plot violin plots of average beta power 
+rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/'; 
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+% off stim 
+ff = findFilesBVQX(rootdir,'coherence_and_psd*.mat');
+dataTable = table();
+for f = 1:length(ff)
+    load(ff{f});
+    [pn,fn] = fileparts(ff{f});
+    dataTable.patient{f} = fn(19:23);
+    dataTable.side{f} = fn(25);
+    dataTable.stim(f) = 0; 
+    dataTable.allDataPkgRcsAccq{f} = allDataPkgRcsAcc;
+end
+% on stim 
+stimDir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+ff  = findFilesBVQX(stimDir,'RC*psd*stim*.mat');
+ffc = findFilesBVQX(stimDir,'RC*coh*stim*.mat');
+tblcnt = size(dataTable,1) + 1;
+clear allDataPkgRcsAcc;
+for f = 1:length(ff)
+    % load data
+    load(ff{f},'fftResultsTd','database');
+    load(ffc{f},'coherenceResultsTd','database');
+    [pn,fn] = fileparts(ff{f});
+    
+    % create output structure 
+    allDataPkgRcsAcc.key0fftOut         = fftResultsTd.key0fftOut;
+    allDataPkgRcsAcc.key1fftOut         = fftResultsTd.key1fftOut;
+    allDataPkgRcsAcc.key2fftOut         = fftResultsTd.key2fftOut;
+    allDataPkgRcsAcc.key3fftOut         = fftResultsTd.key3fftOut;
+    allDataPkgRcsAcc.ffPSD              = fftResultsTd.ff; 
+    allDataPkgRcsAcc.timeStart          = fftResultsTd.timeStart;
+    allDataPkgRcsAcc.timeEnd            = fftResultsTd.timeEnd;
+    allDataPkgRcsAcc.stn02m10810        = coherenceResultsTd.stn02m10810;
+    allDataPkgRcsAcc.stn02m10911        = coherenceResultsTd.stn02m10911;
+    allDataPkgRcsAcc.stn13m0911         = coherenceResultsTd.stn13m0911;
+    allDataPkgRcsAcc.stn13m10810        = coherenceResultsTd.stn13m10810;
+    allDataPkgRcsAcc.ffCoh              = coherenceResultsTd.ff;
+    allDataPkgRcsAcc.database           = database; 
+    
+    % save to data table 
+    dataTable.patient{tblcnt}           = fn(1:5);
+    dataTable.side{tblcnt}              = fn(7);
+    dataTable.stim(tblcnt)              = 1;
+    dataTable.allDataPkgRcsAccq{tblcnt} = allDataPkgRcsAcc;
+    tblcnt = tblcnt + 1;
+    clear allDataPkgRcsAcc;
+end
+
+
+
+
+width = 3; 
+uniquePatients = unique(dataTable.patient);
+uniqueSides    = unique(dataTable.side); 
+cnttoplot = 1;
+for p = 1:length(uniquePatients)
+    for s = 1:length(uniqueSides)
+        idxuse = strcmp(dataTable.patient, uniquePatients{p}) & ...
+            strcmp(dataTable.side, uniqueSides{s}) ;
+        patTable = dataTable(idxuse,:);
+        idxstim  = find(patTable.stim==1);
+        dataStrucStim = patTable.allDataPkgRcsAccq{idxstim};
+        switch dataStrucStim.database.electrodes{1}
+            case '+2 -c '
+                if strcmp(dataStrucStim.database.chan1{1}, '+3-1 lpf1-100Hz lpf2-100Hz sr-250Hz')
+                    stnFn_stim   = 'key0fftOut'; 
+                    stnFn_noStim = 'key1fftOut'; 
+                    cnlsReadFreq = [1 2];
+                elseif strcmp(dataStrucStim.database.chan2{1}, '+3-1 lpf1-100Hz lpf2-100Hz sr-250Hz')
+                    stnFn_stim   = 'key1fftOut'; 
+                    stnFn_noStim = 'key1fftOut'; 
+                    cnlsReadFreq = [2 2];
+                end
+            case '+1 -c '
+                if strcmp(dataStrucStim.database.chan1{1}, '+2-0 lpf1-100Hz lpf2-100Hz sr-250Hz')
+                    stnFn_stim   = 'key0fftOut';
+                    stnFn_noStim = 'key0fftOut';
+                    cnlsReadFreq = [1 1];
+                elseif strcmp(dataStrucStim.database.chan2{1}, '+3-1 lpf1-100Hz lpf2-100Hz sr-250Hz')
+                    stnFn_stim   = 'key1fftOut';
+                    stnFn_noStim = 'key0fftOut';
+                    cnlsReadFreq = [2 1];
+                end
+        end
+        switch uniquePatients{p}
+            case 'RCS02'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 19 24 25 75 75 76 76];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+            case 'RCS05'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [27 27 27 27 61 61 61 61];
+            case 'RCS06'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 19 14 26 55 55 61 61];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+            case 'RCS07'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 20 21 24 76 79 80 80];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+            case 'RCS08'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [27 23 26 26 43 84 84 84];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+        end
+        stimState = [ 0 1];
+        stimLabel = {'stim off','stim on'};
+        stmfn     = {'stnFn_noStim','stnFn_stim'};
+        colorsuse = [0.5 0.5 0.5; 0 0.8 0]; 
+
+        if  p == 1 & s == 1
+            ff = psdResults.ff;
+        end
+        for ss = 1:2
+            %  get the data strcture 
+            dataStruc = patTable.allDataPkgRcsAccq{ patTable.stim == stimState(ss) };
+            % normalize the data
+            fnuse = eval(stmfn{ss});
+            hoursrec = hour(dataStruc.timeStart);
+            idxhoursuse = (hoursrec >= 8) & (hoursrec <= 22);
+            fftOutRaw = dataStruc.(fnuse);
+            if size(fftOutRaw,1) > size(fftOutRaw,2)
+                fftOut = fftOutRaw(idxhoursuse',:);
+                fftOut = fftOut';
+            end
+            if size(fftOutRaw,1) < size(fftOutRaw,2)
+                fftOut = fftOutRaw(:,idxhoursuse);
+            end
+            
+            meanVals = mean(fftOut(40:60,:));
+            q75_test=quantile(meanVals,0.75);
+            q25_test=quantile(meanVals,0.25);
+            w=2.0;
+            wUpper = w*(q75_test-q25_test)+q75_test;
+            wLower = q25_test-w*(q75_test-q25_test);
+            idxWhisker = (meanVals' < wUpper) & (meanVals' > wLower);
+            fftOut = fftOut(:,idxWhisker);
+            
+            dat = fftOut;
+            idxnormalize = ff > 3 &  ff <90;
+            meandat = repmat(mean(abs(mean(dat(:,idxnormalize),2))),length(ff),1); % mean within range, by row
+            % the absolute is to make sure 1/f curve is not flipped
+            % since PSD values are negative
+            meanmat = repmat(meandat,1,size(dat,2));
+            dat = dat./meanmat;
+            fftOutNorm = dat;
+            
+%             xlim([3 100]);
+            % use peaks or individual peaks
+            idxusefreq = ff >= 13 &  ff <= 30;
+            % individual peaks
+            betapeakuse = freqs(cnlsReadFreq(ss));
+            idxusefreq = ff >= (betapeakuse - width) &  ff <= (betapeakuse + width);
+            
+            
+            
+            meanbetafreqNorm{p,s,ss} = mean(fftOutNorm(idxusefreq,:),1);
+            meanbetafreq{p,s,ss} = mean(fftOut(idxusefreq,:),1);
+            toplot{1,cnttoplot} = mean(fftOutNorm(idxusefreq,:),1)';
+            xtics(cnttoplot)  = cnttoplot;
+            xticklab = sprintf('%s %s %s',uniquePatients{p},uniqueSides{s},stimLabel{ss});
+            xtickalbs{cnttoplot} = xticklab;
+            coloruse(cnttoplot,:) = colorsuse(ss,:);
+            cnttoplot = cnttoplot + 1;
+            % save some of the data 
+            idxuse = strcmp(dataTable.patient, uniquePatients{p}) & ...
+                     strcmp(dataTable.side, uniqueSides{s}) & ... 
+                     dataTable.stim == stimState(ss);
+            cnfnm = sprintf('chan%d',str2num((fnuse(4)))+1);
+            idxNum = find(idxuse==1);
+            dataTable.ff{idxNum} = ff;
+            dataTable.fftOut{idxNum} = fftOut;
+            dataTable.fftOutNorm{idxNum} = fftOutNorm;
+            dataTable.betapeakuse(idxNum) = betapeakuse;
+            dataTable.meanbetafreqNorm{idxNum} = meanbetafreqNorm{p,s,ss};
+            dataTable.meanbetafreq{idxNum} = meanbetafreq{p,s,ss};
+
+        end
+    end
+end
+
+
+%% loop on patients and plot a plot per patient with both the raw data and the violin plot 
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
+colorsuse = [0.5 0.5 0.5; 0 0.8 0]; 
+
+for p = 1:length(uniquePatients)
+    idxuse = strcmp(dataTable.patient, uniquePatients{p});
+    patTable = dataTable(idxuse,:);
+    % start figure 
+    hfig = figure();
+    hfig.Color = 'w';
+    hpanel = panel();
+    hpanel.pack(2,1);
+    
+    hpanel(1,1).pack(1,4);
+    hpanel(2,1).pack(1,2);
+%     hpanel.select('all');
+%     hpanel.identify();
+    for ss = 1:size(patTable,1)
+        datPlot = patTable(ss,:);
+        if strcmp(datPlot.side,'L') & datPlot.stim
+            colUse = 2;
+        end
+        if strcmp(datPlot.side,'L') & ~datPlot.stim
+            colUse = 1;
+        end
+        if strcmp(datPlot.side,'R') & datPlot.stim
+            colUse = 4;
+        end
+        if strcmp(datPlot.side,'R') & ~datPlot.stim
+            colUse = 3;
+        end
+        if datPlot.stim
+            colorsuse = [0.5 0.5 0.5 0.2];
+            ttlUse = sprintf('%s %s %s',datPlot.patient{1},datPlot.side{1},'stim on');
+        else
+            colorsuse =  [0 0.8 0 0.2]; 
+            ttlUse = sprintf('%s %s %s',datPlot.patient{1},datPlot.side{1},'stim off');
+        end
+        hsb(ss) = hpanel(1,1,1,colUse).select();
+        reduce_plot(patTable.ff{ss},patTable.fftOut{ss},'Color',colorsuse);
+        xlim([3 100]);
+        title(ttlUse);
+        if colUse == 1
+            ylabel('Power (log_1_0\muV^2/Hz)');
+        end
+        hold(hsb(ss),'on');
+    end
+    linkaxes(hsb,'y');
+    for ss = 1:4
+        plot(hsb(ss),[patTable.betapeakuse(ss) patTable.betapeakuse(ss)], hsb(ss).YLim,...
+            'LineWidth' , 4,...
+            'LineStyle','-.',...
+            'Color',[0 0 0.2 0.2]);
+    end
+    
+    
+    % plot the violin plots
+    ttsPlotsUse = {'stim on/off L','stim on/off R'};
+    uniqueSides    = unique(patTable.side);    
+    coloruse = [  0 0.8 0;0.5 0.5 0.5]; 
+
+    for s = 1:length(uniqueSides)
+        idxside = strcmp(patTable.side,uniqueSides{s});
+        patSide = patTable(idxside,:);
+        plotstruc = struct();
+        for t = 1:size(patSide,1)
+            fnUse = sprintf('v%d',t);
+            plotstruc.(fnUse) = patSide.meanbetafreq{t};
+            if logical(patSide.stim(t))
+                xTicks{t} = 'stim on';
+            else
+                xTicks{t} = 'stim off';
+            end
+        end
+        if strcmp(patSide.side{s},'L')
+            colUse = 1;
+        end
+        if strcmp(patSide.side{s},'R')
+            colUse = 2;
+        end
+        hsb = hpanel(2,1,1,colUse).select();
+        hviolin  = violinplot(plotstruc);
+        for h = 1:length(hviolin)
+            hviolin(h).ViolinPlot.FaceColor =  coloruse(h,:);
+            hviolin(h).ScatterPlot.CData    =  coloruse(h,:);
+            hviolin(h).ViolinPlot.FaceAlpha =  0.3;
+            hviolin(h).ShowData = 0;
+        end
+        hsb.XTickLabel  = xTicks;
+%         hsb.XTickLabelRotation = 30;
+
+        title(ttsPlotsUse{s});
+    end
+    hpanel.margin = [20 20 15 15];
+    hpanel.fontsize = 16;
+    figname = sprintf('%s',uniquePatients{p});
+    prfig.plotwidth           = 16;
+    prfig.plotheight          = 12;
+    prfig.figdir             = figdirout;
+    prfig.figname             = figname;
+    prfig.figtype             = '-djpeg';
+    plot_hfig(hfig,prfig)
+
+end
+return 
+x = 2;
+%%
+
+
 addpath(genpath(fullfile(pwd,'toolboxes','violin')));
+addpath(genpath(fullfile(pwd,'toolboxes','Violinplot-Matlab/')));
+clear plotstruc;
+for t = 1:length(toplot)
+    fnUse = sprintf('v%d',t);
+%     plotstruc.NotNumeric(t) = sum(~isnumeric(toplot{t}));
+%     plotstruc.NaN(t) = sum(isnan(toplot{t}));
+%     plotstruc.InF(t) = sum(isinf(toplot{t}));
+    plotstruc.(fnUse) = toplot{t};
+end
+hfigure = figure;
+hSub = subplot(1,1,1);
+hviolin  = violinplot(plotstruc);
+ylabel('Average norm. beta power'); 
+hSub.XTick = xtics;
+hSub.XTickLabel  = xtickalbs;
+hSub.XTickLabelRotation = 30;
+ylim([-1.1 -0.45]);
+for h = 1:length(hviolin)
+    hviolin(h).ViolinPlot.FaceColor =  coloruse(h,:);
+    hviolin(h).ScatterPlot.CData    =  coloruse(h,:);
+    hviolin(h).ViolinPlot.FaceAlpha =  0.3;
+    hviolin(h).ShowData = 0;
+end
+
+title('effect of chronic stim');
+
+return 
+
 patients = {'RCS02','RCS05'}; 
 patients = {'RCS01','RCS02'}; % renamed for paper  
 betapeaks = [27 19 20];
@@ -619,7 +943,7 @@ end
 stimstate = {'off stim - imobile','off stim - mobile','on chronic stim'}; 
 statesuse = {'off','on'};
 colorsUse = [0.8 0 0;
-          0   0.8 0,
+          0   0.8 0;
           0   0   0.8];
 titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
 cntplt = 1;
