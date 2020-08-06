@@ -11,8 +11,8 @@ addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 hfig = figure; 
 p = panel();
 p.pack(1,2); 
-p(1,1).pack(2,1);
-p(1,2).pack(3,1); 
+p(1,1).pack('v',{1/3 1/3 1/3});
+p(1,2).pack('v',{1/3 2/3}); 
 p.select('all');
 p.fontsize = 30;
 p.identify();
@@ -28,8 +28,8 @@ if ~plotpanels
     hfig.Color = 'w';
     hpanel = panel();
     hpanel.pack(1,2);
-    hpanel(1,1).pack('v',{0.3,0.8});
-    hpanel(1,2).pack(3,1);
+    hpanel(1,1).pack('v',{1/3 1/3 1/3});
+    hpanel(1,2).pack('v',{1/3 2/3}); 
 %     hpanel.select('all');
 %     hpanel.identify();
     %%
@@ -42,6 +42,7 @@ figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recor
 figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 % origina funciton used: plot_pkg_data_all_subjects
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
 ff = findFilesBVQX(resultsdir,'RCS*.mat'); 
 tbl = table();
 for f = 1:length(ff) 
@@ -71,7 +72,7 @@ if plotpanels
     hsb = subplot(1,1,1);
     hsb(cntplt) = hsb; 
 else
-    hpanel(1,1,1).select();
+    hpanel(1,2,2).select();
     hsb = gca();
 end
 
@@ -542,181 +543,68 @@ if plotpanels
 end
 %% 
 
-%% panel c - AUC for all subjects 
-% original function to compute the data: 
-% AUC_analysis_including_coherence_and_psd_pkg_data()
-addpath(genpath(fullfile(pwd,'toolboxes','notBoxPlot')))
-datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/';
-fignum = 5; 
-figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
-figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
-figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+%% plot C - stn beta centered psd 
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+load(fnsave,'outputTable');
 
-
-ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
-for f = 1:length(ff)
-    load(ff{f});
-    if f == 1 
-        AUCall = AUC_results_table; 
-    else
-        AUCall = [AUCall; AUC_results_table];
+plotShaded = 1;
+hfig = figure; 
+hfig.Color = 'w'; 
+p = panel();
+p.pack(3,2); 
+freqUse = {'beta','gamma'};
+areas = {'STN','M1'};
+medstates = {'off','on'};
+for f = 1:length(freqUse)
+    for a = 1:length(areas)
+        hsb = p(a,f).select(); 
+        hold(hsb,'on');
+        for m = 1:length(medstates)
+            idxFreq = strcmp(outputTable.freqUse ,freqUse{f});
+            idxAreas= strcmp(outputTable.area ,areas{a});
+            idxMed  = strcmp(outputTable.medstate ,medstates{m});
+            idxUse = idxFreq & idxAreas & idxMed; 
+            tbPlt = outputTable(idxUse,:);
+            data = tbPlt.psdData{1}; 
+            freqLen = size(data,2);
+            xrow = 1-ceil(freqLen/2):1:floor(freqLen/2);
+            x = xrow; 
+            y = data; 
+            if strcmp(medstates{m},'off')
+                colorUse = [0.8 0 0.2];
+            elseif strcmp(medstates{m},'on')
+                colorUse = [0 0.8 0.2];
+            end
+            if plotShaded
+                hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
+        
+                hshadedError.mainLine.Color = colorUse;
+                hshadedError.mainLine.LineWidth = 2;
+                hshadedError.patch.FaceColor = colorUse;
+                hshadedError.patch.MarkerEdgeColor = [ 1 1 1];
+                hshadedError.edge(1).Color = [colorUse 0.1];
+                hshadedError.edge(2).Color = [colorUse 0.1];
+                hshadedError.patch.FaceAlpha = 0.1;
+                hplt(m) = hshadedError.mainLine;
+            else
+                hplt = plot(x,y);
+                for hh = 1:length(hplt)
+                    hplt(hh).Color = [colorUse 0.4];
+                end
+                hplt(m) = hplt(hh);
+            end
+            titleUse = sprintf('%s %s',areas{a},freqUse{f});
+            title(titleUse); 
+            ylabel('Power (log_1_0\muV^2/Hz)');
+            xlabel('centered frequency (Hz)'); 
+%             plot(xrow,data);
+        end
+        legend(hplt,{'off - PKG estimate','on - PKG estimate'});
     end
-end
-datbox = []; 
-xvals  = []; 
-pvals  = []; 
-patients   = {}; 
-idxnum = 1; 
-titlsuse = {}; 
-
-idxuse = cellfun(@(x) any(strfind(x,'STN beta')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'STN beta';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'M1 gamma')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'motor cortex gamma';
-idxnum = idxnum + 1; 
-
-
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh beta')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence beta';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh gamma')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence gamma';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'all areas')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'all features';
-idxnum = idxnum + 1; 
-% XXXXXXX 
-% XXXXXXX
-% plot some stats: 
-fprintf('STN beta %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==1)),min(datbox(xvals==1)),max(datbox(xvals==1)));
-fprintf('M1 gamma %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==2)),min(datbox(xvals==2)),max(datbox(xvals==2)));
-fprintf('M1-STN coh beta  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==3)),min(datbox(xvals==3)),max(datbox(xvals==3)));
-fprintf('M1-STN coh gamma  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==4)),min(datbox(xvals==4)),max(datbox(xvals==4)));
-fprintf('all areas  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==5)),min(datbox(xvals==5)),max(datbox(xvals==5)));
-
-
-for i = 1:5
-    persig = sum(pvals(xvals==i)<0.05)/sum(xvals==i); 
-    fprintf('%s %.2f\n',titlsuse{i},persig); 
-end
-if plotpanels
-    hfig = figure;
-    hfig.Color = 'w';
-    hsb = subplot(1,1,1);
-else
-    hpanel(1,1,2).select();
-    hold on;
-    hsb = gca();
-end
-hold on; 
-nbp = notBoxPlot(datbox,xvals); 
-hold on;
-hsb.XTickLabel = titlsuse;
-hsb.XTickLabelRotation = 30;
-ylabel('AUC'); 
-ylim([0.4 1.1]);
-title('Decoding accuracy (AUC) per region and patient'); 
-set(gca,'FontSize',12);
-
-% color each subject with a different color 
-% segregate markers based on significance (marker style) 
-xvalsUse = unique(xvals);
-colorsSubs = [255 181 62; ...
-             0 0 87;...
-             177 63 0;...
-             0 102 8;...
-             204 255 102]./255;
-for i = 1:length(xvalsUse)
-    hdat = nbp(i).data;
-    xdat = hdat.XData;
-    ydat = hdat.YData;
-    patdat  = patients(xvals==i);
-    pvalsdat = pvals(xvals==i);
-    unqpat = unique(patdat);
-    delete(hdat); 
-    for p = 1:length(unqpat)
-        idxpat = strcmp(unqpat{p},patdat);
-        xpat = xdat(idxpat); 
-        ypat = ydat(idxpat); 
-        ppat = pvalsdat(idxpat); 
-        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),60,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.5);
-        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),60,'filled','s','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.5);
-    end
-end
-hLegend = legend(hsact,altPatientNames);
-hLegend.Box = 'off';
-hsb.XLim = [ 0 7.5];
-if plotpanels
-    % save fig as
-    set(gca,'FontSize',16);
-    savefig(hfig,fullfile(figdirout,'Fig5_panelC_AUC_all_subs_with_coherence'));
-    
-    prfig.plotwidth           = 10;
-    prfig.plotheight          = 7;
-    prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig5_panelC_AUC_all_subs_with_coherence';
-    prfig.figtype             = '-dpdf';
-    plot_hfig(hfig,prfig)
-    close(hfig);
-end
-
-if ~plotpanels
-    
-    hpanel.fontsize = 12;
-    hpanel(1).de.margin = 30;
-    hpanel.marginbottom = 40;
-    hpanel(1,2).de.margin = 10;
-    hpanel(1,2).de.marginbottom = 2;
-    hpanel(1,1).de.margin = 20;
-    hpanel.margin = [20 20 10 10];
-    prfig.plotwidth           = 10;
-    prfig.plotheight          = 7;
-    prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig5_all_final';
-    prfig.figtype             = '-dpdf';
-    plot_hfig(hfig,prfig)
-    % close(hfig);
 end
 %%
+
 return;
 
 %% panel s1 - all raw PSD data showcasing sleep - for all patients 

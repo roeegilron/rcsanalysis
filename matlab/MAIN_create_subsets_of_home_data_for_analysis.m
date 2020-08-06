@@ -97,8 +97,9 @@ try
     idxstim      = dbUse.stimulation_on == 0;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
@@ -112,8 +113,10 @@ try
     idxstimLev   = dbUse.amplitude_mA == 2.2;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
+
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_2.2');
@@ -129,8 +132,9 @@ try
     idxstim      = dbUse.stimulation_on == 0;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
@@ -144,8 +148,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 2.7;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_2.7');
@@ -154,6 +159,22 @@ end
 
 %% RCS05 L
 try
+    % before stim 
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS05');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % on stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS05');
     idxside      = strcmp(dbUse.side,'L');
@@ -162,8 +183,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 1.8;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
-    
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm;
+    idxScbsUsed = dbUse.recordedWithScbs == 1;
+
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_1.8');
@@ -172,6 +194,22 @@ end
 
 %% RCS05 R
 try
+    % before stim 
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS05');
+    idxside      = strcmp(dbUse.side,'R');
+    idxsense     = strcmp(dbUse.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % on stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS05');
     idxside      = strcmp(dbUse.side,'R');
@@ -180,8 +218,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 1.3;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_1.3');
@@ -190,6 +229,22 @@ end
 
 %% RCS06 L 
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS06');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS06');
     idxside      = strcmp(dbUse.side,'L');
@@ -199,8 +254,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 0.9;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_0.9');
@@ -208,6 +264,22 @@ end
 %%
 %% RCS06 R
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS06');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS06');
     idxside      = strcmp(dbUse.side,'R');
@@ -217,8 +289,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 0.9;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_0.9');
@@ -227,6 +300,22 @@ end
 
 %% RCS07 L
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS07');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % durning stim
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS07');
     idxside      = strcmp(dbUse.side,'L');
@@ -245,6 +334,22 @@ end
 %%
 %% RCS07 R
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS07');
+    idxside      = strcmp(dbUse.side,'R');
+    idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+    
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS07');
     idxside      = strcmp(dbUse.side,'R');
@@ -254,8 +359,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 1.8;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
-    
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+        
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_1.8');
@@ -264,6 +370,22 @@ end
 
 %% RCS08 L
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS08');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan1,'+2-0 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+    
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS08');
     idxside      = strcmp(dbUse.side,'L');
@@ -273,8 +395,9 @@ try
     idxstimLev   = dbUse.amplitude_mA == 2.7;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_2.7');
@@ -282,6 +405,22 @@ end
 %%
 %% RCS08 R
 try
+    % before stim
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS08');
+    idxside      = strcmp(dbUse.side,'R');
+    idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-450Hz lpf2-1700Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+    
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim 
     outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
     idxpat       = strcmp(dbUse.patient,'RCS08');
     idxside      = strcmp(dbUse.side,'R');
@@ -291,13 +430,26 @@ try
     idxstimLev   = dbUse.amplitude_mA == 1.7;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
-    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate;
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_1.7');
 end
 %%
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 return 

@@ -252,6 +252,7 @@ fnsave = sprintf('%s_%s_psdResults__%s.mat',database.patient{1},database.side{1}
 save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
 
 %% process actigraphy data 
+accResults = struct();
 if ~isempty(fieldnames( accProcDat))
     for a = 1:size(accProcDat,2)
         start = tic;
@@ -262,10 +263,10 @@ if ~isempty(fieldnames( accProcDat))
         datOut = processActigraphyData(dat,64);
         accMean  = mean(datOut);
         accVari  = mean(var(dat));
-        accResults(a).('accMean') = accMean;
-        accResults(a).('accVari') = accVari;
-        accResults(a).('timeStart') = accProcDat(a).timeStart;
-        accResults(a).('timeEnd') = accProcDat(a).timeEnd;
+        accResults.('accMean')(a) = accMean;
+        accResults.('accVari')(a) = accVari;
+        accResults.('timeStart')(a) = accProcDat(a).timeStart;
+        accResults.('timeEnd')(a) = accProcDat(a).timeEnd;
     end
     
     % check for outliers
@@ -388,6 +389,61 @@ coherenceResultsTd.timeEnd = [tdProcDat.timeEnd];
 fnsave = sprintf('%s_%s_coherenceResults__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'params','coherenceResultsTd','timeDomainFileDur','database')
 
+
+
+% save one big file 
+fnsave = sprintf('%s_%s_psdAndCoherence__%s.mat',database.patient{1},database.side{1}, label);
+save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
+save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+
+allDataCoherencePsd = struct();
+
+fieldnamesTd = fieldnames( fftResultsTd);
+for fn = 1:length(fieldnamesTd)
+    if strcmp(fieldnamesTd{fn},'ff')
+        fnuse = 'ffPsd';
+    elseif strcmp(fieldnamesTd{fn},'timeStart')
+        fnuse = 'timeStartTd';
+    elseif strcmp(fieldnamesTd{fn},'timeEnd')
+        fnuse = 'timeEndTd';
+    else
+        fnuse = fieldnamesTd{fn};
+    end
+    allDataCoherencePsd.(fnuse) = fftResultsTd.(fieldnamesTd{fn});
+end
+
+
+fieldnamesCoh = fieldnames( coherenceResultsTd);
+for fn = 1:length(fieldnamesCoh)
+    if strcmp(fieldnamesCoh{fn},'ff')
+        fnuse = 'ffCoh';
+    elseif strcmp(fieldnamesCoh{fn},'timeStart')
+        fnuse = 'timeStartCoh';
+    elseif strcmp(fieldnamesCoh{fn},'timeEnd')
+        fnuse = 'timeEndCoh';
+    else
+        fnuse = fieldnamesCoh{fn};
+    end
+    allDataCoherencePsd.(fnuse) = coherenceResultsTd.(fieldnamesCoh{fn});
+end
+
+fieldnamesAcc = fieldnames( accResults);
+for fn = 1:length(fieldnamesAcc)
+    if strcmp(fieldnamesAcc{fn},'ff')
+        fnuse = 'ffCoh';
+    elseif strcmp(fieldnamesAcc{fn},'timeStart')
+        fnuse = 'timeStartAcc';
+    elseif strcmp(fieldnamesAcc{fn},'timeEnd')
+        fnuse = 'timeEndAcc';
+    else
+        fnuse = fieldnamesAcc{fn};
+    end
+    allDataCoherencePsd.(fnuse) = accResults.(fieldnamesAcc{fn});
+end
+
+fnsave = sprintf('%s_%s_psdAndCoherence__%s.mat',database.patient{1},database.side{1}, label);
+save( fullfile(patdir,fnsave),'allDataCoherencePsd','database')
 
 
 

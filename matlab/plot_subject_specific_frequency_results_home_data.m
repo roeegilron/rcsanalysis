@@ -10,14 +10,17 @@ plotpanels = 1;
 % original function:
 % plot_pkg_data_all_subjects
 
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+
 if plotpanels
     hfig = figure;
     hfig.Color = 'w';
 end
 pdb = patientPSD_at_home;
-datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
 
 
 sides = {'L','R'};
@@ -289,7 +292,13 @@ for f = 1:length(freqUse)
         end
     
 end
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+save(fnsave,'outputTable');
 %% plot 
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+load(fnsave,'outputTable');
+
 plotShaded = 1;
 hfig = figure; 
 hfig.Color = 'w'; 
