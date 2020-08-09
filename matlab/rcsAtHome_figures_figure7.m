@@ -301,9 +301,11 @@ end
 %% loop on patients and plot a plot per patient with both the raw data and the violin plot 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
+addpath(genpath(fullfile(pwd,'toolboxes','Violinplot-Matlab/')));
+
 colorsuse = [0.5 0.5 0.5; 0 0.8 0]; 
 
-for p = 1:length(uniquePatients)
+for p = 3%1:length(uniquePatients)
     idxuse = strcmp(dataTable.patient, uniquePatients{p});
     patTable = dataTable(idxuse,:);
     % start figure 
@@ -411,30 +413,50 @@ x = 2;
 addpath(genpath(fullfile(pwd,'toolboxes','violin')));
 addpath(genpath(fullfile(pwd,'toolboxes','Violinplot-Matlab/')));
 clear plotstruc;
-for t = 1:length(toplot)
+dataTable = sortrows(dataTable,{'patient','side','stim'})
+colorsuse = [0.5 0.5 0.5; 0 0.8 0];
+for t = 1:size(dataTable)
     fnUse = sprintf('v%d',t);
 %     plotstruc.NotNumeric(t) = sum(~isnumeric(toplot{t}));
 %     plotstruc.NaN(t) = sum(isnan(toplot{t}));
 %     plotstruc.InF(t) = sum(isinf(toplot{t}));
-    plotstruc.(fnUse) = toplot{t};
+    plotstruc.(fnUse) = dataTable.meanbetafreq{t};
+    if dataTable.stim(t)
+        xtickalbs{t} = sprintf('%s %s %s',dataTable.patient{t},dataTable.side{t},'stim on');
+        ColorsUse(t,:) = colorsuse(1,:);
+    else
+        xtickalbs{t} = sprintf('%s %s %s',dataTable.patient{t},dataTable.side{t},'stim off');
+        ColorsUse(t,:) = colorsuse(2,:);
+    end
 end
-hfigure = figure;
+hfig = figure;
+hfig.Color = 'w';
 hSub = subplot(1,1,1);
 hviolin  = violinplot(plotstruc);
-ylabel('Average norm. beta power'); 
-hSub.XTick = xtics;
+
+ylabel('Average STN beta power'); 
+% hSub.XTick = xtics;
 hSub.XTickLabel  = xtickalbs;
 hSub.XTickLabelRotation = 30;
-ylim([-1.1 -0.45]);
 for h = 1:length(hviolin)
-    hviolin(h).ViolinPlot.FaceColor =  coloruse(h,:);
-    hviolin(h).ScatterPlot.CData    =  coloruse(h,:);
+    hviolin(h).ViolinPlot.FaceColor =  ColorsUse(h,:);
+    hviolin(h).ScatterPlot.CData    =  ColorsUse(h,:);
     hviolin(h).ViolinPlot.FaceAlpha =  0.3;
     hviolin(h).ShowData = 0;
 end
+hpanel.fontsize = 18; 
+figname = 'all_patient_chronic_stim';
+prfig.plotwidth           = 16;
+prfig.plotheight          = 12;
+prfig.figdir             = figdirout;
+prfig.figname             = figname;
+prfig.figtype             = '-djpeg';
+title('effect of chronic stim  STN beta');
 
-title('effect of chronic stim');
+plot_hfig(hfig,prfig)
 
+
+%%
 return 
 
 patients = {'RCS02','RCS05'}; 

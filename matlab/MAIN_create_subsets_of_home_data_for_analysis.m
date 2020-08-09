@@ -82,10 +82,25 @@ dropboxdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database
 reportsDir = fullfile(dropboxdir,'reports');
 databaseFile = fullfile(dropboxdir,'database_from_device_settings.mat');
 load(databaseFile);
-masterTableOut.allDeviceSettingsOut = allDeviceSettingsOut;
 idxkeep  = cellfun(@(x) istable(x),masterTableOut.stimStatus) & logical(masterTableOut.recordedWithScbs);
+idxkeep  = cellfun(@(x) istable(x),masterTableOut.stimStatus);
+
 dbUse    = masterTableOut(idxkeep,:); 
 dbUse.duration.Format = 'hh:mm:ss';
+
+%%
+    % off stim 
+    outputfolder = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS04');
+    idxstim      = dbUse.stimulation_on == 1;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithResearchApp == 1;
+    
+    idxconcat = idxpat   & idxstim & idxTdIsStrm  & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+
+%%
 
 %% RCS02 L
 try
