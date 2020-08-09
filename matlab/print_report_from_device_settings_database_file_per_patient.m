@@ -65,7 +65,7 @@ for p = 1:length(uniqPatients)
             dbUse.rate_Hz(ss) = dbUse.stimStatus{ss}.rate_Hz(1);
         end
         
-        fnSave = sprintf('%s_s_sense_stim_report.txt',uniqPatients{p},uniqSides{s});
+        fnSave = sprintf('%s_%s_sense_stim_report.txt',uniqPatients{p},uniqSides{s});
         fid = fopen(fullfile(reportsDir,fnSave),'w+');
         
         fprintf(fid, 'sensing and stimulation settings report of database size and settings\n\n\n');

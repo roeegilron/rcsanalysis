@@ -11,7 +11,8 @@ move_and_delete_folders(); % second call is to delete folders that are empty
 maintain_stim_sense_database();
 
 %% new way to matinain a database - replaces previous functions - needs to completly replace it 
-create_database_from_device_settings_files()
+dirname  = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/';
+create_database_from_device_settings_files(dirname)
 
 %% print reports using the new device settings file method 
 print_report_from_device_settings_database_file_per_patient

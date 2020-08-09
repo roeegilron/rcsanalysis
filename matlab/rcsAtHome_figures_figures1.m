@@ -3,13 +3,13 @@ function rcsAtHome_figures_figures1();
 close all force;clear all;clc;
 fignum = 4; % NA - it's a supplementary figure 
 addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS02 L pkg R.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS06 R pkg L.mat');
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Figs1_raw_data_across_subs';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs1_raw_data_across_subs';
 titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
 labelsCheck = [];
 combineareas = 1;
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/'; 
+rootdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 
 
@@ -17,23 +17,23 @@ hfig = figure;
 hfig.Color = 'w';
 hfig.Position = [1000         194        1387        1144];
 hpanel = panel();
-hpanel.pack(4,3); 
-hsb = gobjects(4,3);
+hpanel.pack(5,3); 
+hsb = gobjects(5,3);
 
-ff = findFilesBVQX(rootdir,'coherence_and_psd*.mat');
+ff = findFilesBVQX(rootdir,'coherence_and_psd*RCS*.mat');
 cntplt = 1; 
 nrows  = 4;
 ncols =  3; 
 datuse = {};
 
-linewidths = [0.2 0.6 0.03 0.03];
+linewidths = [0.2 0.6 0.03 0.03 0.2];
 areatitls = {'STN','motor cortex'};
 for f = 1:length(ff)
     [pn,fn,ext] = fileparts(ff{f}); 
     patients{f} = fn(19:23);     
 end
 uniquePatients = unique(patients); 
-patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04'};
+patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04','RCS05'};
 for p = 1:length(uniquePatients)
     fpts = ff(strcmp(uniquePatients{p},patients));
     stndata = [];
@@ -69,7 +69,9 @@ for p = 1:length(uniquePatients)
         else
             dat = m1_data;
         end
-        
+        if strcmp(uniquePatients{p},'RCS08')
+            psdResults.ff = allDataPkgRcsAcc.ffPSD;
+        end
         idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
         meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
         % the absolute is to make sure 1/f curve is not flipped
@@ -113,6 +115,9 @@ for p = 1:length(uniquePatients)
     hold on;
     r = ceil(size(coh_dat,1) .* rand(720,1));
     r = 1:5:size(coh_dat,1);
+    if strcmp(uniquePatients{p},'RCS08')
+        cohResults.ff = allDataPkgRcsAcc.ffCoh;
+    end
     reduce_plot(cohResults.ff', coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
     ylims = hsb(p,msr-1).YLim;
 %     plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);

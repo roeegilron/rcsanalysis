@@ -21,12 +21,13 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 cnttime = 1; 
 
 for ss = 1:size(database,1) 
-    [pn,fn] = fileparts( database.allDeviceSettingsOut{ss});
+    [pn,fn] = fileparts( database.deviceSettingsFn{ss});
     ff = findFilesBVQX(pn, 'proc*TD*.mat');
     if ~isempty(ff)
         processedTDFiles{ss,1} = ff{1};
         database.TdExist(ss) = 1; 
     else
+        processedTDFiles{ss,1} = '';
         database.TdExist(ss) = 0; 
     end
 end
@@ -89,12 +90,13 @@ save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database
 cnttime = 1; 
 
 for ss = 1:size(database,1) 
-    [pn,fn] = fileparts( database.allDeviceSettingsOut{ss});
+    [pn,fn] = fileparts( database.deviceSettingsFn{ss});
     ff = findFilesBVQX(pn, 'processedAccData.mat');
     if ~isempty(ff)
         processedActigraphyFiles{ss,1} = ff{1};
         database.AccExist(ss) = 1; 
     else
+        processedActigraphyFiles{ss,1} = '';
         database.AccExist(ss) = 0; 
     end
 end
