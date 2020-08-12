@@ -135,7 +135,9 @@ taskDataLocs = taskDataLocs(idsUse,:);
 idsUse = strcmp(taskDataLocs.patient,'RCS07') | strcmp(taskDataLocs.patient,'RCS08');
 
 idsUse = strcmp(taskDataLocs.patient,'RCS07');
-taskDataLocs = taskDataLocs(idsUse,:);
+% taskDataLocs = taskDataLocs(idsUse,:);
+% XXXX
+% XXXX
 
 handBrainRelation = {'contralateral','ipsilateral'};
 ccc = 1;
@@ -308,7 +310,8 @@ for ttt = 1:size(taskDataLocs)
             taskData.idxUseRxGenTime(tt,1) = idxUseRxGenTime;
         end
         
-        analysisToDo = {'center_prep','center_move'};
+        analysisToDo = {'center_prep','center_move','center_keyUp'};
+        analysisToDo = {'center_keyUp'};
         for aaa = 1:length(analysisToDo)
             timeparams = getTaskTimings(taskData,analysisToDo{aaa});
             %% plot ipad data based on this alligmment
@@ -501,6 +504,80 @@ switch analysisType
             
             if inMove & any(strfind(x,'KeyUp'))
                 keyUpDuringMove = 1;
+            end
+            
+            if ~inMove & any(strfind(x,'KeyUp'))
+                keyUpDuringMove = 0;
+            end
+            
+            if keyUpDuringMove & ~badTrial
+                prepRCidx(idxcnt,1) = idxMove;
+                idxcnt = idxcnt + 1;
+            end
+            
+            
+            cnt = cnt + 1;
+        end
+        
+        unqRCidxs = unique(prepRCidx);
+        
+        timeparams.RCidxUse                    = unqRCidxs;
+        timeparams.start_epoch_at_this_time    =  -1000;%-8000; % ms relative to event (before), these are set for whole analysis
+        timeparams.stop_epoch_at_this_time     =  1000; % ms relative to event (after)
+        timeparams.start_baseline_at_this_time =  -1000;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
+        timeparams.stop_baseline_at_this_time  =  0;%5-6000; % ms relative to event
+        timeparams.extralines                  = 0; % plot extra line
+        timeparams.extralinesec                = 3000; % extra line location in seconds
+        timeparams.analysis                    = analysisType;
+        timeparams.filtertype                  = 'ifft-gaussian' ; % 'ifft-gaussian' or 'fir1'
+        
+    case 'center_keyUp'
+        %% get idx for event
+        cnt = 1;
+        idxcnt = 1;
+        lookForKeyUp = 0;
+        
+        inFixation = 0;
+        keyDownDuringFixation = 0;
+        inPrep = 0;
+        keyUpDuringPrep = 0;
+        inMove = 0;
+        keyUpDuringMove = 0;
+        while cnt <= size(taskData.event,1)
+            x = taskData.event{cnt};
+            
+            % prep
+            if  any(strfind(x,'PREP start'))
+                inPrep = 1;
+                badTrial = 0;
+            end
+            if  any(strfind(x,'PREP end'))
+                inPrep = 0;
+            end
+            
+            if inPrep & any(strfind(x,'KeyUp'))
+                keyUpDuringPrep = 1;
+            end
+            if ~inPrep & any(strfind(x,'KeyUp'))
+                keyUpDuringPrep = 0;
+            end
+            if keyUpDuringPrep
+                badTrial = 1;
+            end
+            % move
+            if  any(strfind(x,'MOVE start'))
+                inMove = 1;
+                
+            end
+            if  any(strfind(x,'MOVE end'))
+                inMove = 0;
+            end
+            
+            
+            
+            if inMove & any(strfind(x,'KeyUp'))
+                keyUpDuringMove = 1;
+                idxMove = taskData.idxUseRxUnixTime(cnt);
             end
             
             if ~inMove & any(strfind(x,'KeyUp'))

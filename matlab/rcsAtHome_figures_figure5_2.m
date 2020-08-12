@@ -147,7 +147,7 @@ else
     hsb = gca();
 end
 hold on; 
-nbp = notBoxPlot(datbox,xvals); 
+nbp = notBoxPlot(datbox,xvals,'jitter',0.6); 
 hold on;
 hsb.XTickLabel = titlsuse;
 hsb.XTickLabelRotation = 30;
@@ -166,7 +166,14 @@ colorsSubs = [ ...
     178,75,112; ...
     109,128,176; ...
     187,111,61]./255;
-markerSize = 100;
+markerSizeSig = 50;
+markerSizeNotSig = 20;
+for i = 1:length(xvalsUse)
+    nbp(i).sdPtch.FaceAlpha = 0.0;
+    nbp(i).sdPtch.FaceColor = [0.1 0.1 0.1];
+    nbp(i).semPtch.FaceAlpha = 0.0;
+    nbp(i).semPtch.FaceColor = [0.0 0.0 0.8];
+end
 for i = 1:length(xvalsUse)
     hdat = nbp(i).data;
     xdat = hdat.XData;
@@ -180,8 +187,8 @@ for i = 1:length(xvalsUse)
         xpat = xdat(idxpat); 
         ypat = ydat(idxpat); 
         ppat = pvalsdat(idxpat); 
-        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),markerSize,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
-        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),markerSize,'filled','s','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
+        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),markerSizeSig,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
+        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),markerSizeNotSig,'filled','v','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
     end
 end
 hLegend = legend(hsact,altPatientNames);
@@ -283,7 +290,7 @@ xlim([0.7 1.1]);
 ylim([0 20]);
 
 
-
+%%
 if ~plotpanels
     
     hpanel.fontsize = 12;
@@ -295,7 +302,7 @@ if ~plotpanels
     prfig.plotwidth           = 10;
     prfig.plotheight          = 7;
     prfig.figdir              = figdirout;
-    prfig.figname             = 'Fig5_v2_AUC_and_updrs';
+    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v3';
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     % close(hfig);

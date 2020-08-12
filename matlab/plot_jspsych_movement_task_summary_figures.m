@@ -24,7 +24,7 @@ idxchoose = cellfun(@(x) any(strfind(x,'1000Hz')), masterTableUse.chan4) & ...
             ((masterTableUse.stimulation_on & masterTableUse.active_recharge) | (~masterTableUse.stimulation_on));
 masterTableUse = masterTableUse(idxchoose,:);
 % find matched for master table use (contra lateral only) 
-ff = findFilesBVQX(resdir,['*contra*move' '*.mat']);
+ff = findFilesBVQX(resdir,['*contra*keyUp' '*.mat']);
 metaData = table();
 potentialResultsFiles = table();
 for f = 1:length(ff)
@@ -186,7 +186,7 @@ hpanel.marginright = 15;
 hfig = gcf;
 hfig.PaperSize = [12 8];
 hfig.PaperPosition = [0 0 12 8];
-fnmsv = sprintf('all_patient_center_move__left_and_right_CONTRA_-zscore_%s_%s',chanelsPlotLabels{ci});
+fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_%s',chanelsPlotLabels{ci});
 print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r300');
 
 

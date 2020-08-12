@@ -110,8 +110,60 @@ if plotthis
     params.figname = 'on_off_meds_all_patients_3rd_try_v1_normed_all_psd';
     plot_hfig(hfig,params)
 end
+%% plot coherence table as well 
+uniquePatiets = unique(patientPSD_in_clinic.patient); 
+medStates     = unique(patientPSD_in_clinic.medstate); 
+posSides      = unique(patientPSD_in_clinic.side); 
+uniqeElec     = unique(patientPSD_in_clinic.electrode); 
+m1Elecs       = uniqeElec(1:2);
+stnElecs      = uniqeElec(3:4);
+%%
+patientCOH_in_clinic = table();
+cntOut = 1; 
+for p = 1:length(uniquePatiets) % loop on patients 
+    for m = 1:length(medStates)
+        for s = 1:length(posSides)
+            for c = 1:length(m1Elecs)
+                for n = 1:length(stnElecs)
+                    idxSTN    =  strcmp(patientPSD_in_clinic.patient,uniquePatiets{p}) & ...
+                                 strcmp(patientPSD_in_clinic.medstate, medStates{m}) & ... 
+                                 strcmp(patientPSD_in_clinic.side,posSides{s}) & ...
+                                 strcmp(patientPSD_in_clinic.electrode,stnElecs{n});
+                             
+                    idxM1     =  strcmp(patientPSD_in_clinic.patient,uniquePatiets{p}) & ...
+                                 strcmp(patientPSD_in_clinic.medstate,medStates{m}) & ...
+                                 strcmp(patientPSD_in_clinic.side,posSides{s}) & ...
+                                 strcmp(patientPSD_in_clinic.electrode,m1Elecs{c});
+
+                    chan1 = stnElecs{n};
+                    chan2 = m1Elecs{c};
+                    x = patientPSD_in_clinic(idxSTN,:).rawdata{1};
+                    y = patientPSD_in_clinic(idxM1,:).rawdata{1};
+                    Fs = patientPSD_in_clinic(idxSTN,:).srate{1};
+                    [Cxy,F] = mscohere(x',y',...
+                        2^(nextpow2(Fs)),...
+                        2^(nextpow2(Fs/2)),...
+                        2^(nextpow2(Fs)),...
+                        Fs);
+                    patientCOH_in_clinic.patient{cntOut} = uniquePatiets{p};
+                    patientCOH_in_clinic.side{cntOut} = posSides{s};
+                    patientCOH_in_clinic.medstate{cntOut} = medStates{m};
+                    patientCOH_in_clinic.chan1{cntOut} = chan1;
+                    patientCOH_in_clinic.chan2{cntOut} = chan2;
+                    patientCOH_in_clinic.srate{cntOut} = Fs;
+                    patientCOH_in_clinic.mscoherence{cntOut} = Cxy;
+                    patientCOH_in_clinic.ffCoh{cntOut} = F;
+                    cntOut = cntOut + 1; 
+                end
+            end
+        end
+    end
+end
+%%
+
 fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
-save(fnmsave,'patientPSD_in_clinic');
+save(fnmsave,'patientPSD_in_clinic','patientCOH_in_clinic');
+
 return
 %% plot PAC 
 dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';

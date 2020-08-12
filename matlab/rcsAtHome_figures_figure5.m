@@ -8,28 +8,27 @@ function rcsAtHome_figures_figure5()
 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 %%
-hfig = figure; 
-p = panel();
-p.pack(1,2); 
-p(1,1).pack('v',{1/3 1/3 1/3});
-p(1,2).pack('v',{1/3 2/3}); 
-p.select('all');
-p.fontsize = 30;
-p.identify();
-plotpanels = 0; % plot the big figure;
+    hfig = figure;
+    hfig.Color = 'w';
+    hpanel = panel();
+    hpanel.pack(1,2);
+    hpanel(1,2).pack('v',{1/3 1/3 1/3});
+    hpanel(1,1).pack('v',{1/3 2/3}); 
+    hpanel.select('all');
+    hpanel.identify();
 % p(1,1).repack(0.3);
 %%
 
 close all;
-
+plotpanels = 0;
 if ~plotpanels
     %%
     hfig = figure;
     hfig.Color = 'w';
     hpanel = panel();
     hpanel.pack(1,2);
-    hpanel(1,1).pack('v',{1/3 1/3 1/3});
-    hpanel(1,2).pack('v',{1/3 2/3}); 
+    hpanel(1,2).pack('v',{1/3 1/3 1/3});
+    hpanel(1,1).pack('v',{1/3 2/3}); 
 %     hpanel.select('all');
 %     hpanel.identify();
     %%
@@ -42,6 +41,7 @@ figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recor
 figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 % origina funciton used: plot_pkg_data_all_subjects
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
 resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
 ff = findFilesBVQX(resultsdir,'RCS*.mat'); 
 tbl = table();
@@ -72,8 +72,9 @@ if plotpanels
     hsb = subplot(1,1,1);
     hsb(cntplt) = hsb; 
 else
-    hpanel(1,2,2).select();
+    hpanel(1,1,1).select();
     hsb = gca();
+    hold(hsb,'on');
 end
 
 hbar = bar(recTime);
@@ -102,18 +103,19 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 
 % original function:
 % plot_pkg_data_all_subjects
 
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/patientPSD_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/patientCOH_at_home.mat');
 if plotpanels
     hfig = figure;
     hfig.Color = 'w';
 end
 pdb = patientPSD_at_home;
-datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/';
 
 
 sides = {'L','R'};
@@ -358,7 +360,7 @@ for a = 1:length(areas)
         hsb(cntplt) = subplot(nrows,ncols,cntplt);hold on;
         cntplt = cntplt + 1;
     else
-        hpanel(1,2,cntplt,1).select();
+        hpanel(1,2,cntplt).select();
         hold on;
         cntplt = cntplt + 1;
         hsb = gca();
@@ -414,7 +416,7 @@ if plotpanels
     hsb(cntplt) = subplot(nrows,ncols,cntplt);hold on;
     cntplt = cntplt + 1;
 else
-    hpanel(1,2,cntplt,1).select();
+    hpanel(1,1,cntplt).select();
     hold on;
     cntplt = cntplt + 1;
     hsb = gca();
@@ -549,16 +551,14 @@ fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
 load(fnsave,'outputTable');
 
 plotShaded = 1;
-hfig = figure; 
-hfig.Color = 'w'; 
-p = panel();
-p.pack(3,2); 
+hsb = hpanel(1,1,2).select();
 freqUse = {'beta','gamma'};
+freqUse = {'beta'};
 areas = {'STN','M1'};
+areas = {'STN'};
 medstates = {'off','on'};
 for f = 1:length(freqUse)
     for a = 1:length(areas)
-        hsb = p(a,f).select(); 
         hold(hsb,'on');
         for m = 1:length(medstates)
             idxFreq = strcmp(outputTable.freqUse ,freqUse{f});
@@ -603,9 +603,26 @@ for f = 1:length(freqUse)
         legend(hplt,{'off - PKG estimate','on - PKG estimate'});
     end
 end
+%% plot panel
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+
+hpanel.fontsize = 10;
+hpanel.de.margin = 20;
+hpanel.marginbottom = 15;
+hpanel.marginright = 15;
+hpanel.margintop = 15;
+hpanel.marginleft = 15;
+prfig.plotwidth           = 8;
+prfig.plotheight          = 7;
+prfig.figdir              = figdirout;
+prfig.figname             = 'Fig5_v1_pkg_and_hours_recorded_partial';
+prfig.figtype             = '-dpdf';
+plot_hfig(hfig,prfig)
 %%
 
 return;
+
+
 
 %% panel s1 - all raw PSD data showcasing sleep - for all patients 
 close all force;clear all;clc;

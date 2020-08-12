@@ -4,14 +4,25 @@ close all;
 plotpanels = 0;
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 if ~plotpanels
-    hfig = figure;
-    hfig.Color = 'w';
-    hpanel = panel();
-    hpanel.pack(2,2);
-    hpanel(1,1).pack(4,1); % panel a raw stn and m1 data 
-    hpanel(2,1).pack(2,1); % panel c example in data recording 
-%     hpanel.select('all');
-%     hpanel.identify();
+    %%
+    close all;
+    for i = 1
+        hfig = figure;
+        hfig.Color = 'w';
+        hpanel = panel();
+        hpanel.pack('h',{0.25 0.75/2 0.75/2});
+        hpanel(1).pack('v',{0.5 0.5});
+        hpanel(1,1).pack(4,1);
+        hpanel(2).pack(3,1); % panel a raw stn and m1 data
+        hpanel(3).pack(3,1); % panel a raw stn and m1 data
+        if i == 1
+%             hpanel.select('all');
+%             hpanel.identify();
+        end
+    end
+    %%
+    
+
 end
 %%
 
@@ -20,7 +31,8 @@ fignum = 3;
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig3_data_examples_in_clinic';
 % original function:
 % plot_chopped_data_comparisons
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientRAWDATA_in_clinic.mat');
+load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientRAWDATA_in_clinic.mat')
+
 idxuse = strcmp(datTbl.patient,'RCS07') & ...
     strcmp(datTbl.side,'R') & ...
     strcmp(datTbl.med,'off' );
@@ -91,6 +103,8 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 3; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures';
 load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientPSD_in_clinic.mat');
+% load(fnmsave,'patientPSD_in_clinic','patientCOH_in_clinic');
+
 % original function:
 % plot_chopped_data_comparisons
 colorsUse   = [ 0 0.8 0 0.5; 0.8 0 0 0.5];
@@ -102,10 +116,10 @@ if plotpanels
     hfig = figure;
     hfig.Color = 'w';
 end
-hsb = gobjects(2,1);
+hsb = gobjects(3,1);
 for e = 1:2
     if ~plotpanels
-        hsb(e,1) = hpanel(2,1,cntplt,1).select(); cntplt = cntplt + 1;
+        hsb(e,1) = hpanel(2,cntplt,1).select(); cntplt = cntplt + 1;
     else
         hsb(1) = subplot(2,1,cntplt); cntplt = cntplt +1;
     end
@@ -119,22 +133,41 @@ for e = 1:2
         plot(datTabl.ff{idxuse},datTabl.fftOutNorm{idxuse},'LineWidth',4,'Color',colorsUse(m,:));
         
     end
-    xlim([3.5 89.5]);
-    xlim([3.5 200]);
+    xlim(hsb(e,1),[3.5 89.5]);
     ttluse = sprintf('%s',electrodes{e});
     title(ttluse,'FontName','Arial','FontSize',16);
     set(gca,'FontName','Arial','FontSize',16);
     
     ylabel('Norm. Power','FontName','Arial','FontSize',11);
-
+    
     if e == 1
         legend({'defined on','defined off'},'FontName','Arial','FontSize',10);
-        hsb(e,1).XTick = []; 
-    else
-        xlabel('Frequency (Hz)','FontName','Arial','FontSize',11);
     end
-    
+    hsb(e,1).XTick = [];
 end
+% plot coherence between 
+hsb(cntplt,1) = hpanel(2,cntplt,1).select();
+hsb = hsb(cntplt,1);
+hold(hsb,'on');
+for m = 1:2
+    idxCoh    = strcmp(patientCOH_in_clinic.patient,'RCS02') & ...
+        strcmp(patientCOH_in_clinic.side,'R') & ...
+        strcmp(patientCOH_in_clinic.chan1,'STN 0-2') & ...
+        strcmp(patientCOH_in_clinic.chan2,'M1 9-11') & ...
+         strcmp(patientCOH_in_clinic.medstate,medstates{m} );
+    
+    cohPlot = patientCOH_in_clinic(idxCoh,:);
+    x = cohPlot.ffCoh{1};
+    y = cohPlot.mscoherence{1};
+    plot(x,y,...
+        'LineWidth',4,'Color',colorsUse(m,:));
+end
+xlabel('Frequency (Hz)','FontName','Arial','FontSize',11);
+ylabel('ms coherence'); 
+title('coherence between STN and MC'); 
+xlim(hsb,[3.5 89.5]);
+
+        
 
 if plotpanels
     prfig.plotwidth           = 4;
@@ -157,7 +190,7 @@ figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recor
 %plot normalized data across patients 
 dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
 fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
-load(fnmsave,'patientPSD_in_clinic');
+load(fnmsave);
 
 
 pdb = patientPSD_in_clinic;
@@ -176,29 +209,24 @@ if plotpanels
     hfig.Color = 'w';
 end
 
-% loop on area 
+% loop on area and do STATS PSDS for all patients 
 areas = {'STN 1-3','M1 8-10'}; 
+areas = {'STN','M1'}; 
 titlesUse = {'STN contacts','M1 contacts'};
-areas = {'STN 1-3'}; 
-if length(areas) == 2 
-    hpanel(2,2).pack(2,1);
-end
+
 medstatecheck = {'on','off'};
 colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
 for a = 1:length(areas)
     if ~plotpanels
-        if length(areas) == 2 
-            hsb(e,2) = hpanel(2,2,a,1).select(); cntplt = cntplt + 1;
-        else
-            hsb(e,1) = hpanel(2,2).select(); cntplt = cntplt + 1;
-        end
+        hsb(e,2) = hpanel(3,a,1).select(); cntplt = cntplt + 1;
     else
         subplot(1,1,a);
     end
 
     hold on;
     for m = 1:length(medstatecheck) 
-        idxkeep = strcmp(pdb.electrode,areas{a}) &  strcmp(pdb.medstate,medstatecheck{m});
+        idxkeep = cellfun(@(x) any(strfind(x,areas{a})), pdb.electrode) &  ...
+                  strcmp(pdb.medstate,medstatecheck{m});
         idxkeepout(:,m) = idxkeep;
         fftout  = psdall(idxkeep,:); 
         
@@ -300,13 +328,128 @@ for a = 1:length(areas)
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     legend(hLine,{'defined on','defined off'});
     xlim([5 90]);
-    xlabel('Frequency (Hz)');
-    ylabel('Norm. frequency');
+%     xlabel('Frequency (Hz)');
+    ylabel('Norm. power');
+    hsb = gca;
+    hsb.XTick = [];
     title(titlesUse{a});
     set(gca,'FontSize',16);
 end
 
 
+
+
+
+% loop on area and do STATS COHERNCE  for all patients 
+areas = {'STN 1-3','M1 8-10'}; 
+areas = {'STN','M1'}; 
+titlesUse = {'STN contacts','M1 contacts'};
+
+medstatecheck = {'on','off'};
+colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
+pdb = patientCOH_in_clinic;
+psdall = []; 
+ff = []; 
+for i = 1:size(pdb)
+    ff = pdb.ffCoh{i};
+    idxnorm = ff >=5 & ff <=90;
+    psdall(i,:) = pdb.mscoherence{i}(idxnorm)';
+end
+
+
+hsb(3,2) = hpanel(3,3,1).select(); cntplt = cntplt + 1;
+hold on;
+for m = 1:length(medstatecheck)
+    idxkeep = strcmp(pdb.medstate,medstatecheck{m});
+    idxkeepout(:,m) = idxkeep;
+    fftout  = psdall(idxkeep,:);
+    
+    x = ff(idxnorm);
+    y = fftout;
+    % stadnard error or mean
+    hsbH = shadedErrorBar(x',y,{@median,@(y) std(y)./sqrt(size(y,1))});
+    % 1 std
+    %       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1});
+    
+    hsbH.mainLine.Color = colorsuse(m,:);
+    hsbH.mainLine.LineWidth = 3;
+    hsbH.patch.FaceAlpha = 0.1;
+    hsbH.patch.FaceColor = colorsuse(m,1:3);
+    hsbH.edge(1).Color = [1 1 1];
+    hsbH.edge(2).Color = [1 1 1];
+    hLine(m) = hsbH.mainLine;
+end
+
+
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+idxstats = (idxkeepout(:,1) | idxkeepout(:,2));
+pdbSTN = pdb(idxstats,:);
+
+% groups:
+
+% id = subject id
+% percent  = beta level averaged between 13-30
+% month - categorical med on/off
+% X - matrix of conditions incdluing (numerical):
+%  1. med state (on/off)
+%  2. side (L/R)
+%  3. montage (0-2 / 1-3)
+uniquePatients = unique(pdbSTN.patient);
+id = zeros(size(pdbSTN,1),1);
+for p = 1:length(uniquePatients)
+    for i = 1:size(pdbSTN,1)
+        id( strcmp(pdbSTN.patient,uniquePatients{p}) ) = p;
+    end
+end
+
+medstate = zeros(size(pdbSTN,1),1);
+medstate( strcmp(pdbSTN.medstate,'on') ) = 1;
+medstate( strcmp(pdbSTN.medstate,'off') ) = 2;
+
+side = zeros(size(pdbSTN,1),1);
+side( strcmp(pdbSTN.side,'L') ) = 1;
+side( strcmp(pdbSTN.side,'R') ) = 2;
+
+
+
+% do stats for each frequency
+psdcheck = psdall(idxstats,:);
+for f = 1:size(freqschecking,2)
+    meanfreq = [] ;
+    meanfreq = psdcheck(:,f);
+    const = ones(size(meanfreq,1),1);
+    X = [medstate, side, const];
+    varnames ={'med state','side','const'};
+    [betahat, alphahat, results] = gee(id, meanfreq, medstate, X, 'n', 'equi', varnames);
+    pvals(f) = results.model{3,5};
+end
+siglog = logical(pvals <= (0.05./length(freqschecking))  );
+freqssig = freqschecking(siglog);
+cntsig = 1;
+xfreqssig = [];
+D = diff([0,siglog,0]);
+b.beg = find(D == 1);
+b.end = find(D == -1) - 1;
+xfreqssig(:,1) = freqschecking(b.beg);
+xfreqssig(:,2) = freqschecking(b.end);
+ylims = get(gca,'YLim');
+if ~isempty(xfreqssig)
+    plot(xfreqssig,[ylims(2) ylims(2)],'Color',[0.5 0.5 0.5],'LineWidth',2);
+end
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+% %%%%%%%%%%%%%%%%%%%%%%%%% do stats
+legend(hLine,{'defined on','defined off'});
+xlim([5 90]);
+
+xlabel('Frequency (Hz)');
+ylabel('Norm. frequency');
+title(titlesUse{a});
+set(gca,'FontSize',16);
+
+hsb(3,2).YLim(1) = 0;
 
 if plotpanels
     sgtitle('Defined on/off in clinic (8 STNs, 5 patients)','FontSize',12);
@@ -359,7 +502,7 @@ ttlsuse{1,1} = 'Movement related cortical activity';
 ttlsuse{1,2} = 'motor cortex 8-10'; 
 title(ttlsuse); 
 % to plot vecot uncomment this 
-delete(hp);
+% delete(hp);
 % to plot jpeg on comment this: 
 delete(hline); 
 hsb.Box = 'off';
@@ -376,20 +519,20 @@ if ~plotpanels
     %% plot all 
     figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig3_data_examples_in_clinic';
     hpanel.fontsize = 10;
-    hpanel.margin = [20 20 27 12];
-    hpanel(1,1).marginright = 30;
-    hpanel(2,1).marginright = 30;
-    hpanel(2,1).margintop = 30;
-    hpanel(1,1).de.margin = 2;
-    hpanel(2,1).de.margin = 10; 
+    hpanel.de.margin = 10;
+    hpanel(1).marginright = 40;
+    hpanel(2).marginright = 15;
     
-    prfig.plotwidth           = 7;
+
+    
+    
+    prfig.plotwidth           = 10;
     prfig.plotheight          = 7;
     prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig3_all_nomovement_just_stn_vector';
+    prfig.figname             = 'Fig3_all_nomovement_just_stn_vector_v5_not_vector';
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
-
+    %%
 end
 return 
 

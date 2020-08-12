@@ -119,9 +119,9 @@ for p = 1:length(uniquePatients) % loop on patients
                 cnls  =  [0  1  2  3  0  1  2  3  ];
                 freqs =  [19 19 14 26 55 55 61 61];
                 ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
-                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
                 allstates = rawstates; % make syre all states is "raw slate". 
@@ -308,9 +308,20 @@ cntbl = 1;
 unqPatients = unique(patientPSD_at_home.patient); 
 areaStr = {'STN','M1','coh'};
 plotShaded = 1;
+cntPvalRes = 1; 
+tblPvalResults = table();
 for pp = 1:length(unqPatients)
     idxPatient = strcmp(patientPSD_at_home.patient,unqPatients{pp});
     patientTable = patientPSD_at_home(idxPatient,:);
+    % only use some of the states 
+    % XXX 
+    idxUseStates = strcmp(patientTable.medstate,'off') | strcmp(patientTable.medstate,'on');
+    strUse = 'off_vs_on_vs_sleep_sig';
+    % XXX 
+    patientTable = patientTable(idxUseStates,:);
+    freqsCheckSignificance = 3:100; 
+    numberMultipleComparisons = length(freqsCheckSignificance) * size(patientTable,1);
+    effectivePValue = 0.05/numberMultipleComparisons; % this is Bonforoni correction - may neeed to do FDR... 
     hfig = figure;
     hfig.Color = 'w';
     p = panel();
@@ -378,7 +389,74 @@ for pp = 1:length(unqPatients)
                     xlim([3 100]);
                     grid on; 
                     hsb.XTick = [10:10:100];
+                    yout{tt} = y; 
+                end
+                % plot significance 
+                [h,pvals ] = ttest2(yout{1},yout{2});
+                [h,pvals ] = ranksum(yout{1}(:,1),yout{2}(:,1));
+                pvals = [];
+                for ppp = 1:length(x)
+                    [pvals(ppp),h ] = ranksum(yout{1}(:,ppp),yout{2}(:,ppp));
+                end
+                sigValues = pvals <= effectivePValue;
+                
+                Xsig = x(sigValues);
+                ylims = hsb.YLim;
+                scatter(Xsig,repmat(ylims(2),length(Xsig),1),'filled','MarkerFaceColor',[0.5 0.5 0.5],'MarkerFaceAlpha',0.5);
+                freqsCheck = {'alpha','beta','gamma'}; 
+                freqsNums  = [6 15; 12 30; 70 90];
+                NumberMultipleComparisons = size(patientTable,1)/2 * length(freqsCheck);
+                for fq = 1:length(freqsCheck)
+                    tblPvalResults.patient{cntPvalRes}    = tablePlot.patient{1};
+                    tblPvalResults.side{cntPvalRes} = tablePlot.side{1};
+                    tblPvalResults.electrode{cntPvalRes} = tablePlot.electrode{1};
+                    tblPvalResults.freqName{cntPvalRes}  = freqsCheck{fq};
 
+                    
+                    idxfreqs = x >= freqsNums(fq,1) & x <freqsNums(fq,2);
+                    [pval,h ] = ranksum(mean(yout{1}(:,idxfreqs),2),...
+                                              mean(yout{2}(:,idxfreqs),2));
+                    [h,pvalTtest] = ttest2(mean(yout{1}(:,idxfreqs),2),...
+                                              mean(yout{2}(:,idxfreqs),2));
+                    youtFreqsBins{1} = yout{1}(:,idxfreqs);
+                    youtFreqsBins{2} = yout{2}(:,idxfreqs);
+                    
+                    % compute the peaks
+                    y = [youtFreqsBins{1} ; youtFreqsBins{2}];
+                    % plot the max 10%
+                    maxYs = max(y,[],2);
+                    [~,idxplot] = maxk(maxYs,ceil(0.1*size(y,1)) );
+                    yPlot = y(idxplot,:);
+                    
+                    dataFindPeaks = mean(yPlot',2);
+                    
+                    [pks,locs] = findpeaks(dataFindPeaks,'MinPeakDistance',length(dataFindPeaks)-2,'MinPeakProminence',range(dataFindPeaks)*0.2);
+                    % does it have a peak?
+                    if ~isempty(pks)
+                        tblPvalResults.peakExists(cntPvalRes)  = 1;
+                        % redo test in freq specific manner 
+                        freqsUseForPeaksAlgo = x(idxfreqs);
+                        peakFreq             = freqsUseForPeaksAlgo(locs);
+                        idxfreqsPeak = x <= (peakFreq+1.5) & x >= (peakFreq-1.5);
+                        [pval,h ] = ranksum(mean(yout{1}(:,idxfreqsPeak),2),...
+                            mean(yout{2}(:,idxfreqsPeak),2));
+                        [h,pvalTtest] = ttest2(mean(yout{1}(:,idxfreqsPeak),2),...
+                            mean(yout{2}(:,idxfreqsPeak),2));
+                    else
+                        tblPvalResults.peakExists(cntPvalRes)  = 0;
+                    end
+                    
+                    tblPvalResults.rawData{cntPvalRes}  = youtFreqsBins;
+                    tblPvalResults.freqRange(cntPvalRes,:)  = freqsNums(fq,:);
+                    tblPvalResults.frqNumbersHz{cntPvalRes}  = x(idxfreqs);
+                    tblPvalResults.rawPval_ManWitney(cntPvalRes)  = pval;
+                    tblPvalResults.sigCorrected_ManWitney(cntPvalRes)  = pval <= (0.001/NumberMultipleComparisons);
+                    tblPvalResults.rawPval_Ttest(cntPvalRes)  = pvalTtest;
+                    tblPvalResults.sigCorrected_Ttest(cntPvalRes)  = pvalTtest <= (0.001/NumberMultipleComparisons);
+                    tblPvalResults.p_value_001(cntPvalRes)  = 0.001/NumberMultipleComparisons;
+                    tblPvalResults.p_value_05(cntPvalRes)  = 0.05/NumberMultipleComparisons;
+                    
+                    cntPvalRes = cntPvalRes + 1;
                 end
             end
         end
@@ -386,12 +464,186 @@ for pp = 1:length(unqPatients)
     prfig.plotwidth           = 12;
     prfig.plotheight          = 9;
     prfig.figdir             = figdirout;
-    prfig.figname             = sprintf('%s_%s_individ_psd_states',tablePlot.patient{tt},strUse);
+    prfig.figname             = sprintf('%s_%s_individ_psd_states_with_sig_man_witney',tablePlot.patient{tt},strUse);
     prfig.figtype             = '-dpdf';
-    plot_hfig(hfig,prfig)
+%     plot_hfig(hfig,prfig)
     close(hfig);
 
 end
+%% plot significance in particaular frequencey ranges 
+hfig = figure; 
+hfig.Color = 'w'; 
+hsb = subplot(1,1,1); 
+hold(hsb,'on'); 
+areas = {'STN','M1','coh'};
+cnt = 1; 
+unqPatients = unique(tblPvalResults.patient); 
+imagePlot = [];
+for f = 1:length(freqsCheck)
+    for a = 1:length(areas)
+        for p = 1:length(unqPatients)
+            unqIdxs = strcmp(freqsCheck{f},tblPvalResults.freqName) & ...
+                strcmp(unqPatients{p},tblPvalResults.patient) & ...
+                cellfun(@(x) any(strfind(x,areas{a})),tblPvalResults.electrode);
+            tblUse = tblPvalResults(unqIdxs,:);
+            if sum(tblUse.sigCorrected_Ttest & tblUse.peakExists)>=1
+                clrUse = [0 0.8 0.2];
+            else
+                clrUse = [0.8 0 0.2];
+            end
+            x = p;
+            y = cnt;
+            scatter(x,cnt,60,'filled','MarkerFaceColor', clrUse);
+            yLabels{cnt} =  sprintf('%s %s',areas{a},freqsCheck{f});
+            idxPvals = tblUse.sigCorrected_Ttest & tblUse.peakExists;
+            maxP     = max( -log10(tblUse.rawPval_ManWitney(idxPvals)));
+%             maxP     = max( -log10(tblUse.rawPval_Ttest));
+            if isempty(maxP)
+                maxP = NaN;
+            end
+            imagePlot(x,cnt) = maxP;
+        end
+        cnt = cnt + 1;
+    end
+end
+
+hsb.YTick     = 1:length(yLabels);
+hsb.YTickLabel = yLabels;
+hsb.XTick = 1:length(unqPatients);
+hsb.XLim = [0 6];
+hsb.YLim = [0 10];
+hsb.XTickLabel = unqPatients;
+title('significane in bands');
+set(gca,'FontSize',16); 
+fnmsv = fullfile(figdirout,'pValues_per_frequency.mat');
+save(fnmsv,'tblPvalResults');
+%% plot an image with empty colors 
+close all;
+hfig = figure; 
+hfig.Color = 'w'; 
+hsb = subplot(1,1,1); 
+
+
+Data_Array = flipud(imagePlot);
+imAlpha=ones(size(Data_Array));
+imAlpha(isnan(Data_Array))=0;
+imAlpha(isnan(Data_Array))=0;
+imagesc(Data_Array,'AlphaData',imAlpha);
+set(gca,'color',[1 1 1]);
+
+
+hsb.YTick = 1:length(uniquePatients);
+hsb.YTickLabel = fliplr(uniquePatients);
+hsb.XTick = 1:length(yLabels);
+hsb.XTickLabel = yLabels;
+% hsb.XTickLabelRotation = 45;
+
+hcolor = colorbar;
+hcolor.Label.String = '-log10(p-value)';
+title('max p-value / area / subject');
+set(gca,'FontSize',16);
+axis tight;
+
+%%
+
+%% make manhttan plots 
+hfig = figure;
+hfig.Color = 'w';
+unocrrectedPval_5 = -log10(0.05);
+correctedPval_5 = -log10(0.05/NumberMultipleComparisons);
+correctedPval_1 = -log10(0.001/NumberMultipleComparisons);
+unqPatients = unique(tblPvalResults.patient); 
+for p = 1:length(unqPatients)
+    hsb = subplot(length(unqPatients)+1,1,p); 
+    hold(hsb,'on'); 
+    unqIdxs = strcmp(unqPatients{p},tblPvalResults.patient);
+    tblUse = tblPvalResults(unqIdxs,:);
+    tblUse = sortrows(tblUse,{'freqName'});
+    for t = 1:size(tblUse)
+        switch tblUse.freqName{t}
+            case 'alpha'
+                clrUse = [0 0.8 0.2];
+            case 'beta'
+                clrUse = [0.8 0 0.2];
+            case 'gamma'
+                clrUse = [0 0.8 0.8];
+        end
+        pvalUse = -log10(tblUse.rawPval_ManWitney(t));
+        if tblUse.peakExists(t)==0 %|| pvalUse <= correctedPval_1 
+            clrUse = [1 1 1];
+        end
+        scatter(t,pvalUse,60,'filled','MarkerFaceColor', clrUse);
+        xTickLabels{t} = strrep( sprintf('%s %s',tblUse.electrode{t},tblUse.freqName{t}),'_',' ');
+    end
+    if p == length(unqPatients)
+        hsb.XTick = 1:length(xTickLabels);
+        hsb.XTickLabel = xTickLabels;
+        hsb.XTickLabelRotation = 60;
+    end
+    ylabel(unqPatients{p}); 
+    xlims = hsb.XLim;
+    plot(xlims,[correctedPval_5 correctedPval_5],'LineWidth',2,'LineStyle','-.','Color',[0.5 0.5 0.5 0.2]);
+    plot(xlims,[correctedPval_1 correctedPval_1],'LineWidth',2,'LineStyle','-.','Color',[0.5 0.5 0.5 0.2]);
+    plot(xlims,[unocrrectedPval_5 unocrrectedPval_5],'LineWidth',2,'LineStyle','-.','Color',[0.8 0.0 0.0 0.2]);
+    set(gca,'FontSize',16); 
+    hsbAx(p) = hsb; 
+end
+sgtitle('Manhattan plots of p-values','FontSize',24);
+linkaxes(hsbAx,'x');
+
+
+%%
+
+%% determin if peaks exist in specific frequncey ranges 
+close all; 
+correctedPval_5 = -log10(0.05/NumberMultipleComparisons);
+correctedPval_1 = -log10(0.001/NumberMultipleComparisons);
+unqPatients = unique(tblPvalResults.patient);
+for p = 1:length(unqPatients)
+    unqIdxs = strcmp(unqPatients{p},tblPvalResults.patient);
+    tblUse = tblPvalResults(unqIdxs,:);
+    tblUse = sortrows(tblUse,{'freqName'});
+    hfig = figure;
+    hfig.Color = 'w';
+    for t = 1:size(tblUse)
+        hsb(t) = subplot(8,6,t);
+        hold(hsb(t),'on'); 
+        titleTable{t} = strrep( sprintf('%s %s',tblUse.electrode{t},tblUse.freqName{t}),'_',' ');
+        y = [tblUse.rawData{t}{1} ; tblUse.rawData{t}{2}];
+        % plot the max 10% 
+        maxYs = max(y,[],2);
+        [~,idxplot] = maxk(maxYs,ceil(0.1*size(y,1)) );
+        yPlot = y(idxplot,:);
+        xPlot = tblUse.frqNumbersHz{t};
+        plot(xPlot,mean(yPlot',2),'LineWidth',1,'Color',[0 0 0.8 0.5]);
+        dataFindPeaks = mean(yPlot',2);
+
+        [pks,locs] = findpeaks(dataFindPeaks,'MinPeakDistance',length(dataFindPeaks)-2,'MinPeakProminence',range(dataFindPeaks)*0.2);
+        if ~isempty(pks)
+            scatter(xPlot(locs),pks,40,'filled','MarkerFaceColor',[0.0 0.8 0.2],'MarkerFaceAlpha',0.5);
+        end
+        
+        title(titleTable{t});
+        % does it have a peak? 
+        meanY = mean(yPlot',2);
+        edgesSmaller = (meanY(1) < max(meanY(2:end-1)))  &  (meanY(end) < max(meanY(2:end-1)));
+        peakExists = (mean([meanY(1) meanY(end)]) * 1.5)  <  max(meanY(2:end-1));
+        if ~isempty(pks)
+            hsb(t).Color = [0.8 0.0 0.2 0.5];
+        end
+        
+    end
+    sgtitle(uniquePatients{p},'FontSize');
+    set(gcf, 'InvertHardcopy', 'off')
+    prfig.plotwidth           = 14;
+    prfig.plotheight          = 9;
+    prfig.figdir             = figdirout;
+    prfig.figname             = sprintf('%s_individ_peaks',uniquePatients{p});
+    prfig.figtype             = '-dpdf';
+    plot_hfig(hfig,prfig)
+
+end
+%% 
 return
 
 

@@ -10,7 +10,7 @@ fprintf(fid,'these folders have errored:\n\n');
 % find all patient directories
 patdirs = findFilesBVQX(rootdir_dest,'RCS*',struct('dirs',1,'depth',1));
 patdirsGP = patdirs([3 9 10],:);
-patdirsGP = patdirs([2 5 6 7 8],:);
+% patdirsGP = patdirs([2 5 6 7 8],:);
 for p = 1:length(patdirsGP)% loop on patient directories
     fprintf('\n\n');
     recordingPrograms = {'SummitContinuousBilateralStreaming'};
