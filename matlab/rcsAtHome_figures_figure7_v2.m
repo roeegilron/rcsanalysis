@@ -90,12 +90,13 @@ end
 
 % cartoon of schematic cartoon - arrow to cortical lead. 
 % add Ken's stragetg 
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+%%
 close all;
 clear hsb*
-addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 
 hfig = figure;
-hfig.Position = [1281          80        1280        1265]
+hfig.Position = [1281          80        1280        1265];
 lineWidth = 0.5;
 
 globalFontSize = 20;
@@ -105,10 +106,17 @@ hpanel.pack('v',{0.33 0.67});
 idxRCS06 = 1; % top panel 
 idxRCS02 = 2; % bottom panel 
 hpanel(idxRCS06).pack({50 50});
-hpanel(idxRCS02).pack({0.24 0.24 0.05 0.24 0.24}); % the middle plot is to accomodate zoom 
-hpanel.select('all');
+hpanel(idxRCS02).pack('v',{0.5 0.5}); % divide into adaptive / vs zoom 
+hpanel(idxRCS02,1).pack('v',{0.5 0.5}); % adaptive portion 
+hpanel(idxRCS02,2).pack('h',{0.5 0.5}); % zoom portion / measures portion 
+hpanel(idxRCS02,2,2).pack('h',{0.5 0.5}); % measures portion  - motor diary / PKG 
+hpanel(idxRCS02,2,1).pack('v',{0.1 0.45 0.45}); % zoom portion 
+% hpanel(idxRCS02,1).pack({0.24 0.24 0.05 0.24 0.24}); % the middle plot is to accomodate zoom 
+% hpanel.select('all');
+% hpanel.identify();
+hpanel.margin = [30 30 30 30];
 hpanel.fontsize = 10;
-
+%%
 
 
 % RCS06
@@ -191,8 +199,8 @@ end
 
 
 
-hsb2(1) = hpanel(2,1).select(); % zoom in 
-hsb2(2) = hpanel(2,2).select(); % zoom in 
+hsb2(1) = hpanel(2,1,1).select(); % zoom in 
+hsb2(2) = hpanel(2,1,2).select(); % zoom in 
 plot_adbs_in_pair_of_subplots(dbuse,hsb2); 
 hsb2(1).Title.String = '8 hours of aDBS using cortical gamma control signal';
 hsb2(2).Title.String = 'Current';
@@ -202,8 +210,8 @@ hsb2(1).XTickLabel = '';
 
 
 
-hsb2(1) = hpanel(2,4).select(); % zoom in 
-hsb2(2) = hpanel(2,5).select(); % zoom in 
+hsb2(1) = hpanel(2,2,1,2).select(); % zoom in 
+hsb2(2) = hpanel(2,2,1,3).select(); % zoom in 
 plot_adbs_in_pair_of_subplots(dbuse,hsb2); 
 hsb2(1).Title.String = 'aDBS using gamma control signal - ZOOM';
 hsb2(2).Title.String = 'Current - ZOOM';
@@ -263,7 +271,7 @@ ylim(haxCur,[-0.1 1.5]);
 % fix RCS02  plot to go from 10am - 6pm 
 % and axis limits to go from 9am-7pm. 
 % fix detector 
-haxDet = hpanel(2,1).select();
+haxDet = hpanel(2,1,1).select();
 hLines = haxDet.Children;
 xlimitsZoom = datetime({'27-Apr-2020 10:00:00.000', '27-Apr-2020 18:00:00.000'});
 xlimitsZoom.TimeZone  = dbuse.timeStart.TimeZone;
@@ -284,7 +292,7 @@ end
 haxDet.YTickLabel = newLabels;
 
 % fix current 
-haxCur = hpanel(2,2).select();
+haxCur = hpanel(2,1,2).select();
 hLines = haxCur.Children;
 xlimitsZoom.TimeZone  = dbuse.timeStart.TimeZone;
 for h = 1:length(hLines)
@@ -303,7 +311,7 @@ haxCur.XTick = haxCur.XTick(2):hours(2):haxCur.XTick(end-1);
 
 
 % fix zoom on detector zoom: 
-haxDet = hpanel(2,4).select();
+haxDet = hpanel(2,2,1,2).select();
 ylim(haxDet,[0 4000]);
 haxDet.YTick = [0 haxDet.YTick(end)*0.25 haxDet.YTick(end)*0.5 haxDet.YTick(end)*0.75 haxDet.YTick(end)];
 newYLabels = rescale(haxDet.YTick,0,1);
@@ -314,40 +322,152 @@ haxDet.YTickLabel = newLabels;
 
 
 % fix x ticks on current zoom 
-haxCur = hpanel(2,5).select();
+haxCur = hpanel(2,2,1,3).select();
 haxCur.XTick = haxCur.XTick(1):minutes(20):haxCur.XTick(end);
 
 
-
-zoomAx = hpanel(2,3).select();
+% zoom spacing plot 
+zoomAx = hpanel(2,2,1,1).select();
 set(zoomAx,  'box','off','XTickLabel',[],'XTick',[],'YTickLabel',[],'YTick',[])
 set(zoomAx,'XColor','none')
 set(zoomAx,'YColor','none')
 
 hsb(1).XTickLabel = '';
 hsb2(1).XTickLabel = '';
-hpanel.margin = [40 20 20 20];
-hpanel.de.margin = 10 ;
-hpanel(1).marginbottom = 50;
-hpanel(2,2).marginbottom = 5;
+
+%% add some objective measures and subjective measures 
+
+% plot motor diaries 
+%  load motor diaries 
+resultdirsave = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive';
+fnsmv = fullfile(resultdirsave,'motor_diary_results_rcs02_open_loop_vs_closed_loop.mat'); 
+filepath = pwd; 
+functionname = 'process_motor_diary_RCS02_from_redcap';
+load(fnsmv,'motorDiaryTable','filepath','functionname');
+
+
+y = [];
+c = [];
+
+motorDiaryTable = sortrows(motorDiaryTable,{'session'},'descend');
+conditionsUse = flipud(unique(motorDiaryTable.session));
+for t = 1:2
+    idxuse = strcmp(motorDiaryTable.session,conditionsUse{t});
+    tblUse = motorDiaryTable(idxuse,:);
+    Conditions = categorical(tblUse.state,...
+        unique(tblUse.state));
+
+    % old way 
+    Conditions = removecats(removecats(Conditions,'sleep'));
+    idxremove  = isundefined(Conditions);
+    Conditions = Conditions(~idxremove);
+    summary(Conditions);
+    c = countcats(Conditions);
+    cats = categories(Conditions); 
+    y (t,:) = c./sum(c); 
+end
+
+hpanel(2,2,2,1).select();
+hbar = bar(y,'stacked');
+hbar(1).FaceColor = [0.8 0 0.2];
+hbar(1).FaceAlpha = 0.5;
+hbar(2).FaceColor = [0 0.8 0.2];
+hbar(2).FaceAlpha = 0.5;
+legend(cats);
+hsb = gca;
+hsb.XTickLabel = conditionsUse;
+hsb.XTickLabel = {'open loop','aDBS'};
+
+hsb.XTickLabelRotation = 45; 
+ylabel('% time/state');
+ttluse{1,1} = 'objective measures:';
+ttluse{1,2} = '3 day motor diary';
+title(ttluse);
+set(gca,'FontSize',10);
+
+% plot pkg
+resultdirsave = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive';
+fnsmv = fullfile(resultdirsave,'process_pkg_data_RCS02_open_loop_vs_closed_loop.mat'); 
+filepath = pwd; 
+functionname = 'RCS02_open_loop_vs_closed_loop.m';
+load(fnsmv,'pkgData','tableLabel','functionname','filepath');
+
+y = [];
+c = [];
+pkgData = pkgData(3:4); 
+for t = 1:length(pkgData);
+    Conditions = categorical(pkgData{t}.new_state,...
+        unique(pkgData{1}.new_state));
+    fprintf('%s\n',tableLabel{t});
+
+    % old way 
+    Conditions = removecats(removecats(Conditions,'state unknown'));
+    Conditions = removecats(removecats(Conditions,'state rule conflict'));
+    Conditions = removecats(removecats(Conditions,'sleep'));
+    Conditions = removecats(removecats(Conditions,'tremor'));
+    idxremove  = isundefined(Conditions);
+    Conditions = Conditions(~idxremove);
+    summary(Conditions);
+    c = countcats(Conditions);
+    cats = categories(Conditions); 
+    y (t,:) = c./sum(c); 
+    
+end
+% 
+
+hpanel(2,2,2,2).select();
+ttluse{1,1} = 'subjective measures:';
+ttluse{1,2} = '4 day pkg report';
+
+hbar = bar(y,'stacked');
+hbar(1).FaceColor = [0.8 0 0.2];
+hbar(1).FaceAlpha = 0.5;
+hbar(2).FaceColor = [0 0.8 0.2];
+hbar(2).FaceAlpha = 0.5;
+ylim([0 1]);
+legend(cats,'Location','northeastoutside');
+hsb = gca;
+hsb.XTick = 3:4;
+% hsb.XTickLabel = tableLabel;
+hsb.XTickLabel = {'open loop','aDBS'};
+hsb.XTickLabelRotation = 35; 
+title(ttluse);
+ylabel('% time in category'); 
+set(gca,'FontSize',10);
+
+%% plot 
+% global figure margines 
+hpanel.fontsize = 8;
+hpanel.marginright = 20;
+hpanel.marginleft = 20;
+hpanel.margintop = 12;
+hpanel.marginbottom = 20;
+
+hpanel.de.margin = 8 ;
+hpanel(1).marginbottom = 13  ;
+hpanel(2,1).marginbottom = 18 ;
+hpanel(2,2,1).marginright = 15;
+hpanel(2,2,1).margintop = 7;
+hpanel(2,2,1,1).margintop = 7;
+hpanel(2,2,1).marginbottom = 40; 
+hsb = hpanel(2,2,2,2).select();
+hsb.YTick = []; 
+hsb.YLabel.String = '';
+
 datetick(hpanel(1,2).select(),'x',15,'keepticks','keeplimits');
-datetick(hpanel(2,2).select(),'x',15,'keepticks','keeplimits');
-datetick(hpanel(2,5).select(),'x',15,'keepticks','keeplimits');
+datetick(hpanel(2,1,2).select(),'x',15,'keepticks','keeplimits');
+datetick(hpanel(2,2,1,3).select(),'x',15,'keepticks','keeplimits');
 
-
-
-
-
-
-hpanel.fontsize = 16;
+figdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive';
+hpanel.fontsize = 10;
 hfig.Renderer='Painters';
 prfig.figdir = figdir;
 prfig.figtype = '-dpdf';
 prfig.resolution = 600;
 prfig.closeafterprint = 0;
-prfig.plotwidth           = 9;
-prfig.plotheight          = 9*1.5;
-prfig.figname             = 'figuer_7_v2_new_adaptive_full_day_run_v4';
+prfig.plotwidth           = 7.2;
+prfig.plotheight          = 7.2*1.2;
+prfig.figname             = 'figuer_7_v2_new_adaptive_full_day_run_v7';
 plot_hfig(hfig,prfig)
 
 

@@ -65,6 +65,22 @@ for a = 1:length(areasUse)
     legend(hLeg,{'stim off','stim on'}); 
 end
 
+savename = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig3_0_hours_recrorded/psd_and_cohernce_databases_hours_recorded.mat';
+load(savename,'hoursRecorded');
+idxkeep = strcmp(hoursRecorded.area,'STN') & ... 
+          strcmp(hoursRecorded.diagnosis,'PD') & ... 
+          strcmp(hoursRecorded.patient,'RCS02'); 
+tblUse = hoursRecorded(idxkeep,:);       
+
+ sum(tblUse.awakeHours);
+ 
+ idxkeep = strcmp(hoursRecorded.area,'STN') & ... 
+          strcmp(hoursRecorded.diagnosis,'PD') & ... 
+          strcmp(hoursRecorded.patient,'RCS02') | strcmp(hoursRecorded.patient,'RCS06') | strcmp(hoursRecorded.patient,'RCS07');
+tblUse = hoursRecorded(idxkeep,:);     
+ sum(tblUse.awakeHours);
+
+
 %% 
 
 %% panel B - beta band violin plots 
@@ -79,6 +95,7 @@ idxuse3 = strcmp(dataTbl.patient,'RCS07') & strcmp(dataTbl.side,'R');
 idxuse  = idxuse1 | idxuse2 | idxuse3; 
 dataTbl = dataTbl(idxuse,:);
 dataTbl = sortrows(dataTbl,{'patient','stim'});
+dataTbl = [dataTbl(1:2,:) ; dataTbl(5:6,:) ; dataTbl(3:4,:)];
 % 
 
 %% plot the violin plots
@@ -106,21 +123,25 @@ for h = 1:length(hviolin)
     hviolin(h).ShowData = 0;
 end
 hsb.XTick = 1.5:2:5.5;
-hsb.XTickLabel = unique(dataTbl.patient);
+hsb.XTickLabel = {'RCS01', 'RCS04','RCS03'};
 ylabel('Power (log_1_0\muV^2/Hz)');
 
 
 %% plot hfig 
-return 
+
 hpanel.margin = [30 30 30 30];
+% change some labels 
+hsb = hpanel(1,1,2,1).select();
+hsb.Title.String  = 'MC';
+
 hpanel.fontsize = 16;
-figname = sprintf('%s',uniquePatients{p});
+figname = 'all_patients_psd_chornic_stim';
 prfig.plotwidth           = 16;
 prfig.plotheight          = 12;
 prfig.figdir             = figdirout;
 prfig.figname             = figname;
-prfig.figtype             = '-djpeg';
+prfig.figtype             = '-dpdf';
 plot_hfig(hfig,prfig)
-
+%%
 
 end

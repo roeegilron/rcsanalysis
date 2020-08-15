@@ -296,7 +296,11 @@ for p = 1:length(uniquePatients) % loop on patients
         end
     end
 end
+rootdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs3_Rcs07_example_clinic_vs_home';
+fnmsv = fullfile(rootdir,'at_home_psds_all_subjects.mat');
+save(fnmsv,'patientPSD_at_home');
 %% psds 
+
 close all; 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 pdb = patientPSD_at_home ;

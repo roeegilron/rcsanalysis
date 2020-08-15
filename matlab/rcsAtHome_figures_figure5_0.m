@@ -97,6 +97,7 @@ end
 %% 
 %% panel b image plot of p-values in which show significance seperating on/off 
 % original figure that made this is at: 
+% plot_subject_specific_data_psd_coherence_home_data.m
 figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 fnmsv = fullfile(figdirout,'pValues_per_frequency.mat');
 load(fnmsv,'tblPvalResults');

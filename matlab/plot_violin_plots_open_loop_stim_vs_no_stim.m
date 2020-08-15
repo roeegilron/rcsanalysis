@@ -23,6 +23,11 @@ for p = 1:length(patientAnalyze)
         cntTbl = cntTbl + 1; 
     end
 end
+% report first on time 
+dataStim = dataTable( dataTable.stim == 1,:);
+dataStim.allDataPkgRcsAccq{1}.database.timeStart(1)
+dataStim.allDataPkgRcsAccq{3}.database.timeStart(1)
+dataStim.allDataPkgRcsAccq{5}.database.timeStart(1)
 
 
 width = 3;

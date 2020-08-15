@@ -13,7 +13,7 @@ for f = 1:length(ff)
     varsExist = fieldnames(rawTab); 
     fnLoop = varsExist(2:end-3); 
     for fn = 1:length(fnLoop)
-        outTable.patient{cnt} = rawTab.RecordId{1}
+        outTable.patient{cnt} = rawTab.RecordId{1};
         ;
         outTable.medState{cnt} = medState;
         if any(strfind(lower(fnLoop{fn}),'right'))
