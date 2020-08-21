@@ -48,7 +48,7 @@ if printRawDeviceSettings
     end
 end
 
-%%
+%% Identify stream started (opt1) or stopped (op2: 2a) stream off or 2b) sense off)
 deviceSettingTable = table();
 recNum = 1;
 f = 1;
@@ -64,11 +64,11 @@ while f <= length(DeviceSettings)
             tdData = translateTimeDomainChannelsStruct(curStr.SensingConfig.timeDomainChannels);
             timenum = curStr.RecordInfo.HostUnixTime;
             t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-            outRec(recNum).timeStart = t;
+            out(recNum).timeStart = t;
             outRec(recNum).unixtimeStart  = timenum;
             outRec(recNum).tdData = tdData;
             deviceSettingTable.action{recNum} = 'sense config';
-            deviceSettingTable.recNum(recNum) = NaN;
+            deviceSettingTable.recNum(recNum) = nan;
             deviceSettingTable.timeStart{recNum} = t;
             for c = 1:4
                 fnuse = sprintf('chan%d',c);
@@ -444,9 +444,11 @@ cnt = 1;
 stimState = table();
 for gc = 1:size(groupChangeTable,1)
     % first try to get from talbe
-    if sum(cellfun(@(x) any(strfind(x,'Therapy')), fieldnames(groupChangeTable.struc{gc}))) >=1
+    idxGeneralDataTable = cellfun(@(x) any(strfind(x,'General')),groupChangeTable.fn2); % ## WAS BREAKING BEFORE (JUAN)
+    if idxGeneralDataTable(gc) && sum(cellfun(@(x) any(strfind(x,'Therapy')), fieldnames(groupChangeTable.struc{gc}))) >=1
         therapyStatus = groupChangeTable.struc{gc}.GeneralData.therapyStatusData;
     end
+    %%%%%%%%%%%% ## @ROEE: "I AM NOT SURE WHY THIS AND WHY == 4" (JUAN)
     if sum(cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), fieldnames(groupChangeTable.struc{gc}))) == 4 % this is the first payload
         % need to find the valid group
         fieldNamesGroupsRaw = fieldnames(groupChangeTable.struc{gc});
@@ -570,8 +572,7 @@ stimState.duration.Format = 'hh:mm:ss';
 % the settings being changed in each adaptive state update will be noted
 % in a cell array as well
 
-adaptiveChanges = getAdaptiveChanges(DeviceSettings)
-
+% adaptiveChanges = getAdaptiveChanges(DeviceSettings)
 
 f = 1;
 previosSettIdx = 0;
@@ -731,14 +732,6 @@ while f <= length(DeviceSettings)
     end
     f = f +1;
 end
-
-
-
-
-
-
-
-
 
 %%%%
 %%% NEEED TO FIX STATES   - with is field for change detection
