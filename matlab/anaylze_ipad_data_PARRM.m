@@ -13,6 +13,9 @@ close all;
 %% plot ipad data based on this alligmment
 pathadd = '/Users/roee/Box/movement_task_data_at_home/code/from_nicki';
 addpath(genpath(pathadd));
+<<<<<<< HEAD
+addpath(genpath('/Users/roee/Box/movement_task_data_at_home/code/eeglab'));
+=======
 addpath('/Users/roee/Box/movement_task_data_at_home/code/eeglab');
 for m = 1:size(tuse,1)
     rcsDataMeta = tuse(m,:);
@@ -37,6 +40,7 @@ for m = 1:size(tuse,1)
 end
 
     
+>>>>>>> 9bfe5b3b10e1e8b95e3a565cfcf48decd7d317b1
 
 for m = 1:size(tuse,1)
     stimRate = tuse.stimStatus{m}.rate_Hz;
