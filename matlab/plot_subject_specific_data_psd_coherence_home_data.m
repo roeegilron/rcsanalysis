@@ -300,6 +300,9 @@ rootdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revi
 fnmsv = fullfile(rootdir,'at_home_psds_all_subjects.mat');
 save(fnmsv,'patientPSD_at_home');
 %% psds 
+rootdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs3_Rcs07_example_clinic_vs_home';
+fnmsv = fullfile(rootdir,'at_home_psds_all_subjects.mat');
+load(fnmsv,'patientPSD_at_home');
 
 close all; 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
@@ -307,7 +310,7 @@ pdb = patientPSD_at_home ;
 freqUse = {'beta','gamma'};
 window  = 10; % hz from each side 
 areas = {'STN','M1'};
-medstates = {'off','on'};
+medstates = {'off','on','sleep'};
 cntbl = 1; 
 unqPatients = unique(patientPSD_at_home.patient); 
 areaStr = {'STN','M1','coh'};
@@ -319,7 +322,7 @@ for pp = 1:length(unqPatients)
     patientTable = patientPSD_at_home(idxPatient,:);
     % only use some of the states 
     % XXX 
-    idxUseStates = strcmp(patientTable.medstate,'off') | strcmp(patientTable.medstate,'on');
+    idxUseStates = strcmp(patientTable.medstate,'off') | strcmp(patientTable.medstate,'on') | strcmp(patientTable.medstate,'sleep');
     strUse = 'off_vs_on_vs_sleep_sig';
     % XXX 
     patientTable = patientTable(idxUseStates,:);
@@ -330,6 +333,8 @@ for pp = 1:length(unqPatients)
     hfig.Color = 'w';
     p = panel();
     p.pack(4,4);
+    hsbs = gobjects(4,4);
+        
     for a = 1:length(areaStr) 
         idxArea = cellfun(@(x) any(strfind(x,areaStr{a})),patientTable.electrode);
         cntPltColumn = 1; 
@@ -347,6 +352,7 @@ for pp = 1:length(unqPatients)
                     aUse = a +1;
                 end
                 hsb = p(aUse,cntPltColumn).select();
+                hsbs(aUse,cntPltColumn) = hsb;
                 hold(hsb,'on');
 
                 cntPltColumn = cntPltColumn + 1;
@@ -380,7 +386,7 @@ for pp = 1:length(unqPatients)
                         hshadedError.patch.MarkerEdgeColor = [ 1 1 1];
                         hshadedError.edge(1).Color = [colorUse 0.1];
                         hshadedError.edge(2).Color = [colorUse 0.1];
-                        hshadedError.patch.FaceAlpha = 0.1;
+                        hshadedError.patch.FaceAlpha = 0;
                         hplt(tt) = hshadedError.mainLine;
                     else
                         hplt = plot(x,y);
@@ -389,13 +395,55 @@ for pp = 1:length(unqPatients)
                         end
                     end
                     ttlsuse = sprintf('%s %s %s',tablePlot.patient{tt}, strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt});
+                    if any(strfind(tablePlot.electrode{tt},'coh'))
+                        if any(strfind(tablePlot.electrode{tt},'stn02')) & any(strfind(tablePlot.electrode{tt},'m10810'))
+                            tablePlot.electrode{tt} = 'COH STN 0-2 <-> MC 8-10';
+                        end
+                        if any(strfind(tablePlot.electrode{tt},'stn02')) & any(strfind(tablePlot.electrode{tt},'m10911'))
+                            tablePlot.electrode{tt} = 'COH STN 0-2 <-> MC 9-11';
+                        end
+                        if any(strfind(tablePlot.electrode{tt},'stn13')) & any(strfind(tablePlot.electrode{tt},'m10810'))
+                            tablePlot.electrode{tt} = 'COH STN 1-3 <-> MC 8-10';
+                        end
+                        if any(strfind(tablePlot.electrode{tt},'stn13')) & any(strfind(tablePlot.electrode{tt},'0911'))
+                            tablePlot.electrode{tt} = 'COH STN 1-3 <-> MC 9-11';
+                        end
+                        ttlsuse = sprintf('%s %s', strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt});
+
+                    elseif any(strfind(tablePlot.electrode{tt},'M1'))
+                        tablePlot.electrode{tt}(2) = 'C';
+                        ttlsuse = sprintf('%s %s', strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt});
+                    else
+                        
+                        ttlsuse = sprintf('%s %s', strrep( tablePlot.electrode{tt},'_', ' '),tablePlot.side{tt});
+                    end
                     title(ttlsuse);
                     xlim([3 100]);
                     grid on; 
-                    hsb.XTick = [10:10:100];
+                    hsb.XTick = [12 30 60 90 ];
                     yout{tt} = y; 
                 end
-                % plot significance 
+                % get rid of some tick values
+                if (cntPltColumn-1) ~= 1
+                    for ll = 1:length(hsb.XTickLabel)
+                        hsb.YTickLabel{ll} = '';
+                    end
+                elseif aUse <=2
+                    ylabel('Power (log_1_0\muV^2/Hz)');
+                else
+                    ylabel('ms coherence');
+                end
+                if aUse ~= 4
+                    for ll = 1:length(hsb.XTickLabel)
+                        hsb.XTickLabel{ll} = '';
+                    end
+                else
+                    xlabel('Frequency (Hz)');
+                end
+                
+
+                % plot significance if comparing all frequecney bands using
+                % rank sum tests 
                 [h,pvals ] = ttest2(yout{1},yout{2});
                 [h,pvals ] = ranksum(yout{1}(:,1),yout{2}(:,1));
                 pvals = [];
@@ -406,7 +454,8 @@ for pp = 1:length(unqPatients)
                 
                 Xsig = x(sigValues);
                 ylims = hsb.YLim;
-                scatter(Xsig,repmat(ylims(2),length(Xsig),1),'filled','MarkerFaceColor',[0.5 0.5 0.5],'MarkerFaceAlpha',0.5);
+%                 scatter(Xsig,repmat(ylims(2),length(Xsig),1),'filled','MarkerFaceColor',[0.5 0.5 0.5],'MarkerFaceAlpha',0.5);
+                % 
                 freqsCheck = {'alpha','beta','gamma'}; 
                 freqsNums  = [6 15; 12 30; 70 90];
                 NumberMultipleComparisons = size(patientTable,1)/2 * length(freqsCheck);
@@ -433,9 +482,11 @@ for pp = 1:length(unqPatients)
                     yPlot = y(idxplot,:);
                     
                     dataFindPeaks = mean(yPlot',2);
-                    
+                    pks = []; locs = [];
                     [pks,locs] = findpeaks(dataFindPeaks,'MinPeakDistance',length(dataFindPeaks)-2,'MinPeakProminence',range(dataFindPeaks)*0.2);
                     % does it have a peak?
+                    pval = 0.5;% default values 
+                    pvalTtest = 0.5; % defaults values 
                     if ~isempty(pks)
                         tblPvalResults.peakExists(cntPvalRes)  = 1;
                         % redo test in freq specific manner 
@@ -459,20 +510,38 @@ for pp = 1:length(unqPatients)
                     tblPvalResults.sigCorrected_Ttest(cntPvalRes)  = pvalTtest <= (0.001/NumberMultipleComparisons);
                     tblPvalResults.p_value_001(cntPvalRes)  = 0.001/NumberMultipleComparisons;
                     tblPvalResults.p_value_05(cntPvalRes)  = 0.05/NumberMultipleComparisons;
+                    if tblPvalResults.peakExists(cntPvalRes) &  tblPvalResults.sigCorrected_ManWitney(cntPvalRes)
+                        scatter(tblPvalResults.frqNumbersHz{cntPvalRes}(locs),ylims(2),50,'filled','MarkerFaceColor',[0.5 0.5 0.5],'MarkerFaceAlpha',0.5)
+                    end
                     
                     cntPvalRes = cntPvalRes + 1;
                 end
             end
         end
     end
-    prfig.plotwidth           = 12;
-    prfig.plotheight          = 9;
+    % fix sig scatters 
+    for iii = 1:4 
+        for jjj = 1:4
+            hscatters = findobj(hsbs(iii,jjj).Children,'Type','scatter');
+            ylimval = hsbs(iii,jjj).YLim(2);
+            for h = 1:length(hscatters)
+                hscatters(h).YData = ylimval; 
+            end
+        end
+    end
+    
+    figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs4_single_subject_example';
+    prfig.plotwidth           = 7.2;
+    prfig.plotheight          = 7.2;
     prfig.figdir             = figdirout;
     prfig.figname             = sprintf('%s_%s_individ_psd_states_with_sig_man_witney',tablePlot.patient{tt},strUse);
     prfig.figtype             = '-dpdf';
-%     plot_hfig(hfig,prfig)
+    linkaxes(hsbs(1:2,:),'y');
+    linkaxes(hsbs(3:4,:),'y');
+    p.de.margin = 6;
+    p.fontsize = 8;
+    plot_hfig(hfig,prfig)
     close(hfig);
-
 end
 %% plot significance in particaular frequencey ranges 
 hfig = figure; 
