@@ -99,7 +99,7 @@ try
     idxstim      = dbUse.stimulation_on == 0;
     idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
     idxAccIsStrm = dbUse.accelerometryStreaming == 1;
-    idxScbsUsed = dbUse.recordedWithScbs == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
     idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
     patDBtoConcat = dbUse(idxconcat,:);

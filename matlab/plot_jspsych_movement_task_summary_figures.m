@@ -32,17 +32,28 @@ for f = 1:length(ff)
     potentialResultsFiles.matFile{f} = ff{f}; 
     potentialResultsFiles.deviceSettingsFile{f} = rcsDataMeta.allDeviceSettingsOut{1};
 end
+saveAllData = 1; 
 for m = 1:size(masterTableUse,1)
     ds = masterTableUse.allDeviceSettingsOut{m};
     idxMatExist = cellfun(@(x) strcmp(x,ds),potentialResultsFiles.deviceSettingsFile);
     if sum(idxMatExist==1)
         masterTableUse.matFile{m} = potentialResultsFiles.matFile(idxMatExist);
+        if saveAllData
+            load(masterTableUse.matFile{m}{1})
+            masterTableUse.timeparams{m} = timeparams;
+            masterTableUse.taskData{m} = taskData;
+            masterTableUse.rcsRawData{m} = rcsIpadDataPlot;
+            clear timeparams taskData rcsIpadDataPlot; 
+        end
+        
     end
 end
 idxWithResults = cellfun(@(x) ~isempty(x), masterTableUse.matFile);
 masterTableUse = masterTableUse(idxWithResults,:);
 masterTableUse = sortrows(masterTableUse,{'patient','unixTimeStart'});
 masterTableUse(:,{'patient','side', 'unixTimeStart','chan4','active_recharge','stimulation_on','handUsedForTask'})
+fnsave = fullfile(resdir,'all_movement_task_contralateral_Brown_share.mat');
+save(fnsave,'masterTableUse'); 
 % loop on left / right brain 
 % loop on stim on/stim off
 
@@ -184,10 +195,19 @@ hpanel.marginright = 15;
 
 
 hfig = gcf;
-hfig.PaperSize = [12 8];
-hfig.PaperPosition = [0 0 12 8];
+hpanel.fontsize = 10;
 fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_%s',chanelsPlotLabels{ci});
-print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r300');
+
+hfig.Renderer='Painters';
+prfig.figdir = figdir;
+prfig.figtype = '-dpdf';
+prfig.resolution = 600;
+prfig.closeafterprint = 0;
+prfig.plotwidth           = 7.2;
+prfig.plotheight          = 7.2;
+prfig.figname             = fnmsv;
+plot_hfig(hfig,prfig)
+print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r300');
 
 
 return 
