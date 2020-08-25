@@ -14,6 +14,29 @@ close all;
 pathadd = '/Users/roee/Box/movement_task_data_at_home/code/from_nicki';
 addpath(genpath(pathadd));
 addpath('/Users/roee/Box/movement_task_data_at_home/code/eeglab');
+for m = 1:size(tuse,1)
+    rcsDataMeta = tuse(m,:);
+    patient = tuse.patient{m};
+    brainSideChoose = tuse.side{m};
+    handUsed = tuse.handUsedForTask{m};
+    handBrainRelation  = 'contra';
+    timeStart = tuse.timeStart(m);
+    timeEnd = tuse.timeEnd(m);
+    fnmsv = sprintf('%s_%s-brain-%s-hand_%s___%s____%d-%0.2d-%0.2d__%0.2d-%0.2d_PARRM',...
+        patient,brainSideChoose,handUsed,...
+        handBrainRelation,...
+        timeparams.analysis,...
+        year(timeStart),...
+        month(timeStart),...
+        day(timeStart),...
+        hour(timeStart),...
+        minute(timeStart));
+    
+    % save data
+    save(fullfile(resdir,[fnmsv '.mat']),'rcsDataMeta','-append');
+end
+
+    
 
 for m = 1:size(tuse,1)
     stimRate = tuse.stimStatus{m}.rate_Hz;

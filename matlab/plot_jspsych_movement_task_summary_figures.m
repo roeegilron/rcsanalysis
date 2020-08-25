@@ -24,7 +24,7 @@ idxchoose = cellfun(@(x) any(strfind(x,'1000Hz')), masterTableUse.chan4) & ...
             ((masterTableUse.stimulation_on & masterTableUse.active_recharge) | (~masterTableUse.stimulation_on));
 masterTableUse = masterTableUse(idxchoose,:);
 % find matched for master table use (contra lateral only) 
-ff = findFilesBVQX(resdir,['*contra*keyUp' '*.mat']);
+ff = findFilesBVQX(resdir,['*contra*keyUp*PAR' '*.mat']);
 metaData = table();
 potentialResultsFiles = table();
 for f = 1:length(ff)
@@ -41,7 +41,7 @@ for m = 1:size(masterTableUse,1)
         if saveAllData
             load(masterTableUse.matFile{m}{1})
             masterTableUse.timeparams{m} = timeparams;
-            masterTableUse.taskData{m} = taskData;
+%             masterTableUse.taskData{m} = taskData;
             masterTableUse.rcsRawData{m} = rcsIpadDataPlot;
             clear timeparams taskData rcsIpadDataPlot; 
         end
@@ -196,7 +196,7 @@ hpanel.marginright = 15;
 
 hfig = gcf;
 hpanel.fontsize = 10;
-fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_%s',chanelsPlotLabels{ci});
+fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_%s_PARRM',chanelsPlotLabels{ci});
 
 hfig.Renderer='Painters';
 prfig.figdir = figdir;
