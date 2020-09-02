@@ -1,4 +1,7 @@
-function out = getAdaptiveChanges(deviceSettings)
+function out = getAdaptiveChanges(fn)
+
+    warning('off','MATLAB:table:RowsAddedExistingVars');
+    DeviceSettings = jsondecode(fixMalformedJson(fileread(fn),'DeviceSettings'));
 
     f = 1;
     cntChangeTemp = 1;
@@ -6,8 +9,8 @@ function out = getAdaptiveChanges(deviceSettings)
     embeddedOn = 0;
     adaptiveChanges = table();
 
-    while f<length(deviceSettings)
-        curStr = deviceSettings{f};
+    while f<length(DeviceSettings)
+        curStr = DeviceSettings{f};
         % if adaptive config && embedded
         if isfield(curStr,'AdaptiveConfig')
             if isfield(curStr.AdaptiveConfig,'adaptiveMode')
@@ -26,14 +29,15 @@ function out = getAdaptiveChanges(deviceSettings)
             end
         end
         if isfield(curStr,'GeneralData') && embeddedOn
-            adaptiveChanges.therapySatus(cntChangeTemp) = curStr.GeneralData.therapyStatusData.therapyStatus;
-            adaptiveChanges.activeGroup(cntChangeTemp) = curStr.GeneralData.therapyStatusData.activeGroup;
-            adaptiveChanges.INStime(cntChangeTemp) = curStr.GeneralData.deviceTime;
+            adaptiveChanges.stimulation_on(cntChangeTemp) = curStr.GeneralData.therapyStatusData.therapyStatus;
+            adaptiveChanges.activeGroup(cntChangeTemp) = translateActiveGroupToABCD(curStr.GeneralData.therapyStatusData.activeGroup); 
             cntChangeTemp = cntChangeTemp + 1;
-        end
+        end           
         f = f + 1;
     end
-
+    
+    
+    % get rid off rows without information
     adaptiveChangesTemp = table();
     nextRow = 0;
     for j=1:size(adaptiveChanges,1)
@@ -44,5 +48,14 @@ function out = getAdaptiveChanges(deviceSettings)
     end
     
     out = adaptiveChangesTemp;
-
+    
+    function outGroup = translateActiveGroupToABCD(input)
+        switch input
+            case 0, outGroup  = 'A';
+            case 1, outGroup  = 'B';
+            case 2, outGroup  = 'C';
+            case 3, outGroup  = 'D';
+        end
+    end
+                
 end
