@@ -26,6 +26,9 @@ if plotthis
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
 
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/';
+
 ff = findFilesBVQX(resultsdir,'coherence_and_psd *.mat');
 addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/rcsanalysis/matlab/toolboxes/cluster_dp'));
 
