@@ -61,8 +61,32 @@ for a = 1:length(areasUse)
         ylabel('Power (log_1_0\muV^2/Hz)');
         xlabel('Frequency (Hz)');
         hLeg(t) = hsbH.patch;
+        yStats{t} = y; 
+        xStats{t} = x; 
     end
     legend(hLeg,{'stim off','stim on'}); 
+    % compute p value in beta range
+    freqsNums  = [12 30];
+    x = xStats{1}; 
+    idxfreqs = x >= freqsNums(1,1) & x <freqsNums(1,2);
+    youtFreqsBins{1} = yStats{1}(idxfreqs,:);
+    
+    % compute the peaks
+    yPeaks = [youtFreqsBins{1}];
+    % find peaks 
+    dataFindPeaks = mean(yPeaks',1);
+    pks = []; locs = [];
+    [pks,locs] = findpeaks(dataFindPeaks,'MinPeakDistance',length(dataFindPeaks)-2,'MinPeakProminence',range(dataFindPeaks)*0.2);
+    betaFreqs = x(idxfreqs);
+    if ~isempty(locs)
+        peakFreq = betaFreqs(locs);
+        idxfreqsPeak = x <= (peakFreq+1.5) & x >= (peakFreq-1.5);
+        [pval,h ] = ranksum(mean(yStats{1}(idxfreqsPeak,:)',2),...
+            mean(yStats{2}(idxfreqsPeak,:)',2));
+        fprintf('pvalue is %.6f\n',pval);
+    end
+    %
+
 end
 
 savename = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig3_0_hours_recrorded/psd_and_cohernce_databases_hours_recorded.mat';

@@ -25,6 +25,8 @@ idxchoose = cellfun(@(x) any(strfind(x,'1000Hz')), masterTableUse.chan4) & ...
 masterTableUse = masterTableUse(idxchoose,:);
 % find matched for master table use (contra lateral only) 
 ff = findFilesBVQX(resdir,['*contra*keyUp*PAR' '*.mat']);
+ff = findFilesBVQX(resdir,['*contra*keyUp' '*.mat'],struct('minage',60*60*48));
+ff = findFilesBVQX(resdir,['*contra*keyUp' '*.mat'],struct('maxage',60*60*5));
 metaData = table();
 potentialResultsFiles = table();
 for f = 1:length(ff)
@@ -52,8 +54,24 @@ idxWithResults = cellfun(@(x) ~isempty(x), masterTableUse.matFile);
 masterTableUse = masterTableUse(idxWithResults,:);
 masterTableUse = sortrows(masterTableUse,{'patient','unixTimeStart'});
 masterTableUse(:,{'patient','side', 'unixTimeStart','chan4','active_recharge','stimulation_on','handUsedForTask'})
-fnsave = fullfile(resdir,'all_movement_task_contralateral_Brown_share.mat');
+fnsave = fullfile(resdir,'all_movement_task_contralateral_Brown_share_before_PARRM.mat');
+
 save(fnsave,'masterTableUse'); 
+
+% find out when this was recorded compared to surgery date 
+dirSave = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
+load(fullfile(dirSave, 'deviceIdMasterList.mat'),'masterTable'); 
+
+for m = 1:size(masterTableUse,1)
+    idxuse = cellfun(@(x) strcmp(x,masterTableUse.patient{m}),masterTable.patient) & ...
+             cellfun(@(x) strcmp(x,masterTableUse.side{m}),masterTable.side);
+    surgeryDate = masterTable.implntDate(idxuse);
+    timeDiff(m) = masterTableUse.timeStart(m) - surgeryDate;
+end
+timeDiff.Format = 'dd:hh:mm:ss'
+mean(timeDiff) 
+min(timeDiff)
+max(timeDiff)
 % loop on left / right brain 
 % loop on stim on/stim off
 
@@ -183,6 +201,14 @@ for ci = 1:length(chanelsPlotIdx)
         end
     end
 end
+
+% put in alt patient names 
+altPatNames = {'RCS01','RCS02','RCS03','RCS04','RCS05'};
+for i = 1:5
+    hsb = hpanel(i,1).select();
+    hsb.YLabel.String{1} = altPatNames{i};
+end
+
 hpanel.de.margin = 5;
 
 for i = 1:5
@@ -194,20 +220,21 @@ hpanel.margintop = 15;
 hpanel.marginright = 15;
 
 
+
 hfig = gcf;
 hpanel.fontsize = 10;
-fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_%s_PARRM',chanelsPlotLabels{ci});
+fnmsv = sprintf('all_patient_center_key_Up__left_and_right_CONTRA_-zscore_%s_cutting_out_stim',chanelsPlotLabels{ci});
 
-hfig.Renderer='Painters';
+% hfig.Renderer='Painters';
 prfig.figdir = figdir;
-prfig.figtype = '-dpdf';
-prfig.resolution = 600;
+prfig.figtype = '-djpeg';
+prfig.resolution = 200;
 prfig.closeafterprint = 0;
-prfig.plotwidth           = 7.2;
-prfig.plotheight          = 7.2;
+prfig.plotwidth           = 16;
+prfig.plotheight          = 9;
 prfig.figname             = fnmsv;
 plot_hfig(hfig,prfig)
-print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r300');
+% print(hfig,fullfile(figdir,fnmsv),'-dpdf','-r200');
 
 
 return 

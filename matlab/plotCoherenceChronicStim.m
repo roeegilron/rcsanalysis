@@ -1,5 +1,7 @@
 function plotCoherenceChronicStim()
 %% panel A new way of doing data - single subject on off chronic stim 
+ 
+ 
 rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
 patientAnalyze = {'RCS02'};
 dataTable = table();
@@ -27,7 +29,9 @@ areasUse = {'key0fftOut','key3fftOut',...
   'stn02m10911'};
 ttlUse = {'STN','cortex','STN-cortex coherence'};
 xUse = {'ffPsd','ffPsd','ffCoh'};
+ 
 coloruse = [  0 0.8 0;0.5 0.5 0.5];
+ 
 hfig = figure();
 hfig.Color = 'w';
 for a = 1:length(areasUse)
