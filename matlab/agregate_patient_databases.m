@@ -8,8 +8,30 @@ databasefiles = findFilesBVQX(rootdir_dest,ff);
 for d = 1:length(databasefiles)
     load(databasefiles{d},'sense_stim_table');
     if d == 1 
-        sense_stim_database = sense_stim_table;
+        % XXX need to fix an issue with some sense_stim table 
+        % not updating with most current code 
+        % this code exctract info about adaptive state 
+        % and also gives better esimtate of stim state used in 
+        % majoirty of file, like when running swithc on adaptive 
+        if size(sense_stim_table,2) == 22 
+            sense_stim_database = sense_stim_table;
+        else
+            for i = 1:size(sense_stim_table,1)
+                sense_stim_table.active_recharge(i) = NaN;
+                sense_stim_table.stimTable{i} = table();
+            end
+            sense_stim_database = sense_stim_table;
+        end
     else
+        if size(sense_stim_table,2) == 22
+            sense_stim_table = sense_stim_table;
+        else
+            for i = 1:size(sense_stim_table,1)
+                sense_stim_table.active_recharge(i) = NaN;
+                sense_stim_table.stimTable{i} = table();
+            end
+        end
+        % for cases in which time zone is empty
         sense_stim_table.rectime.TimeZone = sense_stim_database.rectime.TimeZone;
         sense_stim_table.startTime.TimeZone = sense_stim_database.startTime.TimeZone;
         sense_stim_table.endTime.TimeZone = sense_stim_database.endTime.TimeZone;

@@ -9,6 +9,75 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 
 
 
+%% time domain data 
+%%%%%%%%%%
+%%%%%%%%%%
+% START TD 
+% START TD 
+% START TD 
+%%%%%%%%%%
+%%%%%%%%%%
+%%%%%%%%%%
+cnttime = 1; 
+
+for ss = 1:size(database,1) 
+    [pn,fn] = fileparts( database.deviceSettingsFn{ss});
+    ff = findFilesBVQX(pn, 'proc*TD*.mat');
+    if ~isempty(ff)
+        processedTDFiles{ss,1} = ff{1};
+        database.TdExist(ss) = 1; 
+    else
+        processedTDFiles{ss,1} = '';
+        database.TdExist(ss) = 0; 
+    end
+end
+database.processedTDFiles = processedTDFiles;
+totalHours = sum(database.duration);
+existHours = sum(database.duration(logical(database.TdExist)));
+missingHours = sum(database.duration(~logical(database.TdExist))); 
+fprintf('for patient dir:\n%s\n',patdir); 
+fprintf('total database size is %s\n',totalHours); 
+fprintf('actigraphy files exist for %s\n', existHours);
+fprintf('actigraphy files missing for %s\n',missingHours);
+fprintf('files exist for %%%1.6f of data\n',(existHours/totalHours)*100); 
+
+tdProcDat = struct();
+timeDomainFileDur = NaT;
+ffTD = database.processedTDFiles(logical(database.TdExist));
+for f = 1:length(ffTD)
+    %     process and analyze acc data
+    load(ffTD{f},'processedData','params');
+    
+    if isempty(fieldnames(tdProcDat))
+        if isstruct(processedData)
+            tdProcDat = processedData;
+            timeDomainFileDur.TimeZone = processedData(1).timeStart.TimeZone;
+            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
+            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
+            cnttime = cnttime+1;
+        end
+    else
+        if ~isempty(processedData)
+            tdProcDat = [tdProcDat processedData];
+            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
+            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
+            cnttime = cnttime+1;
+        end
+    end
+    clear processedData
+    fprintf('time domain file %d/%d done\n',f,length(ffTD));
+end
+fnsave = sprintf('%s_%s_processedData__%s.mat',database.patient{1},database.side{1}, label);
+save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
+%%%%%%%%%%
+%%%%%%%%%%
+% END TD 
+% END TD 
+% END TD 
+%%%%%%%%%%
+%%%%%%%%%%
+%%%%%%%%%%
+
 %% actigraphy data 
 %%%%%%%%%%
 %%%%%%%%%%
@@ -21,12 +90,13 @@ function concatenate_and_plot_TD_data_from_database_table(database,patdir,label)
 cnttime = 1; 
 
 for ss = 1:size(database,1) 
-    sessionDir = findFilesBVQX(patdir,database.sessname{ss},struct('dirs',1,'depth',1));
-    ff = findFilesBVQX(sessionDir{1}, 'processedAccData.mat');
+    [pn,fn] = fileparts( database.deviceSettingsFn{ss});
+    ff = findFilesBVQX(pn, 'processedAccData.mat');
     if ~isempty(ff)
         processedActigraphyFiles{ss,1} = ff{1};
         database.AccExist(ss) = 1; 
     else
+        processedActigraphyFiles{ss,1} = '';
         database.AccExist(ss) = 0; 
     end
 end
@@ -67,7 +137,7 @@ for f = 1:length(ffAcc)
     fprintf('acc file %d/%d done\n',f,length(ffAcc));
     clear accData;
 end
-fnsave = sprintf('processedDataAcc__%s.mat',label);
+fnsave = sprintf('%s_%s_processedDataAcc__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
 
 %%%%%%%%%%
@@ -82,73 +152,6 @@ save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
 
 
 
-%% time domain data 
-%%%%%%%%%%
-%%%%%%%%%%
-% START TD 
-% START TD 
-% START TD 
-%%%%%%%%%%
-%%%%%%%%%%
-%%%%%%%%%%
-cnttime = 1; 
-
-for ss = 1:size(database,1) 
-    sessionDir = findFilesBVQX(patdir,database.sessname{ss},struct('dirs',1,'depth',1));
-    ff = findFilesBVQX(sessionDir{1}, 'proc*TD*.mat');
-    if ~isempty(ff)
-        processedTDFiles{ss,1} = ff{1};
-        database.TdExist(ss) = 1; 
-    else
-        database.TdExist(ss) = 0; 
-    end
-end
-database.processedTDFiles = processedTDFiles;
-totalHours = sum(database.duration);
-existHours = sum(database.duration(logical(database.TdExist)));
-missingHours = sum(database.duration(~logical(database.TdExist))); 
-fprintf('for patient dir:\n%s\n',patdir); 
-fprintf('total database size is %s\n',totalHours); 
-fprintf('actigraphy files exist for %s\n', existHours);
-fprintf('actigraphy files missing for %s\n',missingHours);
-fprintf('files exist for %%%1.6f of data\n',(existHours/totalHours)*100); 
-
-tdProcDat = struct();
-timeDomainFileDur = NaT;
-ffTD = database.processedTDFiles(logical(database.TdExist));
-for f = 1:length(ffTD)
-    %     process and analyze acc data
-    load(ffTD{f},'processedData','params');
-    
-    if isempty(fieldnames(tdProcDat))
-        if isstruct(processedData)
-            tdProcDat = processedData;
-            timeDomainFileDur.TimeZone = processedData(1).timeStart.TimeZone;
-            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
-            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
-            cnttime = cnttime+1;
-        end
-    else
-        if ~isempty(processedData)
-            tdProcDat = [tdProcDat processedData];
-            timeDomainFileDur(cnttime,1) = processedData(1).timeStart;
-            timeDomainFileDur(cnttime,2) = processedData(end).timeStart;
-            cnttime = cnttime+1;
-        end
-    end
-    clear processedData
-    fprintf('time domain file %d/%d done\n',f,length(ffTD));
-end
-fnsave = sprintf('processedData__%s.mat',label);
-save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
-%%%%%%%%%%
-%%%%%%%%%%
-% END TD 
-% END TD 
-% END TD 
-%%%%%%%%%%
-%%%%%%%%%%
-%%%%%%%%%%
 
 %% plot recording duration to see how much data was recoded per day  
 % split up recordings that are not in the samy day 
@@ -203,7 +206,7 @@ set(gca,'FontSize',16);
 ttluse = sprintf('Continous Chronic Recording at Home (%s hours)',sum(timeDomainFileDur(:,2) - timeDomainFileDur(:,1))); 
 title(ttluse);
 set(gcf,'Color','w'); 
-prfig.figname  = sprintf('continous recording report __ %s',label);
+prfig.figname  = sprintf('%s_%s_continous recording report __ %s',database.patient{1},database.side{1}, label);
 
 plot_hfig(hfig,prfig); 
 
@@ -247,10 +250,11 @@ for c = 1:4
 end
 idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ; 
 close(hfig)
-fnsave = sprintf('psdResults__%s.mat',label);
+fnsave = sprintf('%s_%s_psdResults__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
 
 %% process actigraphy data 
+accResults = struct();
 if ~isempty(fieldnames( accProcDat))
     for a = 1:size(accProcDat,2)
         start = tic;
@@ -261,10 +265,10 @@ if ~isempty(fieldnames( accProcDat))
         datOut = processActigraphyData(dat,64);
         accMean  = mean(datOut);
         accVari  = mean(var(dat));
-        accResults(a).('accMean') = accMean;
-        accResults(a).('accVari') = accVari;
-        accResults(a).('timeStart') = accProcDat(a).timeStart;
-        accResults(a).('timeEnd') = accProcDat(a).timeEnd;
+        accResults.('accMean')(a) = accMean;
+        accResults.('accVari')(a) = accVari;
+        accResults.('timeStart')(a) = accProcDat(a).timeStart;
+        accResults.('timeEnd')(a) = accProcDat(a).timeEnd;
     end
     
     % check for outliers
@@ -279,7 +283,7 @@ if ~isempty(fieldnames( accProcDat))
     idxkeepAcc = idxWhisker;
     close(hfig)
     
-    fnsave = sprintf('accResults__%s.mat',label);
+    fnsave = sprintf('accResults__%s.mat',database.patient{1},database.side{1}, label);
     save( fullfile(patdir,fnsave),'params','accResults','idxkeepAcc','timeDomainFileDur','database')
 end
 
@@ -384,9 +388,64 @@ coherenceResultsTd.timeEnd = [tdProcDat.timeEnd];
 
 
 
-fnsave = sprintf('coherenceResults__%s.mat',label);
+fnsave = sprintf('%s_%s_coherenceResults__%s.mat',database.patient{1},database.side{1}, label);
 save( fullfile(patdir,fnsave),'params','coherenceResultsTd','timeDomainFileDur','database')
 
+
+
+% save one big file 
+fnsave = sprintf('%s_%s_psdAndCoherence__%s.mat',database.patient{1},database.side{1}, label);
+save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
+save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+
+allDataCoherencePsd = struct();
+
+fieldnamesTd = fieldnames( fftResultsTd);
+for fn = 1:length(fieldnamesTd)
+    if strcmp(fieldnamesTd{fn},'ff')
+        fnuse = 'ffPsd';
+    elseif strcmp(fieldnamesTd{fn},'timeStart')
+        fnuse = 'timeStartTd';
+    elseif strcmp(fieldnamesTd{fn},'timeEnd')
+        fnuse = 'timeEndTd';
+    else
+        fnuse = fieldnamesTd{fn};
+    end
+    allDataCoherencePsd.(fnuse) = fftResultsTd.(fieldnamesTd{fn});
+end
+
+
+fieldnamesCoh = fieldnames( coherenceResultsTd);
+for fn = 1:length(fieldnamesCoh)
+    if strcmp(fieldnamesCoh{fn},'ff')
+        fnuse = 'ffCoh';
+    elseif strcmp(fieldnamesCoh{fn},'timeStart')
+        fnuse = 'timeStartCoh';
+    elseif strcmp(fieldnamesCoh{fn},'timeEnd')
+        fnuse = 'timeEndCoh';
+    else
+        fnuse = fieldnamesCoh{fn};
+    end
+    allDataCoherencePsd.(fnuse) = coherenceResultsTd.(fieldnamesCoh{fn});
+end
+
+fieldnamesAcc = fieldnames( accResults);
+for fn = 1:length(fieldnamesAcc)
+    if strcmp(fieldnamesAcc{fn},'ff')
+        fnuse = 'ffCoh';
+    elseif strcmp(fieldnamesAcc{fn},'timeStart')
+        fnuse = 'timeStartAcc';
+    elseif strcmp(fieldnamesAcc{fn},'timeEnd')
+        fnuse = 'timeEndAcc';
+    else
+        fnuse = fieldnamesAcc{fn};
+    end
+    allDataCoherencePsd.(fnuse) = accResults.(fieldnamesAcc{fn});
+end
+
+fnsave = sprintf('%s_%s_psdAndCoherence__%s.mat',database.patient{1},database.side{1}, label);
+save( fullfile(patdir,fnsave),'allDataCoherencePsd','database')
 
 
 

@@ -91,7 +91,7 @@ for f = 1:size(freqs,1)
         hline.YData = tempPSD;
         drawnow;
         fullVidFrame = getframe(hfig);
-        writeVideo(v,fullVidFrame);
+%         writeVideo(v,fullVidFrame);
     end
 end
 
@@ -173,7 +173,7 @@ for i = 1:size(heights,2)
     writeVideo(v,fullVidFrame);
 end
 
-
+%%
 
 close(v);
 close(hfig);

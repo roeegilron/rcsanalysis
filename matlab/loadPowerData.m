@@ -1,3 +1,4 @@
+
 function [powerTable, pbOut]  = loadPowerData(fn)
 try
     jsonobj = deserializeJSON(fn);

@@ -4,39 +4,45 @@ function rcsAtHome_figures_figure5()
 %% 
 % panel a bar graph of total hours awake / alseep
 % panel b - PSD and coherence at home - average state estimate across subjects (median average)
-% panel c - AUC for all subjects 
+% panel c - AUC for all subjects -
 
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 %%
-hfig = figure; 
-p = panel();
-p.pack(1,2); 
-p(1,1).pack(2,1);
-p(1,2).pack(3,1); 
-p.select('all');
-p.fontsize = 30;
-p.identify();
-plotpanels = 0;
-% p(1,1).repack(0.3);
-%%
-
-close all;
-
-if ~plotpanels
     hfig = figure;
     hfig.Color = 'w';
     hpanel = panel();
     hpanel.pack(1,2);
-    hpanel(1,1).pack(2,1);
-    hpanel(1,2).pack(3,1);
+    hpanel(1,2).pack('v',{1/3 1/3 1/3});
+    hpanel(1,1).pack('v',{1/3 2/3}); 
+    hpanel.select('all');
+    hpanel.identify();
+% p(1,1).repack(0.3);
+%%
+
+close all;
+plotpanels = 0;
+if ~plotpanels
+    %%
+    hfig = figure;
+    hfig.Color = 'w';
+    hpanel = panel();
+    hpanel.pack(1,2);
+    hpanel(1,2).pack('v',{1/3 1/3 1/3});
+    hpanel(1,1).pack('v',{1/3 2/3}); 
+%     hpanel.select('all');
+%     hpanel.identify();
+    %%
 end
 % plot panel a in the first column, 3 subplots 
 % plot panel b and c in the seceond column 2 subplots 
 %% panel a bar graph of total hours awake / alseep 
 fignum = 5; 
-figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 % origina funciton used: plot_pkg_data_all_subjects
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/synced_rcs_pkg_data_saved';
 ff = findFilesBVQX(resultsdir,'RCS*.mat'); 
 tbl = table();
 for f = 1:length(ff) 
@@ -60,17 +66,19 @@ end
 fprintf('wake time mean %.2f max %.2f  %.2f\n',mean(recTime(:,1)),max(recTime(:,1)),min(recTime(:,1)));
 fprintf('sleep time mean %.2f max %.2f  %.2f\n',mean(recTime(:,2)),max(recTime(:,2)),min(recTime(:,2)));
 if plotpanels
+    cntplt = 1;
     hfig = figure;
     hfig.Color = 'w'; 
     hsb = subplot(1,1,1);
-    hsb(cntplt) = subplot; 
+    hsb(cntplt) = hsb; 
 else
-    hpanel(1,1,1,1).select();
+    hpanel(1,1,1).select();
     hsb = gca();
+    hold(hsb,'on');
 end
 
 hbar = bar(recTime);
-altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04'};
+altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
 hsb.XTickLabel = altPatientNames;
 hsb.YLabel.String = 'Hours recoreded'; 
 hsb.Title.String = 'Hours recorded at home / patient'; 
@@ -94,16 +102,170 @@ addpath(genpath(fullfile('toolboxes','GEEQBOX')));
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+
 % original function:
 % plot_pkg_data_all_subjects
 
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/patientPSD_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/patientCOH_at_home.mat');
 if plotpanels
     hfig = figure;
     hfig.Color = 'w';
 end
 pdb = patientPSD_at_home;
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/';
+
+
+sides = {'L','R'};
+uniquePatients = {'RCS02','RCS06','RCS05','RCS07','RCS08'};
+cntOut = 1;
+for p = 1:length(uniquePatients) % loop on patients
+    for s = 1:2 % loop on side
+        
+        filenamesearch = sprintf('coherence_and_psd %s %s *.mat',uniquePatients{p},sides{s});
+        ff = findFilesBVQX(datadir,filenamesearch);
+        load(ff{1});
+        rawstates = allDataPkgRcsAcc.states';
+        switch uniquePatients{p}
+            case 'RCS02'
+                % R
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 19 24 25 75 75 76 76];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+            case 'RCS05'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [27 27 27 27 61 61 61 61];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+                
+            case 'RCS06'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 19 14 26 55 55 61 61];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+                
+            case 'RCS07'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [19 20 21 24 76 79 80 80];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+                
+            case 'RCS08'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [27 23 26 26 43 84 84 84];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+        end
+
+        % psd 
+        titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+        labelsCheck = [];
+        for c = 1:4
+            statesUsing = {};cntstt = 1;
+            for ss = 1:length(statesUse)
+                fn = sprintf('key%dfftOut',c-1);
+                labels = strcmp(allstates,statesUse{ss});
+                labelsCheck(:,ss) = labels;
+
+                % save the mean data
+                
+                rawdat = allDataPkgRcsAcc.(fn);
+                rawdat = rawdat(labels,:);
+                fftLogged = mean(rawdat,1);
+                patientPSD_at_home.patient{cntOut} = uniquePatients{p};
+                patientPSD_at_home.side{cntOut} = sides{s};
+                patientPSD_at_home.cnls{cntOut} = cnls;
+                patientPSD_at_home.freqs{cntOut} = freqs;
+                patientPSD_at_home.ttls{cntOut} = ttls;
+                
+                patientPSD_at_home.medstate{cntOut} = statesUse{ss};
+                patientPSD_at_home.electrode{cntOut} = titles{c};
+                patientPSD_at_home.ff{cntOut} = psdResults.ff;
+                patientPSD_at_home.fftOut{cntOut} = fftLogged;
+                patientPSD_at_home.srate(cntOut) = 250;
+                idxnorm = psdResults.ff >=5 & psdResults.ff <=90;
+                fftLogged(idxnorm) = fftLogged(idxnorm)./abs((mean(fftLogged(idxnorm))));
+                patientPSD_at_home.fftOutNorm{cntOut} = fftLogged;
+
+                cntOut = cntOut + 1;
+            end
+        end
+        % coherence 
+        fieldNamesCoherence = {'stn02m10810','stn02m10911','stn13m10810','stn13m0911'};
+        titles_coh = {'coh_stn02m10810','coh_stn02m10911','coh_stn13m10810','coh_stn13m0911'};
+        labelsCheck = [];
+        for c = 1:4
+            statesUsing = {};cntstt = 1;
+            for ss = 1:length(statesUse)
+                fn = sprintf('%s',fieldNamesCoherence{c});
+                labels = strcmp(allstates,statesUse{ss});
+                labelsCheck(:,ss) = labels;
+
+                % save the mean data
+                
+                rawdat = allDataPkgRcsAcc.(fn);
+                rawdat = rawdat(labels,:);
+                ms_coherence = mean(rawdat,1);
+                patientPSD_at_home.patient{cntOut} = uniquePatients{p};
+                patientPSD_at_home.side{cntOut} = sides{s};
+                patientPSD_at_home.medstate{cntOut} = statesUse{ss};
+                patientPSD_at_home.electrode{cntOut} = titles_coh{c};
+                patientPSD_at_home.ff_coh{cntOut} = patientCOH_at_home.ff{1};
+                patientPSD_at_home.ms_coherence{cntOut} = ms_coherence;
+                cntOut = cntOut + 1;
+            end
+        end
+    end
+end
+pdb = patientPSD_at_home ;
 
 
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats 
@@ -165,6 +327,7 @@ for a = 1:length(areas)
     end
     
     % do states for each frequency
+    pvals = [];
     for f = 1:length(pdbSTN.fftOutNorm{1})
         meanfreq = [] ;
         for i = 1:size(pdbSTN,1)
@@ -197,7 +360,7 @@ for a = 1:length(areas)
         hsb(cntplt) = subplot(nrows,ncols,cntplt);hold on;
         cntplt = cntplt + 1;
     else
-        hpanel(1,2,cntplt,1).select();
+        hpanel(1,2,cntplt).select();
         hold on;
         cntplt = cntplt + 1;
         hsb = gca();
@@ -212,7 +375,10 @@ for a = 1:length(areas)
         ff = pdb.ff(idxkeep);
         ff = ff{1};
         % plot(ff,psds,'LineWidth',1,'Color',[0 0.8 0 0.3]);
-        hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+%         hsbH = shadedErrorBar(ff,psds,{@mean,@(x) std(x)*1});
+        y = psds;
+        x = ff;
+        hsbH = shadedErrorBar(x,y,{@median,@(yy) std(yy)./sqrt(size(yy,1))});
         hsbH.mainLine.Color = colorsUse(m,:); 
         hsbH.mainLine.LineWidth = 1;
         hsbH.edge(1).Color = [1 1 1]; 
@@ -245,29 +411,37 @@ for a = 1:length(areas)
 end
 
 % plot coherence 
-pdb = patientCOH_at_home;
+pdbRaw = pdb;
 if plotpanels
     hsb(cntplt) = subplot(nrows,ncols,cntplt);hold on;
     cntplt = cntplt + 1;
 else
-    hpanel(1,2,cntplt,1).select();
+    hpanel(1,1,cntplt).select();
     hold on;
     cntplt = cntplt + 1;
     hsb = gca();
 end
 for m = 1:length(medstate)
-    idxkeep = (pdb.srate == 250) & ...
-        strcmp(pdb.medstate,medstate{m});
-    cohs = cell2mat(pdb.coh(idxkeep)');
-    ff = pdb.ff(idxkeep);
+    idxkeep = cellfun(@(x) any(strfind(x,'coh')),pdbRaw.electrode) & ...
+              strcmp(medstate{m},pdbRaw.medstate);
+    pdb = pdbRaw(idxkeep,:);
+
+        
+    cohs = cell2mat(pdb.ms_coherence);
+    ff = pdb.ff_coh(1);
     ff = ff{1}; 
     errs = []; 
-    meancoh = mean(cohs); 
-    errs(:,1) = mean(cohs) + std(cohs);
-    errs(:,2) = mean(cohs) - std(cohs);
-    errs(errs(:,2)<0,2) = meancoh(errs(:,2)<0);
+    meancoh = mean(cohs);   
+    % using standard deviation 
+%     errs(:,1) = mean(cohs) + std(cohs);
+%     errs(:,2) = mean(cohs) - std(cohs);
+    % using standard error 
+    errs(:,1) = mean(cohs) + (std(cohs)./sqrt(size(cohs,1)));
+    errs(:,2) = mean(cohs) - (std(cohs)./sqrt(size(cohs,1)));
+    
     errs = errs';
-%     hsbH = shadedErrorBar(ff,cohs,{@mean,@(x) std(x)*1});
+
+
     hsbH = shadedErrorBar(ff,mean(cohs),errs); 
     hsbH.mainLine.Color = colorsUse(m,:);
     hsbH.mainLine.LineWidth = 1;
@@ -318,19 +492,20 @@ side( strcmp(pdbSTN.side,'L') ) = 1;
 side( strcmp(pdbSTN.side,'R') ) = 2;
 
 % do states for each frequency
-for f = 1:length(pdbSTN.ff{1})
+pvals = [];
+for f = 1:length(pdbSTN.ff_coh{1})
     meanfreq = [] ;
-    for i = 1:size(pdbSTN.patient,2)
-        meanfreq(i,1) = pdbSTN.coh{i}(f);
+    for i = 1:size(pdbSTN.patient,1)
+        meanfreq(i,1) = pdbSTN.ms_coherence{i}(f);
     end
     const = ones(size(meanfreq,1),1);
-    X = [medstate, montage, side, const];
+    X = [medstate', montage', side', const];
     varnames ={'med state','montage','side','const'};
     [betahat, alphahat, results] = gee(id, meanfreq, medstate, X, 'n', 'equi', varnames);
     pvals(f) = results.model{3,5};
 end
-siglog = logical(pvals<=0.05./length(pdbSTN.ff{1}));
-ff = pdbSTN.ff{i};
+siglog = logical(pvals<=  (0.05./ length(pdbSTN.ff_coh{1})) );
+ff = pdbSTN.ff_coh{i};
 ff(siglog);
 xfreqssig = [];
 D = diff([0,siglogout(:,a)',0]);
@@ -370,182 +545,91 @@ if plotpanels
 end
 %% 
 
-%% panel c - AUC for all subjects 
-% original function to compute the data: 
-% AUC_analysis_including_coherence_and_psd_pkg_data()
-addpath(genpath(fullfile(pwd,'toolboxes','notBoxPlot')))
-datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/';
-fignum = 5; 
-figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
-ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
-for f = 1:length(ff)
-    load(ff{f});
-    if f == 1 
-        AUCall = AUC_results_table; 
-    else
-        AUCall = [AUCall; AUC_results_table];
+%% plot C - stn beta centered psd 
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+load(fnsave,'outputTable');
+
+plotShaded = 1;
+hsb = hpanel(1,1,2).select();
+freqUse = {'beta','gamma'};
+freqUse = {'beta'};
+areas = {'STN','M1'};
+areas = {'STN'};
+medstates = {'off','on'};
+for f = 1:length(freqUse)
+    for a = 1:length(areas)
+        hold(hsb,'on');
+        for m = 1:length(medstates)
+            idxFreq = strcmp(outputTable.freqUse ,freqUse{f});
+            idxAreas= strcmp(outputTable.area ,areas{a});
+            idxMed  = strcmp(outputTable.medstate ,medstates{m});
+            idxUse = idxFreq & idxAreas & idxMed; 
+            tbPlt = outputTable(idxUse,:);
+            data = tbPlt.psdData{1}; 
+            freqLen = size(data,2);
+            xrow = 1-ceil(freqLen/2):1:floor(freqLen/2);
+            x = xrow; 
+            y = data; 
+            if strcmp(medstates{m},'off')
+                colorUse = [0.8 0 0.2];
+            elseif strcmp(medstates{m},'on')
+                colorUse = [0 0.8 0.2];
+            end
+            if plotShaded
+                hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
+        
+                hshadedError.mainLine.Color = colorUse;
+                hshadedError.mainLine.LineWidth = 2;
+                hshadedError.patch.FaceColor = colorUse;
+                hshadedError.patch.MarkerEdgeColor = [ 1 1 1];
+                hshadedError.edge(1).Color = [colorUse 0.1];
+                hshadedError.edge(2).Color = [colorUse 0.1];
+                hshadedError.patch.FaceAlpha = 0.1;
+                hplt(m) = hshadedError.mainLine;
+            else
+                hplt = plot(x,y);
+                for hh = 1:length(hplt)
+                    hplt(hh).Color = [colorUse 0.4];
+                end
+                hplt(m) = hplt(hh);
+            end
+            titleUse = sprintf('%s %s',areas{a},freqUse{f});
+            title(titleUse); 
+            ylabel('Power (log_1_0\muV^2/Hz)');
+            xlabel('centered frequency (Hz)'); 
+%             plot(xrow,data);
+        end
+        legend(hplt,{'off - PKG estimate','on - PKG estimate'});
     end
 end
-datbox = []; 
-xvals  = []; 
-pvals  = []; 
-patients   = {}; 
-idxnum = 1; 
-titlsuse = {}; 
+%% plot panel
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
 
-idxuse = cellfun(@(x) any(strfind(x,'STN beta')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'STN beta';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'M1 gamma')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'motor cortex gamma';
-idxnum = idxnum + 1; 
-
-
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh beta')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence beta';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh gamma')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence gamma';
-idxnum = idxnum + 1; 
-
-idxuse = cellfun(@(x) any(strfind(x,'all areas')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'all features';
-idxnum = idxnum + 1; 
-% XXXXXXX 
-% XXXXXXX
-% plot some stats: 
-fprintf('STN beta %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==1)),min(datbox(xvals==1)),max(datbox(xvals==1)));
-fprintf('M1 gamma %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==2)),min(datbox(xvals==2)),max(datbox(xvals==2)));
-fprintf('M1-STN coh beta  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==3)),min(datbox(xvals==3)),max(datbox(xvals==3)));
-fprintf('M1-STN coh gamma  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==4)),min(datbox(xvals==4)),max(datbox(xvals==4)));
-fprintf('all areas  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==5)),min(datbox(xvals==5)),max(datbox(xvals==5)));
-
-
-for i = 1:5
-    persig = sum(pvals(xvals==i)<0.05)/sum(xvals==i); 
-    fprintf('%s %.2f\n',titlsuse{i},persig); 
-end
-if plotpanels
-    hfig = figure;
-    hfig.Color = 'w';
-    hsb = subplot(1,1,1);
-else
-    hpanel(1,1,2,1).select();
-    hold on;
-    hsb = gca();
-end
-hold on; 
-nbp = notBoxPlot(datbox,xvals); 
-hold on;
-hsb.XTickLabel = titlsuse;
-hsb.XTickLabelRotation = 30;
-ylabel('AUC'); 
-ylim([0.4 1.1]);
-title('Decoding accuracy (AUC) per region and patient'); 
-set(gca,'FontSize',12);
-
-% color each subject with a different color 
-% segregate markers based on significance (marker style) 
-xvalsUse = unique(xvals);
-colorsSubs = [255 181 62; ...
-             0 0 87;...
-             177 63 0;...
-             0 102 8]./255;
-for i = 1:length(xvalsUse)
-    hdat = nbp(i).data;
-    xdat = hdat.XData;
-    ydat = hdat.YData;
-    patdat  = patients(xvals==i);
-    pvalsdat = pvals(xvals==i);
-    unqpat = unique(patdat);
-    delete(hdat); 
-    for p = 1:length(unqpat)
-        idxpat = strcmp(unqpat{p},patdat);
-        xpat = xdat(idxpat); 
-        ypat = ydat(idxpat); 
-        ppat = pvalsdat(idxpat); 
-        scatter(xpat(ppat<0.05),ypat(ppat<0.05),20,'filled','o','MarkerFaceColor',colorsSubs(p,:));
-        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),20,'filled','s','MarkerFaceColor',colorsSubs(p,:));
-    end
-end
-if plotpanels
-    % save fig as
-    savefig(hfig,fullfile(figdirout,'Fig5_panelC_AUC_all_subs_with_coherence'));
-    
-    prfig.plotwidth           = 10;
-    prfig.plotheight          = 7;
-    prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig5_panelC_AUC_all_subs_with_coherence';
-    prfig.figtype             = '-dpdf';
-    plot_hfig(hfig,prfig)
-    close(hfig);
-end
-%% 
-if ~plotpanels
-%%    
-hpanel.fontsize = 12; 
-
-hpanel(1).de.margin = 30; 
-hpanel.marginbottom = 40;
-hpanel(1,2).de.margin = 10;
-hpanel(1,2).de.marginbottom = 2;
-hpanel(1,1).de.margin = 20;
-hpanel.margin = [20 20 10 10];
-prfig.plotwidth           = 10;
+hpanel.fontsize = 10;
+hpanel.de.margin = 20;
+hpanel.marginbottom = 15;
+hpanel.marginright = 15;
+hpanel.margintop = 15;
+hpanel.marginleft = 15;
+prfig.plotwidth           = 8;
 prfig.plotheight          = 7;
-prfig.figdir             = figdirout;
-prfig.figname             = 'Fig5_all_final';
+prfig.figdir              = figdirout;
+prfig.figname             = 'Fig5_v1_pkg_and_hours_recorded_partial';
 prfig.figtype             = '-dpdf';
 plot_hfig(hfig,prfig)
 %%
-% close(hfig);
-end
+
 return;
+
+
 
 %% panel s1 - all raw PSD data showcasing sleep - for all patients 
 close all force;clear all;clc;
 fignum = 4; % NA - it's a supplementary figure 
 addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS02 L pkg R.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS06 R pkg L.mat');
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Figs1_raw_data_across_subs';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs1_raw_data_across_subs';
 titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
 labelsCheck = [];
 combineareas = 1;
@@ -557,8 +641,8 @@ hfig = figure;
 hfig.Color = 'w';
 hfig.Position = [1000         194        1387        1144];
 hpanel = panel();
-hpanel.pack(4,3); 
-hsb = gobjects(4,3);
+hpanel.pack(5,3); 
+hsb = gobjects(5,3);
 
 ff = findFilesBVQX(rootdir,'coherence_and_psd*.mat');
 cntplt = 1; 
@@ -566,14 +650,14 @@ nrows  = 4;
 ncols =  3; 
 datuse = {};
 
-linewidths = [0.2 0.6 0.03 0.03];
+linewidths = [0.2 0.6 0.03 0.03 0.2];
 areatitls = {'STN','motor cortex'};
 for f = 1:length(ff)
     [pn,fn,ext] = fileparts(ff{f}); 
     patients{f} = fn(19:23);     
 end
 uniquePatients = unique(patients); 
-patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04'};
+patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04','RCS05'};
 for p = 1:length(uniquePatients)
     fpts = ff(strcmp(uniquePatients{p},patients));
     stndata = [];
@@ -609,8 +693,13 @@ for p = 1:length(uniquePatients)
         else
             dat = m1_data;
         end
-        
-        idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+        if strcmp(uniquePatients{p},'RCS08')
+            idxnormalize = allDataPkgRcsAcc.ffPSD > 3 &  allDataPkgRcsAcc.ffPSD <90;
+            frequency = allDataPkgRcsAcc.ffPSD';
+        else
+            idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+            frequency = psdResults.ff';
+        end
         meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
         % the absolute is to make sure 1/f curve is not flipped
         % since PSD values are negative
@@ -619,11 +708,10 @@ for p = 1:length(uniquePatients)
         r = ceil(size(dat,1) .* rand(720,1))
         r = 1:5:size(dat,1);
         normalizedPSD = dat(r,:);
-        frequency = psdResults.ff';
         idxsleep = strcmp(allDataPkgRcsAcc.states,'sleep');
         % idxsleep = allDataPkgRcsAcc.bkVals <= -110;
         lw = linewidths(p);
-                reduce_plot(psdResults.ff', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
+                reduce_plot(frequency', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
         xlim([3 100]);
         if p == 4
             xlabel('Frequency (Hz)');
@@ -650,7 +738,12 @@ for p = 1:length(uniquePatients)
     hold on;
     r = ceil(size(coh_dat,1) .* rand(720,1))
     r = 1:5:size(coh_dat,1);
-    reduce_plot(cohResults.ff', coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
+    if strcmp(uniquePatients{p},'RCS08')
+        freqsCoh = allDataPkgRcsAcc.ffCoh;
+    else
+        freqsCoh = cohResults.ff'
+    end
+    reduce_plot(freqsCoh, coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
     ylims = hsb(p,msr-1).YLim;
 %     plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
     plot([13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
@@ -672,7 +765,7 @@ end
 
 hpanel.fontsize = 12; 
 hpanel.margintop = 15;
-hapenl.de.margin = 10; 
+hpanel.de.margin = 10; 
 axs = hfig.Children; 
 for a = 1:length(axs)
     axs(a).Children(1).YData = axs(a).YLim; 

@@ -17,8 +17,8 @@ resultsdir_AUC = datadir;
 %             uniquePatients = {'RCS07'};
 %% XXX
 sides = {'L','R'};
-uniquePatients = {'RCS02','RCS06','RCS05','RCS07'};
-for p = 1:length(uniquePatients) % loop on patients
+uniquePatients = {'RCS02','RCS06','RCS05','RCS07','RCS08'};
+for p = 5%1:length(uniquePatients) % loop on patients
     for s = 1:2 % loop on side
         filenamesearch = sprintf('coherence_and_psd %s %s *.mat',uniquePatients{p},sides{s});
         ff = findFilesBVQX(datadir,filenamesearch);
@@ -86,6 +86,21 @@ for p = 1:length(uniquePatients) % loop on patients
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
+                
+            case 'RCS08'
+                cnls  =  [0  1  2  3  0  1  2  3  ];
+                freqs =  [27 23 26 26 43 84 84 84];
+                ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
         end
         %% get all the data ready for both cohernece and for psd 
         % get the labels
@@ -101,7 +116,11 @@ for p = 1:length(uniquePatients) % loop on patients
             % get channel
             fn = sprintf('key%dfftOut',cnls(c));
             % get freq
+            if strcmp(uniquePatients{p},'RCS08')
+                psdResults.ff = allDataPkgRcsAcc.ffPSD;
+            end
             idxfreq = psdResults.ff >= freqs(c)-1 & psdResults.ff <= freqs(c)+1;
+
             rescaledat = rescale(mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2),0,1); 
             alldataUse(:,cntfeature) = rescaledat; 
             labelMeta{cntfeature,1}  = ttls{c}; 
@@ -117,6 +136,10 @@ for p = 1:length(uniquePatients) % loop on patients
                 % get channel
                 fn = sprintf('%s',cohfieldnames{ac});
                 % get freq
+                if strcmp(uniquePatients{p},'RCS08')
+                    cohResults.ff = allDataPkgRcsAcc.ffCoh;
+                end
+
                 idxfreq = cohResults.ff >= freqsloop(fc)-2 & cohResults.ff <= freqsloop(fc)+2;
                 rescaledat = rescale(mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2),0,1);
                 alldataUse(:,cntfeature) = rescaledat;

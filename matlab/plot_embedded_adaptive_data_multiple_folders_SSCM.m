@@ -5,6 +5,8 @@ clear all; close all; clc;
 %% get folder list
 rootdir = '/Volumes/RCS_DATA/adaptive_at_home_testing';
 rootdir = '/Users/roee/Documents/potential_adaptive/';
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+
 patfolders = findFilesBVQX(rootdir,'RCS*',struct('depth',1,'dirs',1));
 %%
 fprintf('patients found:\n')
