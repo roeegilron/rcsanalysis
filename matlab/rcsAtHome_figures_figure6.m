@@ -4,7 +4,7 @@ function rcsAtHome_figures_figure6()
 % panel b - unsupervised clustering using a template method (RCS02 and RCS07)
 % panel c - bar code comparisons - state estimate, rodgrigez, template matching
 
-plotpanels = 0;
+plotpanels = 1;
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 if ~plotpanels
     hfig = figure;
@@ -282,6 +282,8 @@ if plotthis
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/17_states_historical';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods';
+
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 ff = findFilesBVQX(rootdir, 'pkg_states*10_min*.mat');
 patDatHome = struct();
@@ -398,8 +400,8 @@ for pp = 1:size(patDatHome)
             d(:,m) = vecnorm(normalizedPSD' - fftTemRep')';
         end
         
-        plotRaw = 1;
-        plotState = 0;
+        plotRaw = 0;
+        plotState = 1;
         plotDistance = 0;
         if plotpanels
             subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
@@ -434,6 +436,7 @@ for pp = 1:size(patDatHome)
         
         if plotState
             for s = 1:2
+                hold on;
                 if s == 1
                     labels = d(:,2) > d(:,1);
                 else
@@ -455,8 +458,8 @@ for pp = 1:size(patDatHome)
             end
             xlim([0 100]);
             ttluse = {};
-            ttluse(1,1) = sprintf('%s',patDatHome.patient{pp});
-            ttluse(2,1) = sprintf('%s',ttlsforpaper);
+            ttluse{1,1} = sprintf('%s',patientNamesToPlot{pp});
+            ttluse{2,1} = sprintf('%s',ttlsforpaper{c});
             title(ttluse);
             xlabel('Frequency (Hz)');
             ylabel('Normalized power (a.u.)');
@@ -526,6 +529,7 @@ plotthis = 0;
 if plotthis
 %% panel c - plot bar codes of patient state, template, clustering 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods';
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 patientplot = {'RCS02','RCS07'};
 patientside = {'R','R'};

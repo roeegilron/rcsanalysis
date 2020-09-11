@@ -1,4 +1,4 @@
-function plot_ipad_data_rcs_based_on_jspsych()
+function plot_ipad_data_rcs_based_on_jspsych_brown_paper()
 % this is basing RC+S ipad allignment based on the beeps from the ipad task
 % and not on deslys allignemtn
 clc;
@@ -109,7 +109,9 @@ end
 
 
 %% loop on task data and plot a nice figure for each subject
+% XXXX 
 load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
+% XXXX 
 sides = {'L','R'};
 % so far all subject are using the ipislateral hand
 % XXXX
@@ -155,52 +157,53 @@ for ttt = 1:size(taskDataLocs)
     idxRCdata = taskDataLocs.taskStart(ttt) > masterTableUse.unixTimeStart & ...
         taskDataLocs.taskEnd(ttt) < masterTableUse.unixTimeEnd;
     candidateRCSdata = masterTableUse(idxRCdata,:);
-    % load event data
-    for pp = 1:size(candidateRCSdata)
-        [pn,fn] = fileparts(candidateRCSdata.allDeviceSettingsOut{pp});;
-        load(fullfile(pn,'EventLog.mat'));
-        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc right hand')),eventTable.EventSubType)) > 0
-            candidateRCSdata.handUsedForTask {pp} = 'right';
+    if ~isempty(candidateRCSdata)
+        % load event data
+        for pp = 1:size(candidateRCSdata)
+            [pn,fn] = fileparts(candidateRCSdata.allDeviceSettingsOut{pp});;
+            load(fullfile(pn,'EventLog.mat'));
+            if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc right hand')),eventTable.EventSubType)) > 0
+                candidateRCSdata.handUsedForTask {pp} = 'right';
+            end
+            if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc left hand')),eventTable.EventSubType)) > 0
+                candidateRCSdata.handUsedForTask {pp} = 'left';
+            end
+            if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
+                candidateRCSdata.handUsedForTask {pp} = 'NA';
+            end
         end
-        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc left hand')),eventTable.EventSubType)) > 0
-            candidateRCSdata.handUsedForTask {pp} = 'left';
+        unqHandUsed = unique(candidateRCSdata.handUsedForTask);
+        if strcmp(handBrainRelation{ccc},'contralateral')
+            if strcmp(unqHandUsed{1},'right')
+                brainSideChoose = 'L';
+            elseif strcmp(unqHandUsed{1},'left')
+                brainSideChoose = 'R';
+            end
+        elseif strcmp(handBrainRelation{ccc},'ipsilateral')
+            if strcmp(unqHandUsed{1},'right')
+                brainSideChoose = 'R';
+            elseif strcmp(unqHandUsed{1},'left')
+                brainSideChoose = 'L';
+            end
         end
-        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
-            candidateRCSdata.handUsedForTask {pp} = 'NA';
+        idxSide = strcmp(candidateRCSdata.side,brainSideChoose);
+        rcsDataMeta = candidateRCSdata(idxSide,:);
+        if isempty(rcsDataMeta)
+            % you don't have one side or other conditons aren't met
+            break;
         end
-    end
-    unqHandUsed = unique(candidateRCSdata.handUsedForTask);
-    if strcmp(handBrainRelation{ccc},'contralateral')
-        if strcmp(unqHandUsed{1},'right')
-            brainSideChoose = 'L';
-        elseif strcmp(unqHandUsed{1},'left')
-            brainSideChoose = 'R';
+        handUsed  = unqHandUsed{1};
+        patient  = rcsDataMeta.patient{1};
+        if any(strfind(rcsDataMeta.senseSettings{1}.chan4{1},'250Hz'))
+            x = 2;
+            fprintf('%s %s %s is %s\n',rcsDataMeta.patient{1},rcsDataMeta.side{1},rcsDataMeta.timeStart(1),rcsDataMeta.senseSettings{1}.chan4{1});
         end
-    elseif strcmp(handBrainRelation{ccc},'ipsilateral')
-        if strcmp(unqHandUsed{1},'right')
-            brainSideChoose = 'R';
-        elseif strcmp(unqHandUsed{1},'left')
-            brainSideChoose = 'L';
+        
+        if rcsDataMeta.stimStatus{1}.stimulation_on
+            stimState = sprintf('stim on (%.2f mA)',rcsDataMeta.stimStatus{1}.amplitude_mA);
+        else
+            stimState = 'stim off';
         end
-    end
-    idxSide = strcmp(candidateRCSdata.side,brainSideChoose);
-    rcsDataMeta = candidateRCSdata(idxSide,:);
-    if isempty(rcsDataMeta)
-        % you don't have one side or other conditons aren't met
-        break;
-    end
-    handUsed  = unqHandUsed{1};
-    patient  = rcsDataMeta.patient{1};
-    if any(strfind(rcsDataMeta.senseSettings{1}.chan4{1},'250Hz'))
-        x = 2;
-        fprintf('%s %s %s is %s\n',rcsDataMeta.patient{1},rcsDataMeta.side{1},rcsDataMeta.timeStart(1),rcsDataMeta.senseSettings{1}.chan4{1});
-    end
-    
-    if rcsDataMeta.stimStatus{1}.stimulation_on
-        stimState = sprintf('stim on (%.2f mA)',rcsDataMeta.stimStatus{1}.amplitude_mA);
-    else
-        stimState = 'stim off';
-    end
         timeStart = taskDataLocs.taskTable{ttt}.time(1);
         timeEnd = taskDataLocs.taskTable{ttt}.time(end);
         [hfig,trialDataResultsUse,taskDataWithTrials] = behaviouralAnalysis_movementTask_data_jspsyc(taskDataLocs.taskTable{ttt});
@@ -219,6 +222,7 @@ for ttt = 1:size(taskDataLocs)
         if plotBehavioural
             print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r300');
         end
+    end
 
 end
 
@@ -318,6 +322,8 @@ for ttt = 1:size(taskDataLocs)
             [~,idxUseRxGenTime] = min(abs(outdatcomplete.derivedTimes - targetInsTime));
             taskData.idxUseRxGenTime(tt,1) = idxUseRxGenTime;
         end
+        
+        % stim cleaning to do: 
         
         analysisToDo = {'center_prep','center_move','center_keyUp'};
         analysisToDo = {'center_keyUp'};

@@ -308,6 +308,87 @@ if ~plotpanels
     % close(hfig);
 end
 %%
+
+%% plot the weights for feature coefficiants 
+close all;
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+
+altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
+
+
+ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
+coeff = [];
+patientLabes = {};
+for f = 1:length(ff)
+    load(ff{f});
+    coeff(f,:) = rescale(abs(AUC_results_table_coeffients.coefficents'),0,1);
+    if f == 1 
+        AUCall = AUC_results_table; 
+    else
+        AUCall = [AUCall; AUC_results_table];
+    end
+    patientLabes{f} = sprintf('%s %s',AUC_results_table.patient{1},AUC_results_table.side{1});
+end
+hfig = figure;
+hfig.Color = 'w'; 
+imagesc(coeff); 
+hsb = gca();
+hsb.YTickLabel = patientLabes;
+hsb.XTick = 1:length(AUC_results_table_coeffients.coefficentsLabels');
+hsb.XTickLabel = AUC_results_table_coeffients.coefficentsLabels';
+hsb.XTickLabelRotation = 45;
+hclr = colorbar; 
+hclr.Label.String = 'Norm. contribution to LDA classifier';
+hsb.FontSize = 16; 
+
+title('Contribution of features to LDA discrimination','FontSize',24);
+prfig.plotwidth           = 10;
+prfig.plotheight          = 7;
+prfig.figdir              = figdirout;
+prfig.figname             = 'Fig5_v2_AUC_contributions_of_LDA_weights';
+prfig.figtype             = '-dpdf';
+plot_hfig(hfig,prfig)
+
+%%
+
+%% plot the weights vs AUC performance  
+close all;
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+
+altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
+
+
+ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
+coeff = [];
+patientLabes = {};
+hfig = figure;
+hfig.Color = 'w'; 
+cntplt = 1; 
+for f = 1:length(ff)
+    load(ff{f});
+    coeff(f,:) = rescale(abs(AUC_results_table_coeffients.coefficents'),0,1);
+    hsb(f) = subplot(5,2,cntplt); 
+    cntplt = cntplt + 1; 
+    patientLabes{f} = sprintf('%s %s',AUC_results_table.patient{1},AUC_results_table.side{1});
+    scatter(AUC_results_table.AUC(1:16), coeff(f,:),50,'filled','MarkerFaceAlpha',0.5);
+    xlabel('AUC'); 
+    ylabel('LDA weights'); 
+    set(gca,'FontSize',12); 
+    title(patientLabes{f}); 
+end
+linkaxes(hsb,'x');
+
+sgtitle('Correlation between AUC and LDA weights - ind. features','FontSize',16);
+prfig.plotwidth           = 7;
+prfig.plotheight          = 10;
+prfig.figdir              = figdirout;
+prfig.figname             = 'Fig5_v2_AUC_contributions_of_LDA_weights_scatter_plots';
+prfig.figtype             = '-dpdf';
+plot_hfig(hfig,prfig)
+
+%%
 return;
 
 

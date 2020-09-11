@@ -21,9 +21,9 @@ for ppp = 1:length(patientFolders)
             [pn,fn] = fileparts(ff{f});
             [pnn,medscond] = fileparts(pn);
             [pnnn,patientandside] = fileparts(pnn);
-            outdat.(meds{m})(f).powerChunk = powerChunk;
+%             outdat.(meds{m})(f).powerChunk = powerChunk;
             outdat.(meds{m})(f).outdatachunk = outdatachunk;
-            outdat.(meds{m})(f).powerMeta = powerMeta;
+%             outdat.(meds{m})(f).powerMeta = powerMeta;
             outdat.(meds{m})(f).eventTable = eventTable;
             outdat.(meds{m})(f).current = str2num(fn(end-2:end));
             fprintf('%s %s %s %s\n',...
@@ -37,7 +37,7 @@ end
 %%
 %%
 clear outdat;
-for ppp = 8%1:length(patientFolders)
+for ppp = 1:2%:length(patientFolders)
     [pn,fn] = fileparts(patientFolders{ppp});
     patient = fn(1:end-1);
     side = fn(end);
@@ -51,9 +51,9 @@ for ppp = 8%1:length(patientFolders)
             load(ff{f});
             [pn,fn] = fileparts(ff{f});
             
-            outdat.(meds{m})(f).powerChunk = powerChunk;
+%             outdat.(meds{m})(f).powerChunk = powerChunk;
             outdat.(meds{m})(f).outdatachunk = outdatachunk;
-            outdat.(meds{m})(f).powerMeta = powerMeta;
+%             outdat.(meds{m})(f).powerMeta = powerMeta;
             outdat.(meds{m})(f).eventTable = eventTable;
             outdat.(meds{m})(f).current = str2num(fn(end-2:end));
             if isempty(outdatachunk)
@@ -175,12 +175,13 @@ for ppp = 8%1:length(patientFolders)
             xlim([1 100]);
             xlabel('Freq (Hz)');
             ylabel('Power (log_1_0\muV^2/Hz)');
-            title(ttluse);
+            title(strrep(ttluse,'_',' '));
             set(gca,'FontSize',16);
             
         end
     end
     largeTitleUse = sprintf('%s %s',patient,side);
+    largeTitleUse = strrep(largeTitleUse,'_',' ');
     sgtitle(largeTitleUse,'FontSize',24);
 
     fprintf('patient %s side %s\n', patient,side);
@@ -248,6 +249,19 @@ for ppp = 8%1:length(patientFolders)
                 peaks(3) = 10;
                 peaks(4) = 65;
                 bw = 2.5;
+            case 'RCS01L_BP'
+                peaks(1) = 14; % 25 is high beta peak 17 is low beta
+                peaks(2) = 80;
+                peaks(3) = 16;
+                peaks(4) = 6;
+                bw = 2.5;
+            case 'RCS01L_MP'
+                peaks(1) = 14; % 25 is high beta peak 17 is low beta
+                peaks(2) = 21;
+                peaks(3) = 6;
+                peaks(4) = 76;
+                bw = 2.5;
+
         end
         
         hfig = figure;
@@ -316,7 +330,7 @@ for ppp = 8%1:length(patientFolders)
                     outRec(end).tdData(chanorder(cn)).minusInput,...
                        bandsused(1),   bandsused(2));
 
-                title(ttluse);
+                title(strrep(ttluse,'_',' '));
 
 %                 ylbtitle = sprintf('Power computed from TD (%d-%d Hz)',bandsused(1), bandsused(2));
 %                ylabel(ylbtitle);
@@ -328,6 +342,7 @@ for ppp = 8%1:length(patientFolders)
             
         end
         largeTitleUse = sprintf('%s %s',patient,side);
+        largeTitleUse = strrep(largeTitleUse,'_',' ');
         sgtitle(largeTitleUse,'FontSize',24);
         
         % params to print the figures

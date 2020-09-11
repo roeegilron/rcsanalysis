@@ -92,10 +92,15 @@ clc;
 fprintf('total hours recorded study (%s)\n',sum(recTime(:)));
 recTimeOffStim = recTime(:,1:2);
 fprintf('total hours recorded off stim (%s)\n',sum(recTimeOffStim(:)));
+recTimeOffStim = recTime(1:4,1:2);
+fprintf('total hours recorded off stim subs 1-4 (%s)\n',sum(recTimeOffStim(:)));
 recTimeOffStim = recTime(:,2);
 fprintf('total hours recorded off stim sleeping (%s)\n',sum(recTimeOffStim(:)));
 recTimeOffStim = recTime(:,3);
 fprintf('total hours recorded on stim awake (%s)\n',sum(recTimeOffStim(:)));
+% total hours contributed by RCS08: 
+fprintf('total hours recorded by RCS08 (RCS 05 in paper) (%s)\n',sum(recTime(5,:)));
+
 
 recTime = hours(recTime);
 cntplt = 1;
@@ -138,6 +143,12 @@ for f = 1:length(ff)
     idxnotsleep = ~strcmp(allDataPkgRcsAcc.states,'sleep');
     tbl.sleep_hours(f) = (sum(idxsleep)*2)/60; 
     tbl.wake_hours(f) = (sum(idxnotsleep)*2)/60; 
+    tbl.numStates(f) = length(allDataPkgRcsAcc.states);
 end
+numStates = tbl.numStates; 
+stderror= std( numStates ) / sqrt( length( numStates ))
+fprintf('mean %.2f (%.2f-%.2f) (min,max), %.2f SEM\n',...
+    mean(numStates), min(numStates),max(numStates), stderror);
+
 totalHoursLastVersion = sum(tbl.sleep_hours) + sum(tbl.wake_hours);
 %% 
