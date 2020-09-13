@@ -160,9 +160,9 @@ for p = 1:length(uniquePatients) % loop on patients
             %% disc
             rng(1); % For reproducibility
             cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
-            doshuffle = 0;
+            doshuffle = 1;
             if doshuffle
-                numshuffls = 5e3;
+                numshuffls = 10e3; % XXXXXXXXXXX
             else
                 numshuffls = 1;
             end
@@ -233,6 +233,67 @@ for p = 1:length(uniquePatients) % loop on patients
                 end
             end
         end
+        %% use STN,  M1 or Both power values 
+        
+        for nnn = 1:3 % loop on averages 
+            switch nnn 
+                case 1 
+                    labelAgregateAreas{nnn} = 'STN';
+                    idxuseLabels = cellfun(@(x) any(strfind(x,'STN')),labelMeta) & ...
+                             ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+                case 2 
+                    labelAgregateAreas{nnn} = 'MC';
+                    idxuseLabels = cellfun(@(x) any(strfind(x,'M1')),labelMeta) & ...
+                             ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+                case 3 
+                    labelAgregateAreas{nnn} = 'STN+MC';
+                    idxuseLabels = ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+            end
+                
+            for si =1:numshuffls+1
+                for k = 1:5
+                    idxTrn = training(cvp,k); % Training set indices
+                    idxTest = test(cvp,k);    % Test set indices
+                    tblTrn = array2table(alldataUse(idxTrn,idxuseLabels));
+                    tblTrn.Y = labels(idxTrn);
+                    if doshuffle
+                        if si > 1 % first is real
+                            rng(si);
+                            labs = labels(idxTrn);
+                            idxshuffle = randperm(length(labs));
+                            labs = labs(idxshuffle);
+                            tblTrn.Y = labs;
+                        end
+                    end
+                    Mdl_agregate = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
+                    
+                    [labeltest_agregate,scoretest_agregate,costest_agregate] = predict(Mdl_agregate,alldataUse(idxTest,idxuseLabels));
+                    if doshuffle
+                        [X_agregate,Y_agregate,T_agregate,AUC_agregate(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
+                    else
+                        [X_agregate,Y_agregate,T_agregate,AUC_agregate(k),OPTROCPT_agregate] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
+                    end
+                end
+            end
+            if doshuffle
+                realVal = mean(AUC_agregate(:,1));
+                shufflevals = mean(AUC_agregate(:,2:end),1);
+                AUCout_agregate(nnn) = realVal;
+                sumsmaller = sum(realVal < mean(AUC_agregate(:,2:end),1));
+                if sumsmaller == 0
+                    pval = 1/numshuffls;
+                else
+                    pval = sumsmaller/numshuffls;
+                end
+                AUCpOut_agregate(nnn) = pval;
+            else
+                AUCout_agregate(nnn) = mean(AUC_agregate);
+            end
+
+        end
+        
+        
+        
         if doshuffle
             realVal = mean(AUC(:,1));
             shufflevals = mean(AUC(:,2:end),1);
@@ -249,7 +310,7 @@ for p = 1:length(uniquePatients) % loop on patients
         end
         fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
             c+1, length(labelMeta)+1, uniquePatients{p},sides{s},'all areas',toc(start));
-        %%
+        %% save the table with the 
         labelMetaTitles = labelMeta;
         labelMetaTitles{17,1} = 'all areas';
         AUC_results_table = table(); 
@@ -263,6 +324,9 @@ for p = 1:length(uniquePatients) % loop on patients
                 AUC_results_table.AUCp(r) = AUCpOut(r);
             end
         end
+        %% add some agregate results 
+                labelMetaTitles{17,1} = 'all areas';
+        
         AUC_results_table_coeffients.coefficents = Mdl.Coeffs(2).Linear;
         AUC_results_table_coeffients.coefficentsLabels = labelMeta;
 
@@ -270,11 +334,11 @@ for p = 1:length(uniquePatients) % loop on patients
             sides{s});
         fnmsave = fullfile(resultsdir_AUC,fnmmuse);
         if ~doshuffle % only save the coeefiecns if not doing shuffle 
-            save(fnmsave,'AUC_results_table_coeffients','-append');
+            save(fnmsave,'AUC_results_table_coeffients','AUCout_agregate','labelAgregateAreas', '-append');
             clear alldataUse
         else
             readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
-            save(fnmsave,'AUC_results_table','cnls','freqs','readme');
+            save(fnmsave,'AUC_results_table','cnls','freqs','readme','AUCout_agregate','AUCpOut_agregate','labelAgregateAreas');
             clear alldataUse
         end
         

@@ -426,11 +426,18 @@ allstates(offidx) = {'off'};
 allstates(sleeidx) = {'sleep'};
 statesUse = {'off','on'};
 
-fieldnamesuse = {'key0fftOut','key2fftOut','stn02m10810'};
+fieldnamesuse = {'key0fftOut','key2fftOut','stn02m10911'};
 titles = {'STN 0-2','M1 9-11','STN-M1 coherence'};
+fontSize = 9;
+if plotpanels
+    t = tiledlayout(3,1,'TileSpacing','Compact','Padding','Compact');
+    
+end
 for c = 1:3
     if plotpanels
-        hsb(cntplt) = subplot(3,1,cntplt); cntplt = cntplt + 1;
+        hsb(cntplt) = nexttile; 
+        cntplt = cntplt + 1;
+%         hsb(cntplt) = subplot(3,1,cntplt); cntplt = cntplt + 1;
     else
         hpanel(1,1,2,cntplt,1).select(); % loop on 4th position;
         hsb(cntplt) = gca;
@@ -472,9 +479,24 @@ for c = 1:3
         
         rawdat = allDataPkgRcsAcc.(fn);
         rawdat = rawdat(labels,:);
+        set(gca,'FontSize',fontSize);
+        
+
         
     end
+    xlim([3 100]);
+    % change scale of psd labels from 0-1 (it's a hack, but easier this
+    % way).
+    ylimits =  hsb(cntplt-1).YLim;
+    newTicks = linspace(ylimits(1),ylimits(2),5);
     
+    hsb(cntplt-1).YTick = newTicks;
+    newYLabels = rescale(newTicks,0,1);
+    for y = 1:length(newYLabels)
+        newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+    end
+    hsb(cntplt-1).YTickLabel = newLabels;
+
 %     legend(hsbLegend,statesUsing);
     
     % add each oscilation in turn (each seperatly
@@ -515,8 +537,8 @@ for c = 1:3
         hsb(cntplt-1).XTickLabel = {};
     end
     ttluse = sprintf('%s',titles{c});
-    title(ttluse,'FontName','Arial','FontSize',11);
-    set(gca,'FontName','Arial','FontSize',11);
+    title(ttluse,'FontName','Arial','FontSize',fontSize);
+    set(gca,'FontName','Arial','FontSize',fontSize);
     xlim([3 100]);
     % change scale of psd labels from 0-1 (it's a hack, but easier this
     % way).
@@ -529,6 +551,7 @@ for c = 1:3
         newLabels{y,1} = sprintf('%.2f',newYLabels(y));
     end
     hsb(cntplt-1).YTickLabel = newLabels;
+    set(gca,'xlimmode','manual','ylimmode','manual')
 
 
 
@@ -536,10 +559,11 @@ for c = 1:3
 end
 
 if plotpanels
+    set(gca,'xlimmode','manual','ylimmode','manual')
     hfig.RendererMode = 'manual';
     hfig.Renderer = 'painters';
-    prfig.plotwidth           = 6;
-    prfig.plotheight          = 8;
+    prfig.plotwidth           = 3.5;
+    prfig.plotheight          = 3.2;
     prfig.figdir             = figdirout;
     prfig.figname             = 'Fig4_panelD_all_states_shaded_error_bar_rcs02R';
     prfig.figtype             = '-dpdf';

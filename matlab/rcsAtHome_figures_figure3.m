@@ -130,7 +130,7 @@ for e = 1:2
             strcmp(datTabl.electrode,electrodes{e}) & ...
             strcmp(datTabl.medstate,medstates{m} );
         % plot
-        plot(datTabl.ff{idxuse},datTabl.fftOutNorm{idxuse},'LineWidth',4,'Color',colorsUse(m,:));
+        plot(datTabl.ff{idxuse},datTabl.fftOutNorm{idxuse},'LineWidth',2,'Color',colorsUse(m,:));
         
     end
     xlim(hsb(e,1),[3.5 89.5]);
@@ -141,9 +141,23 @@ for e = 1:2
     ylabel('Norm. Power','FontName','Arial','FontSize',11);
     
     if e == 1
-        legend({'defined on','defined off'},'FontName','Arial','FontSize',10);
+        hLeg = legend({'defined on','defined off'},'FontName','Arial','FontSize',10);
+        hLeg.Box = 'off';
     end
     hsb(e,1).XTick = [];
+    % change scale of psd labels from 0-1 (it's a hack, but easier this
+    % way).
+    ylimits =    hsb(e,1).YLim;
+    newTicks = linspace(ylimits(1),ylimits(2),5);
+    
+    hsb(e,1).YTick = newTicks;
+    newYLabels = rescale(newTicks,0,1);
+    for y = 1:length(newYLabels)
+        newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+    end
+    hsb(e,1).YTickLabel = newLabels;
+    set(gca,'xlimmode','manual','ylimmode','manual')
+
 end
 % plot coherence between 
 hsb(cntplt,1) = hpanel(2,cntplt,1).select();
@@ -160,7 +174,7 @@ for m = 1:2
     x = cohPlot.ffCoh{1};
     y = cohPlot.mscoherence{1};
     plot(x,y,...
-        'LineWidth',4,'Color',colorsUse(m,:));
+        'LineWidth',2,'Color',colorsUse(m,:));
 end
 xlabel('Frequency (Hz)','FontName','Arial','FontSize',11);
 ylabel('ms coherence'); 
@@ -238,8 +252,8 @@ for a = 1:length(areas)
 %       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1}); 
 
         hsbH.mainLine.Color = colorsuse(m,:);
-        hsbH.mainLine.LineWidth = 3;
-        hsbH.patch.FaceAlpha = 0.1;
+        hsbH.mainLine.LineWidth = 2;
+        hsbH.patch.FaceAlpha = 0;
         hsbH.patch.FaceColor = colorsuse(m,1:3); 
         hsbH.edge(1).Color = [1 1 1];
         hsbH.edge(2).Color = [1 1 1];
@@ -326,9 +340,26 @@ for a = 1:length(areas)
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
-    legend(hLine,{'defined on','defined off'});
+    if a == 1 
+        hLegend = legend(hLine,{'defined on','defined off'});
+        hLegend.Box = 'off';
+    end
     xlim([5 90]);
 %     xlabel('Frequency (Hz)');
+    
+    % change scale of psd labels from 0-1 (it's a hack, but easier this
+    % way).
+    ylimits =    hsb(e,2).YLim;
+    newTicks = linspace(ylimits(1),ylimits(2),5);
+    
+    hsb(e,2).YTick = newTicks;
+    newYLabels = rescale(newTicks,0,1);
+    for y = 1:length(newYLabels)
+        newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+    end
+    hsb(e,2).YTickLabel = newLabels;
+    set(gca,'xlimmode','manual','ylimmode','manual')
+    
     ylabel('Norm. power');
     hsb = gca;
     hsb.XTick = [];
@@ -372,8 +403,8 @@ for m = 1:length(medstatecheck)
     %       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1});
     
     hsbH.mainLine.Color = colorsuse(m,:);
-    hsbH.mainLine.LineWidth = 3;
-    hsbH.patch.FaceAlpha = 0.1;
+    hsbH.mainLine.LineWidth = 2;
+    hsbH.patch.FaceAlpha = 0;
     hsbH.patch.FaceColor = colorsuse(m,1:3);
     hsbH.edge(1).Color = [1 1 1];
     hsbH.edge(2).Color = [1 1 1];
@@ -441,15 +472,33 @@ end
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
-legend(hLine,{'defined on','defined off'});
+% legend(hLine,{'defined on','defined off'});
 xlim([5 90]);
 
+
+
 xlabel('Frequency (Hz)');
-ylabel('Norm. frequency');
+ylabel('ms coherence');
 title(titlesUse{a});
 set(gca,'FontSize',16);
 
 hsb(3,2).YLim(1) = 0;
+
+% % change scale of psd labels from 0-1 (it's a hack, but easier this
+% % way).
+% e = 3;
+% ylimits =    hsb(e,2).YLim;
+% newTicks = linspace(ylimits(1),ylimits(2),5);
+% 
+% hsb(e,2).YTick = newTicks;
+% newYLabels = rescale(newTicks,0,1);
+% for y = 1:length(newYLabels)
+%     newLabels{y,1} = sprintf('%.2f',newYLabels(y));
+% end
+% hsb(e,2).YTickLabel = newLabels;
+set(gca,'xlimmode','manual','ylimmode','manual')
+
+
 
 if plotpanels
     sgtitle('Defined on/off in clinic (8 STNs, 5 patients)','FontSize',12);
@@ -501,10 +550,46 @@ xlim([0 7]);
 ttlsuse{1,1} = 'Movement related cortical activity'; 
 ttlsuse{1,2} = 'motor cortex 8-10'; 
 title(ttlsuse); 
+
+% fix some title and font sizes - indiv subjects 
+hsb = hpanel(2,1,1).select();
+hsb.FontSize = 12; 
+hsb.Title.String = 'STN 0-2';
+hsb.Title.FontSize = 14;
+
+hsb = hpanel(2,2,1).select();
+hsb.FontSize = 12; 
+hsb.Title.String = 'motor cortex 9-11';
+hsb.Title.FontSize = 14;
+
+hsb = hpanel(2,3,1).select();
+hsb.Title.String = 'STN-motor cortex coherence';
+hsb.FontSize = 12; 
+hsb.Title.FontSize = 14;
+
+% fix some title and font sizes - group data 
+hsb = hpanel(2,1,1).select();
+hsb.FontSize = 12; 
+hsb.Title.String = 'STN';
+hsb.Title.FontSize = 14;
+
+hsb = hpanel(2,2,1).select();
+hsb.FontSize = 12; 
+hsb.Title.String = 'motor cortex';
+hsb.Title.FontSize = 14;
+
+hsb = hpanel(2,3,1).select();
+hsb.Title.String = 'STN-motor cortex coherence';
+hsb.FontSize = 12; 
+hsb.Title.FontSize = 14;
+
+
+
 % to plot vecot uncomment this 
-% delete(hp);
+delete(hp);
 % to plot jpeg on comment this: 
 delete(hline); 
+    hsb = hpanel(1,2).select(); 
 hsb.Box = 'off';
 hsb.XTick = [];
 hsb.XLabel.String = '';
@@ -631,7 +716,8 @@ for c = [1 4]
         
         rawdat = allDataPkgRcsAcc.(fn);
         rawdat = rawdat(labels,:);
-        legend(statesUsing);
+        
+        hLegend = legend(statesUsing);
         xlim([3 100]);
         xlabel('Time (Hz)','FontName','Arial','FontSize',11);
         ylabel('Norm Power','FontName','Arial','FontSize',11);

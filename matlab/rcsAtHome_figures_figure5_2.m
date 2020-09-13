@@ -363,16 +363,59 @@ altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
 ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
 coeff = [];
 patientLabes = {};
+cntplt = 1; 
+clear AUC_ag;
+for f = 1:length(ff)
+    load(ff{f});
+    [pn,fn] = fileparts(ff{f});
+    patientLabels{f} = [fn(1:5) ' ' fn(7)];
+    AUC_ag(f,:) = AUCout_agregate(1:2);
+end
+hfig = figure; 
+hfig.Color = 'w';
+hsb = gca;
+hbar = bar(AUC_ag);
+hsb.XTickLabel = patientLabels;
+hsb.XTickLabelRotation = 45;
+ylabel('AUC'); 
+title('Relative contribution of area'); 
+set(hsb,'FontSize',16);
+legend(labelAgregateAreas);
+ylim([0.5 1]); 
+prfig.plotwidth           = 10;
+prfig.plotheight          = 7;
+prfig.figdir              = figdirout;
+prfig.figname             = 'Fig5_v2_relative_contribution_of_areas_stn_vs_mc';
+prfig.figtype             = '-dpdf';
+plot_hfig(hfig,prfig)
+
+%%
+
+
+%% plot the agregated STN vs MC vs STN+MC decoders 
+close all;
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+
+altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
+
+
+ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
+coeff = [];
+patientLabes = {};
 hfig = figure;
 hfig.Color = 'w'; 
 cntplt = 1; 
 for f = 1:length(ff)
     load(ff{f});
     coeff(f,:) = rescale(abs(AUC_results_table_coeffients.coefficents'),0,1);
-    hsb(f) = subplot(5,2,cntplt); 
+    hsb(f) = subplot(5,2,cntplt); hold on;
     cntplt = cntplt + 1; 
     patientLabes{f} = sprintf('%s %s',AUC_results_table.patient{1},AUC_results_table.side{1});
     scatter(AUC_results_table.AUC(1:16), coeff(f,:),50,'filled','MarkerFaceAlpha',0.5);
+    xline = AUC_results_table.AUC(17); 
+    ylims = hsb(f).YLim;
+    plot([xline xline], ylims,'LineWidth',1,'Color',[0.5 0.5 0.5 0.5],'LineStyle','-.');
     xlabel('AUC'); 
     ylabel('LDA weights'); 
     set(gca,'FontSize',12); 
@@ -389,6 +432,9 @@ prfig.figtype             = '-dpdf';
 plot_hfig(hfig,prfig)
 
 %%
+
+
+
 return;
 
 

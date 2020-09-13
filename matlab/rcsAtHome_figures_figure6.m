@@ -400,8 +400,8 @@ for pp = 1:size(patDatHome)
             d(:,m) = vecnorm(normalizedPSD' - fftTemRep')';
         end
         
-        plotRaw = 0;
-        plotState = 1;
+        plotRaw = 1;
+        plotState = 0;
         plotDistance = 0;
         if plotpanels
             subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
@@ -418,9 +418,16 @@ for pp = 1:size(patDatHome)
                 else
                     labels = d(:,1) >= d(:,2);
                 end
+                if s == 2 & cntplt == 5
+                    LineWidth = 0.05;
+                    Alpha = 0.02;
+                elseif s == 1 & cntplt == 5
+                    LineWidth = 1;
+                    Alpha = 0.2;
+                end
                 plot(psdResults.ff,normalizedPSD(labels,:),...
-                    'LineWidth',0.05,...
-                    'Color',[colors(s,:) 0.05]);
+                    'LineWidth',LineWidth,...
+                    'Color',[colors(s,:) Alpha]);
             end
             plot(normalizedFFTtemp(:,1)','LineWidth',1,'Color',[0 0 0 0.8],'LineStyle','-.');
             plot(normalizedFFTtemp(:,2)','LineWidth',1,'Color',[0 0 0 0.8],'LineStyle','-');
