@@ -44,6 +44,7 @@ addpath(genpath(fullfile(pwd,'toolboxes','notBoxPlot')))
 
 datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/';
 datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/AUC_results';
+datadir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC/data';
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
@@ -55,6 +56,25 @@ altPatientNames = {'RCS01';'RCS02';'RCS03';'RCS04';'RCS05'};
 ff = findFilesBVQX(datadir,'*by_min_results_with_coherence.mat');
 for f = 1:length(ff)
     load(ff{f});
+    cntSize = size(AUC_results_table,1);
+    cnt = cntSize + 1; 
+    % STN 
+    AUC_results_table.patient{cnt} = AUC_results_table.patient{cntSize};
+    AUC_results_table.side{cnt} = AUC_results_table.side{cntSize};
+    AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
+    AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
+    AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
+    AUC_results_table.AUC(cnt) = AUCout_agregate(1);
+    AUC_results_table.AUCp(cnt) = AUCpOut_agregate(1);
+    cnt = cnt + 1; 
+    % M1 
+    AUC_results_table.patient{cnt} = AUC_results_table.patient{cntSize};
+    AUC_results_table.side{cnt} = AUC_results_table.side{cntSize};
+    AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
+    AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
+    AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
+    AUC_results_table.AUC(cnt) = AUCout_agregate(2);
+    AUC_results_table.AUCp(cnt) = AUCpOut_agregate(2);
     if f == 1 
         AUCall = AUC_results_table; 
     else
@@ -88,6 +108,29 @@ pvals  = [pvals ; pvalsdd];
 datbox = [datbox ; aucadd]; 
 xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
 titlsuse{idxnum,1} = 'motor cortex gamma';
+idxnum = idxnum + 1; 
+
+idxuse = cellfun(@(x) any(strfind(x,'STN all')),AUCall.area);
+aucadd = AUCall.AUC(idxuse); 
+patsadd   = AUCall.patient(idxuse);
+patients = [patients;patsadd];
+pvalsdd  = AUCall.AUCp(idxuse); 
+pvals  = [pvals ; pvalsdd];
+datbox = [datbox ; aucadd]; 
+xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
+titlsuse{idxnum,1} = 'STN all';
+idxnum = idxnum + 1; 
+
+
+idxuse = cellfun(@(x) any(strfind(x,'MC all')),AUCall.area);
+aucadd = AUCall.AUC(idxuse); 
+patsadd   = AUCall.patient(idxuse);
+patients = [patients;patsadd];
+pvalsdd  = AUCall.AUCp(idxuse); 
+pvals  = [pvals ; pvalsdd];
+datbox = [datbox ; aucadd]; 
+xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
+titlsuse{idxnum,1} = 'MC all';
 idxnum = idxnum + 1; 
 
 
@@ -126,14 +169,12 @@ idxnum = idxnum + 1;
 % XXXXXXX 
 % XXXXXXX
 % plot some stats: 
-fprintf('STN beta %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==1)),min(datbox(xvals==1)),max(datbox(xvals==1)));
-fprintf('M1 gamma %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==2)),min(datbox(xvals==2)),max(datbox(xvals==2)));
-fprintf('M1-STN coh beta  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==3)),min(datbox(xvals==3)),max(datbox(xvals==3)));
-fprintf('M1-STN coh gamma  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==4)),min(datbox(xvals==4)),max(datbox(xvals==4)));
-fprintf('all areas  %.2f mean range (%.2f - %.2f)\n',mean(datbox(xvals==5)),min(datbox(xvals==5)),max(datbox(xvals==5)));
+for t = 1:length(titlsuse)
+    fprintf('%s %.2f mean range (%.2f - %.2f)\n',titlsuse{t}, mean(datbox(xvals==t)),min(datbox(xvals==t)),max(datbox(xvals==t)));    
+end
 
 
-for i = 1:5
+for i = 1:length(titlsuse)
     persig = sum(pvals(xvals==i)<0.05)/sum(xvals==i); 
     fprintf('%s %.2f\n',titlsuse{i},persig); 
 end
@@ -159,6 +200,13 @@ set(gca,'FontSize',12);
 % color each subject with a different color 
 % segregate markers based on significance (marker style) 
 xvalsUse = unique(xvals);
+
+% check how many p-values computed per patient 
+unqpat  = unique(patients);
+for p = 1:length(unqpat)
+        patidx  = strcmp(unqpat{p},patients);
+        numPvalTests = sum(patidx); 
+end
             
 colorsSubs = [ ...
     143,75,191 ; ...
@@ -187,13 +235,14 @@ for i = 1:length(xvalsUse)
         xpat = xdat(idxpat); 
         ypat = ydat(idxpat); 
         ppat = pvalsdat(idxpat); 
-        hsact(p) = scatter(xpat(ppat<0.05),ypat(ppat<0.05),markerSizeSig,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
-        scatter(xpat(ppat>=0.05),ypat(ppat>=0.05),markerSizeNotSig,'filled','v','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
+        alphaToBeat = 0.05/numPvalTests;
+        hsact(p) = scatter(xpat(ppat<alphaToBeat),ypat(ppat<alphaToBeat),markerSizeSig,'filled','o','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
+        scatter(xpat(ppat>=alphaToBeat),ypat(ppat>=alphaToBeat),markerSizeNotSig,'filled','v','MarkerFaceColor',colorsSubs(p,:),'MarkerFaceAlpha',0.8);
     end
 end
 hLegend = legend(hsact,altPatientNames);
 hLegend.Box = 'off';
-hsb.XLim = [ 0 7.5];
+hsb.XLim = [ 0 10];
 if plotpanels
     % save fig as
     set(gca,'FontSize',16);
@@ -207,6 +256,7 @@ if plotpanels
     plot_hfig(hfig,prfig)
     close(hfig);
 end
+
 %%
 %% plot UPDRs vs AUC results 
 dirname = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC/baseline_updrs';
@@ -302,13 +352,13 @@ if ~plotpanels
     prfig.plotwidth           = 10;
     prfig.plotheight          = 7;
     prfig.figdir              = figdirout;
-    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v3';
+    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v4';
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     % close(hfig);
 end
 %%
-
+return 
 %% plot the weights for feature coefficiants 
 close all;
 figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';

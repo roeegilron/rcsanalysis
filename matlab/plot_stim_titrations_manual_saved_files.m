@@ -37,7 +37,7 @@ end
 %%
 %%
 clear outdat;
-for ppp = 1:2%:length(patientFolders)
+for ppp = 11:12%:length(patientFolders)
     [pn,fn] = fileparts(patientFolders{ppp});
     patient = fn(1:end-1);
     side = fn(end);
@@ -260,6 +260,18 @@ for ppp = 1:2%:length(patientFolders)
                 peaks(2) = 21;
                 peaks(3) = 6;
                 peaks(4) = 76;
+                bw = 2.5;
+            case 'RCS08L'
+                peaks(1) = 22; % 25 is high beta peak 17 is low beta
+                peaks(2) = 65;
+                peaks(3) = 12;
+                peaks(4) = 81;
+                bw = 2.5;
+            case 'RCS08R'
+                peaks(1) = 22; % 25 is high beta peak 17 is low beta
+                peaks(2) = 38;
+                peaks(3) = 15;
+                peaks(4) = 78;
                 bw = 2.5;
 
         end
