@@ -14,6 +14,7 @@ while cnt <= size(taskData,1)
     
 end
 uniqueTrials  = unique(taskData.trial);
+uniqueTrials  = uniqueTrials(uniqueTrials ~= 0);
 trialDataResults = table();
 for u = 1:size(uniqueTrials,1)
     trialData = taskData(taskData.trial == uniqueTrials(u),:);

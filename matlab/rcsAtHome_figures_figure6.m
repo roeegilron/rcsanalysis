@@ -4,7 +4,7 @@ function rcsAtHome_figures_figure6()
 % panel b - unsupervised clustering using a template method (RCS02 and RCS07)
 % panel c - bar code comparisons - state estimate, rodgrigez, template matching
 
-plotpanels = 0;
+plotpanels = 1;
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 if ~plotpanels
     hfig = figure;
@@ -26,6 +26,9 @@ if plotthis
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
 
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd/';
+
 ff = findFilesBVQX(resultsdir,'coherence_and_psd *.mat');
 addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/rcsanalysis/matlab/toolboxes/cluster_dp'));
 
@@ -279,6 +282,8 @@ if plotthis
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/17_states_historical';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods';
+
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 ff = findFilesBVQX(rootdir, 'pkg_states*10_min*.mat');
 patDatHome = struct();
@@ -413,9 +418,16 @@ for pp = 1:size(patDatHome)
                 else
                     labels = d(:,1) >= d(:,2);
                 end
+                if s == 2 & cntplt == 5
+                    LineWidth = 0.05;
+                    Alpha = 0.02;
+                elseif s == 1 & cntplt == 5
+                    LineWidth = 1;
+                    Alpha = 0.2;
+                end
                 plot(psdResults.ff,normalizedPSD(labels,:),...
-                    'LineWidth',0.05,...
-                    'Color',[colors(s,:) 0.05]);
+                    'LineWidth',LineWidth,...
+                    'Color',[colors(s,:) Alpha]);
             end
             plot(normalizedFFTtemp(:,1)','LineWidth',1,'Color',[0 0 0 0.8],'LineStyle','-.');
             plot(normalizedFFTtemp(:,2)','LineWidth',1,'Color',[0 0 0 0.8],'LineStyle','-');
@@ -431,6 +443,7 @@ for pp = 1:size(patDatHome)
         
         if plotState
             for s = 1:2
+                hold on;
                 if s == 1
                     labels = d(:,2) > d(:,1);
                 else
@@ -452,8 +465,8 @@ for pp = 1:size(patDatHome)
             end
             xlim([0 100]);
             ttluse = {};
-            ttluse(1,1) = sprintf('%s',patDatHome.patient{pp});
-            ttluse(2,1) = sprintf('%s',ttlsforpaper);
+            ttluse{1,1} = sprintf('%s',patientNamesToPlot{pp});
+            ttluse{2,1} = sprintf('%s',ttlsforpaper{c});
             title(ttluse);
             xlabel('Frequency (Hz)');
             ylabel('Normalized power (a.u.)');
@@ -523,6 +536,7 @@ plotthis = 0;
 if plotthis
 %% panel c - plot bar codes of patient state, template, clustering 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods';
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
 patientplot = {'RCS02','RCS07'};
 patientside = {'R','R'};

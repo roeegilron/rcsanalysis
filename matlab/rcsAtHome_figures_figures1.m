@@ -1,15 +1,15 @@
-function rcsAtHome_figures_figures1();
+function rcsAtHome_figures_figures1()
 %% panel s1 - all raw PSD data showcasing sleep - for all patients 
 close all force;clear all;clc;
 fignum = 4; % NA - it's a supplementary figure 
 addpath(genpath(fullfile(pwd,'toolboxes','plot_reducer')));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS02 L pkg R.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd RCS06 R pkg L.mat');
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Figs1_raw_data_across_subs';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Figs1_raw_data_across_subs';
 titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
 labelsCheck = [];
 combineareas = 1;
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/'; 
+rootdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 
 
@@ -17,23 +17,23 @@ hfig = figure;
 hfig.Color = 'w';
 hfig.Position = [1000         194        1387        1144];
 hpanel = panel();
-hpanel.pack(4,3); 
-hsb = gobjects(4,3);
+hpanel.pack(5,3); 
+hsb = gobjects(5,3);
 
-ff = findFilesBVQX(rootdir,'coherence_and_psd*.mat');
+ff = findFilesBVQX(rootdir,'coherence_and_psd*RCS*.mat');
 cntplt = 1; 
 nrows  = 4;
 ncols =  3; 
 datuse = {};
 
-linewidths = [0.2 0.6 0.03 0.03];
+linewidths = [0.2 0.6 0.03 0.03 0.2];
 areatitls = {'STN','motor cortex'};
 for f = 1:length(ff)
     [pn,fn,ext] = fileparts(ff{f}); 
     patients{f} = fn(19:23);     
 end
 uniquePatients = unique(patients); 
-patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04'};
+patientsNameToUse = {'RCS01','RCS02','RCS03','RCS04','RCS05'};
 for p = 1:length(uniquePatients)
     fpts = ff(strcmp(uniquePatients{p},patients));
     stndata = [];
@@ -69,7 +69,9 @@ for p = 1:length(uniquePatients)
         else
             dat = m1_data;
         end
-        
+        if strcmp(uniquePatients{p},'RCS08')
+            psdResults.ff = allDataPkgRcsAcc.ffPSD;
+        end
         idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
         meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
         % the absolute is to make sure 1/f curve is not flipped
@@ -83,9 +85,11 @@ for p = 1:length(uniquePatients)
         idxsleep = strcmp(allDataPkgRcsAcc.states,'sleep');
         % idxsleep = allDataPkgRcsAcc.bkVals <= -110;
         lw = linewidths(p);
-                reduce_plot(psdResults.ff', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
+        reduce_plot(psdResults.ff', normalizedPSD,'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
+%         plot(psdResults.ff', normalizedPSD(1,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);% was 0.7 for rcs02 and 0.5 alpha
+        
         xlim([3 100]);
-        if p == 4
+        if p == length(uniquePatients)
             xlabel('Frequency (Hz)');
         else
             hsb(p,msr-1).XTick = [];
@@ -102,8 +106,8 @@ for p = 1:length(uniquePatients)
         ttluse{1,1} = sprintf('%s',areatitls{a});
         title(ttluse);
         %         plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-        plot([13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-        plot([30 30],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
+%         plot([13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
+%         plot([30 30],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
         set(gca,'FontSize',10);
 
     end
@@ -113,12 +117,12 @@ for p = 1:length(uniquePatients)
     hold on;
     r = ceil(size(coh_dat,1) .* rand(720,1));
     r = 1:5:size(coh_dat,1);
+    if strcmp(uniquePatients{p},'RCS08')
+        cohResults.ff = allDataPkgRcsAcc.ffCoh;
+    end
     reduce_plot(cohResults.ff', coh_dat(r,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
-    ylims = hsb(p,msr-1).YLim;
-%     plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-    plot([13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-    plot([30 30],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-    if p == 4 
+%     reduce_plot(cohResults.ff', coh_dat(1,:),'LineWidth',lw,'Color',[0 0 0.8 0.05]);
+    if p == length(uniquePatients)
         xlabel('Frequency (Hz)');
     else
         hsb(p,msr-1).XTick = [];
@@ -132,30 +136,66 @@ for p = 1:length(uniquePatients)
     set(gca,'FontSize',10);
     clear allDataPkgRcsAcc m1_data coh_dat stndata psdResults cohResults
 end
+hpanel.de.margin = 10;
+plotVector = 0; 
+for i = 1:5 
+    for j = 1:3
+        hsb = hpanel(i,j).select(); 
+        if j == 3 
+             hpanel(i,j).marginright = 20;
+             
+        else
+            
+            hpanel(i,j).marginright = 20;
+        end
+        hpanel(i,j).marginbottom = 7;
+       
+    end
+end
+numTicks = 5;
+for i = 1:5
+    for j = 1:3
+        hsb = hpanel(i,j).select();
+        if plotVector
+            delete(get(hsb,'Children'))
+        end
+        ylims = hsb.YLim;
+        plot(hsb,[13 13],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
+        plot(hsb,[30 30],ylims,'LineWidth',2,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
 
-hpanel.fontsize = 12; 
+        yticksuse = linspace(ylims(1),ylims(2),numTicks);
+        ticklabels = {'0.00','0.25','0.50','0.75','1.00'};
+        hsb.YTick = yticksuse;
+        hsb.YTickLabel = ticklabels;
+    end
+end
+% axs = hfig.Children; 
+% for a = 1:length(axs)
+%     axs(a).Children(1).YData = axs(a).YLim; 
+%     axs(a).Children(2).YData = axs(a).YLim; 
+% end
+
+hpanel.fontsize = 10; 
 hpanel.margintop = 15;
 
-hpanel.margin = [30 15 15 15];
-hpanel.de.margin = 15; 
 
-prfig.plotwidth           = 8.5;
+
+
+hpanel.margin = [30 15 15 15];
+
+prfig.plotwidth           = 7.0;
 prfig.plotheight          = 8.5;
 
 
-hfig.PaperPositionMode = 'manual';
-hfig.PaperSize         = [prfig.plotwidth prfig.plotheight]; 
-hfig.PaperPosition     = [ 0 0 prfig.plotwidth prfig.plotheight]; 
 
-
-axs = hfig.Children; 
-for a = 1:length(axs)
-    axs(a).Children(1).YData = axs(a).YLim; 
-    axs(a).Children(2).YData = axs(a).YLim; 
+if plotVector
+    prfig.figdir             = figdirout;
+    prfig.figtype             = '-dpdf';
+    prfig.figname             = sprintf('FigS1_raw_psd_data_p4_v5_vector');
+else
+    prfig.figdir             = figdirout;
+    prfig.figtype             = '-djpeg';
+    prfig.figname             = sprintf('FigS1_raw_psd_data_p4_v5');
 end
-
-prfig.figdir             = figdirout;
-prfig.figtype             = '-djpeg';
-prfig.figname             = sprintf('FigS1_raw_psd_data_p4_v4');
 plot_hfig(hfig,prfig)
 %%

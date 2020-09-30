@@ -2,8 +2,9 @@ function plot_ipad_data_rcs_based_on_jspsych()
 % this is basing RC+S ipad allignment based on the beeps from the ipad task
 % and not on deslys allignemtn
 clc;
+close all;
 createFileDatabase = 0;
-
+outlierFunc = @isoutlier;
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % dektop
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % laptop
 resdir = '/Users/roee/Box/movement_task_data_at_home/results'; % laptop
@@ -40,6 +41,9 @@ if createFileDatabase == 1
             cntTasks = cntTasks + 1;
         end
     end
+    % only keep tasks above a minimum size 
+    idxKeep = cellfun(@(x) size(x,1),taskDataLocs.taskTable) > 100; % min task size 
+    taskDataLocs = taskDataLocs(idxKeep,:);
     % create patient database
     create_database_from_device_settings_files(boxdir)
     load(fullfile(boxdir,'database_from_device_settings.mat'));
@@ -69,7 +73,7 @@ if createFileDatabase == 1
     masterTableUse.duration.Format = 'hh:mm:ss';
     [masterTableUse, idxsort] = sortrows(masterTableUse,{'patient','timeStart'});
     
-    %% get computer unix time start and stop time for these tasks
+    %% get computer unix time start and stop time for these tasks, also find out which hand was used (if tasks lists hand used) 
     for ss = 1:size(masterTableUse,1)
         [pn,fn] = fileparts(masterTableUse.allDeviceSettingsOut{ss});
         [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(pn);
@@ -83,6 +87,18 @@ if createFileDatabase == 1
             masterTableUse.unixTimeStart(ss) = NaT;
             masterTableUse.unixTimeEnd(ss) = NaT;
         end
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc right hand')),eventTable.EventSubType)) > 0
+            masterTableUse.handUsedForTask {ss} = 'right';
+        end
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc left hand')),eventTable.EventSubType)) > 0
+            masterTableUse.handUsedForTask {ss} = 'left';
+        end
+        % if the task isn't "new enough" to have a hand used, then assume
+        % the right hand hand was used 
+        if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
+            masterTableUse.handUsedForTask {ss} = 'right';
+        end
+
     end
     
     % save this database to results
@@ -93,24 +109,45 @@ end
 
 
 %% loop on task data and plot a nice figure for each subject
+load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
 sides = {'L','R'};
 % so far all subject are using the ipislateral hand
 % XXXX
 % XXXX
 [y,m,d] = ymd(taskDataLocs.taskStart);
-idsUse = strcmp(taskDataLocs.patient,'RCS06') & ...
-    taskDataLocs.taskDuration > seconds(30) & ...
-    d == 28;
+idsUse = taskDataLocs.taskDuration > seconds(30) & ...
+    d >= 28;
 
 [y,m,d] = ymd(masterTableUse.timeStart);
-idxUseRcs =  strcmp(masterTableUse.patient,'RCS06') & ...
-    d == 28;
+idxUseRcs =  d >= 28;
 masterTableUse = masterTableUse(idxUseRcs,:);
 
 
+for m =1:size(masterTableUse,1)
+    masterTableUse.chan1{m} = masterTableUse.senseSettings{m}.chan1{1};
+    masterTableUse.chan2{m} = masterTableUse.senseSettings{m}.chan2{1};
+    masterTableUse.chan3{m} = masterTableUse.senseSettings{m}.chan3{1};
+    masterTableUse.chan4{m} = masterTableUse.senseSettings{m}.chan4{1};
+    masterTableUse.active_recharge(m) = masterTableUse.stimStatus{m}.active_recharge(1);
+    masterTableUse.stimulation_on(m) = masterTableUse.stimStatus{m}.stimulation_on(1);
+    masterTableUse.samplingRate(m)    = masterTableUse.senseSettings{m}.samplingRate;
+end 
+masterTableUse = sortrows(masterTableUse,{'patient','unixTimeStart'});
+masterTableUse(:,{'patient','side', 'unixTimeStart','chan1','chan2','chan3', 'chan4','active_recharge','stimulation_on','samplingRate'})
 taskDataLocs = taskDataLocs(idsUse,:);
+
 % XXXX
 % XXXX
+idsUse = strcmp(taskDataLocs.patient,'RCS07') | strcmp(taskDataLocs.patient,'RCS08');
+
+idsUse = strcmp(taskDataLocs.patient,'RCS07');
+% taskDataLocs = taskDataLocs(idsUse,:);
+% XXXX
+% XXXX
+
+% XXXXX Plot the behavioural data 
+plotBehavioural = 0; 
+% xxxxx
 handBrainRelation = {'contralateral','ipsilateral'};
 ccc = 1;
 for ttt = 1:size(taskDataLocs)
@@ -155,7 +192,8 @@ for ttt = 1:size(taskDataLocs)
     handUsed  = unqHandUsed{1};
     patient  = rcsDataMeta.patient{1};
     if any(strfind(rcsDataMeta.senseSettings{1}.chan4{1},'250Hz'))
-        break;
+        x = 2;
+        fprintf('%s %s %s is %s\n',rcsDataMeta.patient{1},rcsDataMeta.side{1},rcsDataMeta.timeStart(1),rcsDataMeta.senseSettings{1}.chan4{1});
     end
     
     if rcsDataMeta.stimStatus{1}.stimulation_on
@@ -163,24 +201,24 @@ for ttt = 1:size(taskDataLocs)
     else
         stimState = 'stim off';
     end
-    % plot the behaviorual data
-    x = 2;
-    timeStart = taskDataLocs.taskTable{ttt}.time(1);
-    timeEnd = taskDataLocs.taskTable{ttt}.time(end);
-    [hfig,trialDataResultsUse,taskDataWithTrials] = behaviouralAnalysis_movementTask_data_jspsyc(taskDataLocs.taskTable{ttt});
-    taskDataLocs.trialDataResultsUse{ttt} = trialDataResultsUse;
-    taskDataLocs.taskDataWithTrials{ttt} = taskDataWithTrials;
-    ttlLarge{1,1} = sprintf('%s hand used = %s',patient,handUsed);
-    ttlLarge{2,1} = sprintf('%s',stimState);
-    ttlLarge{3,1} = sprintf('%s - %s',timeStart, timeEnd);
-    sgtitle(ttlLarge,'FontSize',20);
-    hfig.PaperSize = [7 10];
-    hfig.PaperPosition = [0 0 7 10];
-    [y,m,d] = ymd(timeStart);
-    [h,mm,s] = hms(timeStart);
-    fnmsv = sprintf('behav-results_%s_%d_%0.2d_%0.2d_%0.2d-%0.2d',patient,y,m,d,h,mm);
-        
-    print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r300');
+        timeStart = taskDataLocs.taskTable{ttt}.time(1);
+        timeEnd = taskDataLocs.taskTable{ttt}.time(end);
+        [hfig,trialDataResultsUse,taskDataWithTrials] = behaviouralAnalysis_movementTask_data_jspsyc(taskDataLocs.taskTable{ttt});
+        taskDataLocs.trialDataResultsUse{ttt} = trialDataResultsUse;
+        taskDataLocs.taskDataWithTrials{ttt} = taskDataWithTrials;
+        ttlLarge{1,1} = sprintf('%s hand used = %s',patient,handUsed);
+        ttlLarge{2,1} = sprintf('%s',stimState);
+        ttlLarge{3,1} = sprintf('%s - %s',timeStart, timeEnd);
+        sgtitle(ttlLarge,'FontSize',20);
+        hfig.PaperSize = [7 10];
+        hfig.PaperPosition = [0 0 7 10];
+        [y,m,d] = ymd(timeStart);
+        [h,mm,s] = hms(timeStart);
+        fnmsv = sprintf('behav-results_%s_%d_%0.2d_%0.2d_%0.2d-%0.2d',patient,y,m,d,h,mm);
+        % plot the behaviorual data
+        if plotBehavioural
+            print(hfig,fullfile(figdir,fnmsv),'-djpeg','-r300');
+        end
 
 end
 
@@ -246,7 +284,7 @@ for ttt = 1:size(taskDataLocs)
         trialDataResultsUse = taskDataLocs.trialDataResultsUse{ttt};
         taskDataWithTrials = taskDataLocs.taskDataWithTrials{ttt};
         % don't plot practice tasks
-        if sum(cellfun(@(x) any(strfind(x,' PREP start')),taskData.event)) <= 30
+        if sum(cellfun(@(x) any(strfind(x,' PREP start')),taskData.event)) <= 30 % bcs our task has 60 trials 
             break;
         end
         
@@ -281,7 +319,8 @@ for ttt = 1:size(taskDataLocs)
             taskData.idxUseRxGenTime(tt,1) = idxUseRxGenTime;
         end
         
-        analysisToDo = {'center_prep','center_move'};
+        analysisToDo = {'center_prep','center_move','center_keyUp'};
+        analysisToDo = {'center_keyUp'};
         for aaa = 1:length(analysisToDo)
             timeparams = getTaskTimings(taskData,analysisToDo{aaa});
             %% plot ipad data based on this alligmment
@@ -290,7 +329,16 @@ for ttt = 1:size(taskDataLocs)
             addpath('/Users/roee/Box/movement_task_data_at_home/code/eeglab');
             
             tdDat = outRec(1).tdData;
-            chanlsPlot = [3:4];
+            % find out what channels to plot 
+            cnlcnt = 1; 
+            for cc = 1:4 
+                if ~any(strfind(tdDat(cc).chanFullStr,'disabled'))
+                    chanlsPlot(cnlcnt) = cc;
+                    cnlcnt = cnlcnt + 1;
+                end
+            end
+            
+            % get the data 
             for c = 1:length(chanlsPlot)
                 cnmIpadData = sprintf('key%d',chanlsPlot(c)-1);
                 cnm = sprintf('chan%d',c);
@@ -299,12 +347,21 @@ for ttt = 1:size(taskDataLocs)
                 rcsIpadDataPlot.([cnm 'Title']) = tdDat(chanlsPlot(c)).chanFullStr;
             end
             rcsIpadDataPlot.numChannels = length(chanlsPlot);
-            % idxUseRxGenTime
-            % idxUseRxUnixTime
-            nrows = 1;
+            % clean stim outliers 
+            if rcsDataMeta.stimStatus{1}.stimulation_on
+                idxRCOut = cleanDataFromStimulationArtifacts(rcsIpadDataPlot,timeparams.RCidxUse,rcsDataMeta,timeparams,outlierFunc);
+                timeparams.RCidxUse = idxRCOut;
+            end
+            
+            if rcsIpadDataPlot.numChannels == 2
+                nrows = 1;
+            elseif rcsIpadDataPlot.numChannels == 4
+                nrows = 2;
+            end
             ncols = 2;
             close all;
             idxUseRxUnixTime = timeparams.RCidxUse;
+            % plot the .json data 
             timeparams = plot_ipad_data_rcs_json(idxUseRxUnixTime,rcsIpadDataPlot,unique(outdatcomplete.samplerate),figdir,timeparams,...
                 nrows,ncols,0,2,250); % nrwos, ncols, save figure, min freq , max freq
             
@@ -425,7 +482,7 @@ switch analysisType
         timeparams.extralines                  = 1; % plot extra line
         timeparams.extralinesec                = 2000; % extra line location in seconds
         timeparams.analysis                    = analysisType;
-        timeparams.filtertype                  = 'fir1' ; % 'ifft-gaussian' or 'fir1'
+        timeparams.filtertype                  = 'ifft-gaussian' ; % 'ifft-gaussian' or 'fir1'
         
         
     case 'center_move'
@@ -501,7 +558,127 @@ switch analysisType
         timeparams.analysis                    = analysisType;
         timeparams.filtertype                  = 'ifft-gaussian' ; % 'ifft-gaussian' or 'fir1'
         
+    case 'center_keyUp'
+        %% get idx for event
+        cnt = 1;
+        idxcnt = 1;
+        lookForKeyUp = 0;
+        
+        inFixation = 0;
+        keyDownDuringFixation = 0;
+        inPrep = 0;
+        keyUpDuringPrep = 0;
+        inMove = 0;
+        keyUpDuringMove = 0;
+        while cnt <= size(taskData.event,1)
+            x = taskData.event{cnt};
+            
+            % prep
+            if  any(strfind(x,'PREP start'))
+                inPrep = 1;
+                badTrial = 0;
+            end
+            if  any(strfind(x,'PREP end'))
+                inPrep = 0;
+            end
+            
+            if inPrep & any(strfind(x,'KeyUp'))
+                keyUpDuringPrep = 1;
+            end
+            if ~inPrep & any(strfind(x,'KeyUp'))
+                keyUpDuringPrep = 0;
+            end
+            if keyUpDuringPrep
+                badTrial = 1;
+            end
+            % move
+            if  any(strfind(x,'MOVE start'))
+                inMove = 1;
+                
+            end
+            if  any(strfind(x,'MOVE end'))
+                inMove = 0;
+            end
+            
+            
+            
+            if inMove & any(strfind(x,'KeyUp'))
+                keyUpDuringMove = 1;
+                idxMove = taskData.idxUseRxUnixTime(cnt);
+            end
+            
+            if ~inMove & any(strfind(x,'KeyUp'))
+                keyUpDuringMove = 0;
+            end
+            
+            if keyUpDuringMove & ~badTrial
+                prepRCidx(idxcnt,1) = idxMove;
+                idxcnt = idxcnt + 1;
+            end
+            
+            
+            cnt = cnt + 1;
+        end
+        
+        unqRCidxs = unique(prepRCidx);
+        
+        timeparams.RCidxUse                    = unqRCidxs;
+        timeparams.start_epoch_at_this_time    =  -1000;%-8000; % ms relative to event (before), these are set for whole analysis
+        timeparams.stop_epoch_at_this_time     =  1000; % ms relative to event (after)
+        timeparams.start_baseline_at_this_time =  -1000;%-6500; % ms relative to event (before), recommend using ~500 ms *note in the msns folder there is a modified version where you can set baseline bounds by trial (good for varible times, ex. SSD)
+        timeparams.stop_baseline_at_this_time  =  0;%5-6000; % ms relative to event
+        timeparams.extralines                  = 0; % plot extra line
+        timeparams.extralinesec                = 3000; % extra line location in seconds
+        timeparams.analysis                    = analysisType;
+        timeparams.filtertype                  = 'ifft-gaussian' ; % 'ifft-gaussian' or 'fir1'
+        
         
     otherwise
 end
+end
+
+function idxRCOut = cleanDataFromStimulationArtifacts(rcsIpadDataPlot,idxRC,rcsDataMeta,timeparams,outlierFunc)
+stimRate = rcsDataMeta.stimStatus{1}.rate_Hz; 
+samplingRate = rcsDataMeta.senseSettings{1}.samplingRate;
+bp = designfilt('bandpassiir',...
+    'FilterOrder',4, ...
+    'HalfPowerFrequency1',ceil(stimRate-2),...
+    'HalfPowerFrequency2',ceil(stimRate+2), ...
+    'SampleRate',samplingRate);
+fieldnamesAll = fieldnames(rcsIpadDataPlot);
+fieldNameIdxUse = cellfun(@(x) any(strfind(x,'chan')),fieldnamesAll) & ~cellfun(@(x) any(strfind(x,'Title')),fieldnamesAll);
+fieldNamesUse = fieldnamesAll(fieldNameIdxUse);
+pointSubtract = (timeparams.start_epoch_at_this_time/1e3) * samplingRate;
+pointAdd = (timeparams.stop_epoch_at_this_time/1e3) * samplingRate;
+idxremove = [];
+for i = 1:length(fieldNamesUse)
+    fn = fieldNamesUse{i};
+    rawData = rcsIpadDataPlot.(fn); 
+    filtData = [];
+    for t = 1:length(idxRC)
+        idxRange = (idxRC(t)+pointSubtract):1:(idxRC(t)+pointAdd-1);
+        taskData = rawData(idxRange,1);
+        filtData(t,:) = filtfilt(bp,taskData);
+        [envpH, envpL] = envelope(filtData(t,:),samplingRate*30,'analytic'); % analytic rms
+        mvmean(t,:) = movmean(abs(envpH),[ceil(range(idxRange)/10),0]);
+        secs = [1:1:length(taskData)]./samplingRate;
+    end
+    try 
+        idxremove(:,i) = outlierFunc(mean(mvmean,2));
+    catch 
+        idxremove(:,i) = mean(mvmean,2) < prctile(mean(mvmean,2),95);
+    end
+    
+    figure;
+    plot(secs,mvmean');
+%     
+    
+end
+% rreport what was removed 
+idxremove = sum(idxremove,2)>=1; 
+fprintf('removed %d/%d trials (%.2f) bcs of stim artifacts \n',sum(idxremove),length(idxremove),sum(idxremove)/length(idxremove));
+idxNotWithStimArtifact = ~idxremove; 
+idxRCOut = idxRC(idxNotWithStimArtifact);
+
+
 end

@@ -16,6 +16,7 @@ metaData.timeEnd(1)                     = NaT;
 metaData.timeEnd.TimeZone               = 'America/Los_Angeles';
 metaData.duration(1)                    = seconds(0); 
 metaData.senseSettings{1}               = struct();
+metaData.senseSettingsMultiple{1}       = struct();
 metaData.stimStatus{1}                  = struct();
 metaData.stimState{1}                   = struct();
 metaData.fftTable{1}                    = struct();
@@ -26,6 +27,7 @@ metaData.powerStreaming(1)              = NaN;
 metaData.fftStreaming(1)                = NaN;
 metaData.timeDomainStreaming(1)         = NaN;
 metaData.accelerometryStreaming(1)      = NaN;
+metaData.deviceSettingsFn{1}            = deviceSettingsFn;
 
 % get session name 
 idxSession = strfind(lower(deviceSettingsFn),'session');
@@ -69,9 +71,10 @@ try
     end
     
     % load device settings from the first structure of device settings 
-    [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings]  = ...
+    [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple]  = ...
         loadDeviceSettingsFromFirstInitialStructure(DeviceSettings);
     metaData.senseSettings{1}               = senseSettings;
+    metaData.senseSettingsMultiple{1}       = senseSettingsMultiple;
     metaData.stimStatus{1}                  = stimStatus;
     metaData.stimState{1}                   = stimState;
     metaData.fftTable{1}                    = fftTable;

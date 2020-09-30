@@ -4,18 +4,23 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 fignum = 5; 
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig5_states_estimates_group_data_and_ AUC';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/final_figures/Fig5_states_estimates_group_data_and_ AUC';
+figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC';
+
 plotpanels = 1;
 % original function:
 % plot_pkg_data_all_subjects
 
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientPSD_at_home.mat');
+load('/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientCOH_at_home.mat');
+
 if plotpanels
     hfig = figure;
     hfig.Color = 'w';
 end
 pdb = patientPSD_at_home;
-datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
 
 
 sides = {'L','R'};
@@ -287,8 +292,14 @@ for f = 1:length(freqUse)
         end
     
 end
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+save(fnsave,'outputTable');
 %% plot 
-plotShaded = 0;
+datadir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/coherence_and_psd';
+fnsave = fullfile(datadir,'coherence_and_psd_summary_all_patients.mat');
+load(fnsave,'outputTable');
+
+plotShaded = 1;
 hfig = figure; 
 hfig.Color = 'w'; 
 p = panel();
@@ -398,6 +409,14 @@ p.marginleft = 30;
 p.margintop = 30;
 % p.de.margin = 15;
 p.fontsize = 15;
+
+prfig.plotwidth           = 10;
+prfig.plotheight          = 10;
+prfig.figdir             = figdirout;
+prfig.figtype             = '-dpdf';
+prfig.figname             = sprintf('AUC_vs_updrs');
+plot_hfig(hfig,prfig)
+
 %%
 
 % %%%%%%%%%%%%%%%%%%%%%%%%% do stats 

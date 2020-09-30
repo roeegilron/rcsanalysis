@@ -1,5 +1,5 @@
 function [timeparams] = plot_ipad_data_rcs_json(event_indices,ecog,ecogsr,figdir,timeparams,varargin)
-addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/First_Pass_Data_Analysis/code/toolboxes/eeglab14_1_0b'));
+% addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/First_Pass_Data_Analysis/code/toolboxes/eeglab14_1_0b'));
 % set some subplot prarams 
 if ~isempty(varargin{1})
     nrows = varargin{1}; 
@@ -61,6 +61,9 @@ center_frequencies=...     %picking frequencies to break up into
 for ch_index = 1:num_channels
     cnm = sprintf('chan%d',ch_index);
     signal = ecog.(cnm)';
+    if size(signal,1) > size(signal,2) 
+        signal = signal';
+    end
     number_of_sample_points_in_signal=length(signal(1,:));
     number_of_conditions=1;  %event indices are cell arrays by condions
     number_of_epochs_per_condition=length(event_indices);
@@ -96,12 +99,15 @@ for ch_index = 1:num_channels
         switch timeparams.filtertype
             case 'fir1'
                 %% option 1
+                pathGen = genpath('/Users/roee/Box/movement_task_data_at_home/code/eeglab');
+                addpath(pathGen);
                 firtypeuse = 'fir1';
                 filtered_signal      = ...
                     eegfilt(signal,sampling_rate,center_frequencies(frequency_index) - 1,center_frequencies(frequency_index) + 1,...
                     epochframes,filtorder, revfilt, firtypeuse);
                 
                 analytic_signal = hilbert(filtered_signal);
+                rmpath(pathGen);
             case 'ifft-gaussian'
                 %% option 2
                 fractional_bandwidth = .35;
