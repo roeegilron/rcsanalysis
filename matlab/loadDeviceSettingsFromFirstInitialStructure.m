@@ -415,6 +415,100 @@ stimStatus = stimStatus(:,{'time','duration','group','stimulation_on','activeGro
     'electrodes','amplitude_mA','rate_Hz','pulseWidth_mcrSec',...
     'active_recharge'});
 
+% loop on programs to find different stim states 
+% print all device settings to see if I am missing somethings 
+clc;
+for ds = 2:length(DeviceSettings)
+    fns = fieldnames(DeviceSettings{ds});
+    fprintf('%0.2d:\n',ds); 
+    for f = 1:length(fns)
+    fprintf('%s\n',fns{f});
+    end
+    fprintf('\n\n');
+end
+stimStateChanges = stimStatus;
+
+for ds = 2:length(DeviceSettings)
+    curFieldNames = fieldnames(DeviceSettings{ds});
+    idxTherapyGroups = cellfun(@(x) any(strfind(x,'TherapyConfigGroup')), curFieldNames);
+    groupNumber = tg-1;
+
+    if sum(idxTherapyGroups)>0 % check if therapy is being configured 
+        therapyGroup = curFieldNames{idxTherapyGroups};
+        groupNumber = str2num(therapyGroup(end));
+        switch groupNumber
+            case 0
+                groupName = 'A';
+            case 1
+                groupName = 'B';
+            case 2
+                groupName = 'C';
+            case 3
+                groupName = 'D';
+        end
+        therapySettings = DeviceSettings{ds}.(curFieldNames{idxTherapyGroups});
+        % only check for things that you can change within session: 
+        % amp, rate, pulsewidth
+        % note that this code may break if multiple programs are enabled. 
+        enabledProgram = find([therapySettings.programs.isEnabled] == 0 ,1);
+        idxBeingChanged = strcmp({groupName},stimState.group) & ...
+            stimState.program == enabledProgram;
+        if sum(idxBeingChanged) > 0
+            stimState(idxBeingChanged,:);
+            % update with changes from this current payload
+            curLen = size(stimStateChanges,1);
+            preIdx = curLen; %  previous index
+            curIdx = curLen + 1; %  current index
+            stimStateChanges(curIdx,:) = stimStateChanges(preIdx,:);
+            % update timing info
+            RecordInfo = DeviceSettings{ds}.RecordInfo;
+            timenum = RecordInfo.HostUnixTime;
+            Curtime = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+            
+            stimStateChanges.time(curIdx)  = Curtime;
+            stimStateChanges.duration(curIdx)  = stimStateChanges.time(curIdx) - stimStateChanges.time(preIdx);
+            stimStateChanges.group(curIdx) = groupName;
+            stimStateChanges.program(curIdx) = enabledProgram;
+            stimStateChanges.amplitude_mA(curIdx) = therapySettings.programs(enabledProgram).amplitudeInMilliamps;
+            stimStateChanges.rate_Hz(curIdx) = therapySettings.rateInHz;
+            stimStateChanges.pulseWidth_mcrSec(curIdx) = therapySettings.programs(enabledProgram).pulseWidthInMicroseconds;
+        end
+    end
+    
+    curFieldNames = fieldnames(DeviceSettings{ds});
+    idxGeneralData = cellfun(@(x) any(strfind(x,'GeneralData')), curFieldNames);
+    if sum(idxGeneralData)>0 % check if general data is being configured
+        generalDataSettings = DeviceSettings{ds}.(curFieldNames{idxGeneralData});
+        therapyStatus = generalDataSettings.therapyStatusData;
+        curLen = size(stimStateChanges,1);
+        preIdx = curLen; %  previous index
+        curIdx = curLen + 1; %  current index
+        stimStateChanges(curIdx,:) = stimStateChanges(preIdx,:);
+        % update timing info
+        RecordInfo = DeviceSettings{ds}.RecordInfo;
+        timenum = RecordInfo.HostUnixTime;
+        Curtime = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+        stimStateChanges.time(curIdx)  = Curtime;
+        stimStateChanges.duration(curIdx)  = stimStateChanges.time(curIdx) - stimStateChanges.time(preIdx);
+        groupNumber = therapyStatus.activeGroup; 
+        switch groupNumber
+            case 0
+                groupName = 'A';
+            case 1
+                groupName = 'B';
+            case 2
+                groupName = 'C';
+            case 3
+                groupName = 'D';
+        end
+        stimStateChanges.group(curIdx) = groupName; 
+        stimStateChanges.stimulation_on(curIdx) = therapyStatus.therapyStatus;
+
+    end
+
+    
+end
+
 
 
 %% Adaptive / detection config

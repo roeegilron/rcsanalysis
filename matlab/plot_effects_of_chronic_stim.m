@@ -49,7 +49,7 @@ hfig.Color = 'w';
 
 nrows = length(patients); 
 ncols = 2; 
-for p = 2%1:size(psdresultsfn,2)
+for p = 1:size(psdresultsfn,2)
     for i = 1:2
         load(psdresultsfn{i,p});
         ff = fftResultsTd.ff;

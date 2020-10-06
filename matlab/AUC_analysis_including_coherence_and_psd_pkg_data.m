@@ -12,10 +12,16 @@ function AUC_analysis_including_coherence_and_psd_pkg_data()
 % loop on patient, side to get AUC for each patient and minute
 % gap
 datadir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+datadir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC/data';
 resultsdir_AUC = datadir;
 %% XXX
-%             uniquePatients = {'RCS07'};
+% run what? 
+fitAllIndividAreas = 0; % each target, site, contact per patient 
+fitAllAreas        = 0; % all features at once 
+fitAllPerTarget    = 0; % all areas from one target across beta / gamma 
+fitAllCoherence    = 1; % all coherence models 
 %% XXX
+
 sides = {'L','R'};
 uniquePatients = {'RCS02','RCS06','RCS05','RCS07','RCS08'};
 for p = 1:length(uniquePatients) % loop on patients
@@ -112,6 +118,7 @@ for p = 1:length(uniquePatients) % loop on patients
 
         % data psd 
         cntfeature = 1; 
+        clear alldataUse
         for c = 1:length(cnls)
             % get channel
             fn = sprintf('key%dfftOut',cnls(c));
@@ -147,30 +154,76 @@ for p = 1:length(uniquePatients) % loop on patients
                 cntfeature = cntfeature + 1;
             end
         end
+        %% set number of shuffles 
+        doshuffle = 1;
+        if doshuffle
+            numshuffls = 10e3; % XXXXXXXXXXX
+        else
+            numshuffls = 1;
+        end
         
         
         %% fit the model
         
         %% loop on areas
-        alldat = [];
-        for c = 1:length(labelMeta)
-            start = tic;
-            % get channel
-            dat = alldataUse(:,c);
-            %% disc
-            rng(1); % For reproducibility
-            cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
-            doshuffle = 1;
-            if doshuffle
-                numshuffls = 10e3; % XXXXXXXXXXX
-            else
-                numshuffls = 1;
+        if fitAllIndividAreas
+            alldat = [];
+            for c = 1:length(labelMeta)
+                start = tic;
+                % get channel
+                dat = alldataUse(:,c);
+                %% disc
+                rng(1); % For reproducibility
+                cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
+                for si =1:numshuffls+1
+                    for k = 1:5
+                        idxTrn = training(cvp,k); % Training set indices
+                        idxTest = test(cvp,k);    % Test set indices
+                        tblTrn = array2table(dat(idxTrn,:));
+                        tblTrn.Y = labels(idxTrn);
+                        if doshuffle
+                            if si > 1 % first is real
+                                rng(si);
+                                labs = labels(idxTrn);
+                                idxshuffle = randperm(length(labs));
+                                labs = labs(idxshuffle);
+                                tblTrn.Y = labs;
+                            end
+                        end
+                        Mdl = fitcdiscr(tblTrn,'Y');
+                        [labeltest,scoretest,costest] = predict(Mdl,dat(idxTest,:));
+                        if doshuffle
+                            [X,Y,T,AUC(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
+                        else
+                            [X,Y,T,AUC(k),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
+                        end
+                    end
+                end
+                if doshuffle
+                    realVal = mean(AUC(:,1));
+                    shufflevals = mean(AUC(:,2:end),1);
+                    AUCout(c) = realVal;
+                    sumsmaller = sum(realVal < mean(AUC(:,2:end),1));
+                    if sumsmaller == 0
+                        pval = 1/numshuffls;
+                    else
+                        pval = sumsmaller/numshuffls;
+                    end
+                    AUCpOut(c) = pval;
+                else
+                    AUCout(c) = mean(AUC);
+                end
+                fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
+                    c, length(labelMeta)+1, uniquePatients{p},sides{s},labelMeta{c},toc(start));
             end
+        end
+        %% use all areas
+        if fitAllAreas
             for si =1:numshuffls+1
                 for k = 1:5
                     idxTrn = training(cvp,k); % Training set indices
                     idxTest = test(cvp,k);    % Test set indices
-                    tblTrn = array2table(dat(idxTrn,:));
+                    tblTrn = array2table(alldataUse(idxTrn,:));
                     tblTrn.Y = labels(idxTrn);
                     if doshuffle
                         if si > 1 % first is real
@@ -181,8 +234,9 @@ for p = 1:length(uniquePatients) % loop on patients
                             tblTrn.Y = labs;
                         end
                     end
-                    Mdl = fitcdiscr(tblTrn,'Y');
-                    [labeltest,scoretest,costest] = predict(Mdl,dat(idxTest,:));
+                    Mdl = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
+                    
+                    [labeltest,scoretest,costest] = predict(Mdl,alldataUse(idxTest,:));
                     if doshuffle
                         [X,Y,T,AUC(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
                     else
@@ -190,159 +244,178 @@ for p = 1:length(uniquePatients) % loop on patients
                     end
                 end
             end
+        end
+        %% use STN,  M1 or Both power values 
+        if fitAllPerTarget
+            for nnn = 1:3 % loop on averages
+                switch nnn
+                    case 1
+                        labelAgregateAreas{nnn} = 'STN';
+                        idxuseLabels = cellfun(@(x) any(strfind(x,'STN')),labelMeta) & ...
+                            ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+                    case 2
+                        labelAgregateAreas{nnn} = 'MC';
+                        idxuseLabels = cellfun(@(x) any(strfind(x,'M1')),labelMeta) & ...
+                            ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+                    case 3
+                        labelAgregateAreas{nnn} = 'STN+MC';
+                        idxuseLabels = ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+                end
+                
+                for si =1:numshuffls+1
+                    for k = 1:5
+                        idxTrn = training(cvp,k); % Training set indices
+                        idxTest = test(cvp,k);    % Test set indices
+                        tblTrn = array2table(alldataUse(idxTrn,idxuseLabels));
+                        tblTrn.Y = labels(idxTrn);
+                        if doshuffle
+                            if si > 1 % first is real
+                                rng(si);
+                                labs = labels(idxTrn);
+                                idxshuffle = randperm(length(labs));
+                                labs = labs(idxshuffle);
+                                tblTrn.Y = labs;
+                            end
+                        end
+                        Mdl_agregate = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
+                        
+                        [labeltest_agregate,scoretest_agregate,costest_agregate] = predict(Mdl_agregate,alldataUse(idxTest,idxuseLabels));
+                        if doshuffle
+                            [X_agregate,Y_agregate,T_agregate,AUC_agregate(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
+                        else
+                            [X_agregate,Y_agregate,T_agregate,AUC_agregate(k),OPTROCPT_agregate] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
+                        end
+                    end
+                end
+                if doshuffle
+                    realVal = mean(AUC_agregate(:,1));
+                    shufflevals = mean(AUC_agregate(:,2:end),1);
+                    AUCout_agregate(nnn) = realVal;
+                    sumsmaller = sum(realVal < mean(AUC_agregate(:,2:end),1));
+                    if sumsmaller == 0
+                        pval = 1/numshuffls;
+                    else
+                        pval = sumsmaller/numshuffls;
+                    end
+                    AUCpOut_agregate(nnn) = pval;
+                else
+                    AUCout_agregate(nnn) = mean(AUC_agregate);
+                end
+                
+            end
+            
+            
+            
             if doshuffle
                 realVal = mean(AUC(:,1));
                 shufflevals = mean(AUC(:,2:end),1);
-                AUCout(c) = realVal;
+                AUCout(c+1) = realVal;
                 sumsmaller = sum(realVal < mean(AUC(:,2:end),1));
                 if sumsmaller == 0
                     pval = 1/numshuffls;
                 else
                     pval = sumsmaller/numshuffls;
                 end
-                AUCpOut(c) = pval;
+                AUCpOut(c+1) = pval;
             else
-                AUCout(c) = mean(AUC);
+                AUCout(c+1) = mean(AUC);
             end
             fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
-                    c, length(labelMeta)+1, uniquePatients{p},sides{s},labelMeta{c},toc(start));
+                c+1, length(labelMeta)+1, uniquePatients{p},sides{s},'all areas',toc(start));
         end
-        %% use all areas
-        for si =1:numshuffls+1
-            for k = 1:5
-                idxTrn = training(cvp,k); % Training set indices
-                idxTest = test(cvp,k);    % Test set indices
-                tblTrn = array2table(alldataUse(idxTrn,:));
-                tblTrn.Y = labels(idxTrn);
-                if doshuffle
-                    if si > 1 % first is real
-                        rng(si);
-                        labs = labels(idxTrn);
-                        idxshuffle = randperm(length(labs));
-                        labs = labs(idxshuffle);
-                        tblTrn.Y = labs;
-                    end
-                end
-                Mdl = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
-                
-                [labeltest,scoretest,costest] = predict(Mdl,alldataUse(idxTest,:));
-                if doshuffle
-                    [X,Y,T,AUC(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
-                else
-                    [X,Y,T,AUC(k),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
-                end
-            end
-        end
-        %% use STN,  M1 or Both power values 
         
-        for nnn = 1:3 % loop on averages 
-            switch nnn 
-                case 1 
-                    labelAgregateAreas{nnn} = 'STN';
-                    idxuseLabels = cellfun(@(x) any(strfind(x,'STN')),labelMeta) & ...
-                             ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
-                case 2 
-                    labelAgregateAreas{nnn} = 'MC';
-                    idxuseLabels = cellfun(@(x) any(strfind(x,'M1')),labelMeta) & ...
-                             ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
-                case 3 
-                    labelAgregateAreas{nnn} = 'STN+MC';
-                    idxuseLabels = ~cellfun(@(x) any(strfind(x,'coh')),labelMeta);
-            end
-                
-            for si =1:numshuffls+1
-                for k = 1:5
-                    idxTrn = training(cvp,k); % Training set indices
-                    idxTest = test(cvp,k);    % Test set indices
-                    tblTrn = array2table(alldataUse(idxTrn,idxuseLabels));
-                    tblTrn.Y = labels(idxTrn);
-                    if doshuffle
-                        if si > 1 % first is real
-                            rng(si);
-                            labs = labels(idxTrn);
-                            idxshuffle = randperm(length(labs));
-                            labs = labs(idxshuffle);
-                            tblTrn.Y = labs;
-                        end
-                    end
-                    Mdl_agregate = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
-                    
-                    [labeltest_agregate,scoretest_agregate,costest_agregate] = predict(Mdl_agregate,alldataUse(idxTest,idxuseLabels));
-                    if doshuffle
-                        [X_agregate,Y_agregate,T_agregate,AUC_agregate(k,si),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
-                    else
-                        [X_agregate,Y_agregate,T_agregate,AUC_agregate(k),OPTROCPT_agregate] = perfcurve(logical(labels(idxTest)),scoretest_agregate(:,2),'true');
-                    end
-                end
-            end
-            if doshuffle
-                realVal = mean(AUC_agregate(:,1));
-                shufflevals = mean(AUC_agregate(:,2:end),1);
-                AUCout_agregate(nnn) = realVal;
-                sumsmaller = sum(realVal < mean(AUC_agregate(:,2:end),1));
-                if sumsmaller == 0
-                    pval = 1/numshuffls;
-                else
-                    pval = sumsmaller/numshuffls;
-                end
-                AUCpOut_agregate(nnn) = pval;
-            else
-                AUCout_agregate(nnn) = mean(AUC_agregate);
-            end
+         %% use only coherence values 
+         rng(1); % For reproducibility
+         cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
 
-        end
-        
-        
-        
-        if doshuffle
-            realVal = mean(AUC(:,1));
-            shufflevals = mean(AUC(:,2:end),1);
-            AUCout(c+1) = realVal;
-            sumsmaller = sum(realVal < mean(AUC(:,2:end),1));
-            if sumsmaller == 0
-                pval = 1/numshuffls;
-            else
-                pval = sumsmaller/numshuffls;
-            end
-            AUCpOut(c+1) = pval;
-        else
-            AUCout(c+1) = mean(AUC);
-        end
-        fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
-            c+1, length(labelMeta)+1, uniquePatients{p},sides{s},'all areas',toc(start));
-        %% save the table with the 
-        labelMetaTitles = labelMeta;
-        labelMetaTitles{17,1} = 'all areas';
-        AUC_results_table = table(); 
-        AUC_results_table_coeffients = table();
-        for r = 1:length(AUCout)
-            AUC_results_table.patient{r} = uniquePatients{p};
-            AUC_results_table.side{r} = sides{s};
-            AUC_results_table.area{r} = labelMetaTitles{r}; 
-            AUC_results_table.AUC(r) = AUCout(r); 
-            if doshuffle
-                AUC_results_table.AUCp(r) = AUCpOut(r);
-            end
-        end
-        %% add some agregate results 
-                labelMetaTitles{17,1} = 'all areas';
-        
-        AUC_results_table_coeffients.coefficents = Mdl.Coeffs(2).Linear;
-        AUC_results_table_coeffients.coefficentsLabels = labelMeta;
+         if fitAllCoherence
+             start = tic;
+             labelAgregateAreas_coherence{1} = 'coherence STN & MC';
+             idxuseLabels = cellfun(@(x) any(strfind(x,'coh')),labelMeta);
+             
+             for si =1:numshuffls+1
+                 for k = 1:5
+                     idxTrn = training(cvp,k); % Training set indices
+                     idxTest = test(cvp,k);    % Test set indices
+                     tblTrn = array2table(alldataUse(idxTrn,idxuseLabels));
+                     tblTrn.Y = labels(idxTrn);
+                     if doshuffle
+                         if si > 1 % first is real
+                             rng(si);
+                             labs = labels(idxTrn);
+                             idxshuffle = randperm(length(labs));
+                             labs = labs(idxshuffle);
+                             tblTrn.Y = labs;
+                         end
+                     end
+                     Mdl_agregate = fitcdiscr(tblTrn,'Y','FillCoeffs','on');
+                     
+                     [labeltest_agregate_coherence,scoretest_agregate_coherence,costest_agregate_coherence] = predict(Mdl_agregate,alldataUse(idxTest,idxuseLabels));
+                     if doshuffle
+                         [X_agregate_coherence,Y_agregate_coherence,T_agregate_coherence,AUC_agregate_coherence(k,si),OPTROCPT_coherence] = perfcurve(logical(labels(idxTest)),scoretest_agregate_coherence(:,2),'true');
+                     else
+                         [X_agregate_coherence_coherence,Y_agregate_coherence,T_agregate_coherence,AUC_agregate_coherence(k),OPTROCPT_agregate_coherence] = perfcurve(logical(labels(idxTest)),scoretest_agregate_coherence(:,2),'true');
+                     end
+                 end
+             end
+             if doshuffle
+                 realVal = mean(AUC_agregate_coherence(:,1));
+                 shufflevals = mean(AUC_agregate_coherence(:,2:end),1);
+                 AUCout_agregate_coherence = realVal;
+                 sumsmaller = sum(realVal < mean(AUC_agregate_coherence(:,2:end),1));
+                 if sumsmaller == 0
+                     pval = 1/numshuffls;
+                 else
+                     pval = sumsmaller/numshuffls;
+                 end
+                 AUCpOut_agregate_coherence = pval;
+             else
+                 AUC_agregate_coherence = mean(AUC_agregate_coherence);
+             end             
+             fprintf('[%0.2d/%0.2d] finished %s %s %s in %.2f\n',...
+                 c+1, length(labelMeta)+1, uniquePatients{p},sides{s},'all coherence',toc(start));
 
-        fnmmuse = sprintf('%s_%s_AUC_by_min_results_with_coherence.mat',uniquePatients{p},...
-            sides{s});
-        fnmsave = fullfile(resultsdir_AUC,fnmmuse);
-        if ~doshuffle % only save the coeefiecns if not doing shuffle 
-            save(fnmsave,'AUC_results_table_coeffients','AUCout_agregate','labelAgregateAreas', '-append');
-            clear alldataUse
-        else
-            readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
-            save(fnmsave,'AUC_results_table','cnls','freqs','readme','AUCout_agregate','AUCpOut_agregate','labelAgregateAreas');
-            clear alldataUse
-        end
-        
-        % save this patient data
+         end
+         %% save with some jaxy exseptions 
+         if fitAllCoherence
+             fnmmuse = sprintf('%s_%s_AUC_by_min_results_with_coherence.mat',uniquePatients{p},...
+                 sides{s});
+             fnmsave = fullfile(resultsdir_AUC,fnmmuse);
+             save(fnmsave,'AUCout_agregate_coherence','AUCpOut_agregate_coherence','labelAgregateAreas_coherence', '-append');
+             
+         else
+             %% save the table with the
+             labelMetaTitles = labelMeta;
+             labelMetaTitles{17,1} = 'all areas';
+             AUC_results_table = table();
+             AUC_results_table_coeffients = table();
+             for r = 1:length(AUCout)
+                 AUC_results_table.patient{r} = uniquePatients{p};
+                 AUC_results_table.side{r} = sides{s};
+                 AUC_results_table.area{r} = labelMetaTitles{r};
+                 AUC_results_table.AUC(r) = AUCout(r);
+                 if doshuffle
+                     AUC_results_table.AUCp(r) = AUCpOut(r);
+                 end
+             end
+             %% add some agregate results
+             labelMetaTitles{17,1} = 'all areas';
+             
+             AUC_results_table_coeffients.coefficents = Mdl.Coeffs(2).Linear;
+             AUC_results_table_coeffients.coefficentsLabels = labelMeta;
+             
+             fnmmuse = sprintf('%s_%s_AUC_by_min_results_with_coherence.mat',uniquePatients{p},...
+                 sides{s});
+             fnmsave = fullfile(resultsdir_AUC,fnmmuse);
+             if ~doshuffle % only save the coeefiecns if not doing shuffle
+                 save(fnmsave,'AUC_results_table_coeffients','AUCout_agregate','labelAgregateAreas', '-append');
+                 clear alldataUse
+             else
+                 readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
+                 save(fnmsave,'AUC_results_table','cnls','freqs','readme','AUCout_agregate','AUCpOut_agregate','labelAgregateAreas');
+                 clear alldataUse
+             end
+         end
     end
 end
 

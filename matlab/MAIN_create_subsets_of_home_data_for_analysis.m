@@ -86,8 +86,9 @@ idxkeep  = cellfun(@(x) istable(x),masterTableOut.stimStatus) & logical(masterTa
 dbUse    = masterTableOut(idxkeep,:); 
 dbUse.duration.Format = 'hh:mm:ss';
 %%
-GETPD = 0;  
-GETGP = 1;  
+GETPD = 0; % stn PD patients 
+GETGP = 1; % stn gp patients 
+GETDT = 0; % dystonia patinet (stn) 
 if GETPD 
 %% RCS02 L
 try
@@ -499,6 +500,7 @@ try
     idxpat       = strcmp(dbUse.patient,'RCS03');
     idxside      = strcmp(dbUse.side,'L');
     idxsense     = strcmp(dbUse.chan2,'+3-2 lpf1-100Hz lpf2-100Hz sr-250Hz');
+    idxsense     = strcmp(dbUse.chan2,'+2-0 lpf1-100Hz lpf2-100Hz sr-250Hz');
     idxstim      = dbUse.stimulation_on == 1;
     idxElec      = strcmp(dbUse.electrodes,'+1 -c ');
     idxstimRate  = dbUse.rate_Hz == 130.2;
@@ -508,6 +510,7 @@ try
     idxScbsUsed  = dbUse.recordedWithScbs == 1;
     
     idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed & idxElec;
+    idxconcat = idxpat & idxside & idxsense & idxstim;
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_4.3_c1');

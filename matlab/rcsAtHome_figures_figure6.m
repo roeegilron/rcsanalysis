@@ -281,10 +281,12 @@ if plotthis
 % load home data  and make table of patient and side 
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/17_states_historical';
+rootdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods/data/17_states_historical';
 figdirout = '/Users/roee/Starr_Lab_Folder/Writing/papers/2019_LongTerm_RCS_recordings/figures/1_draft2/Fig6_unsupervised_methods';
 figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods';
 
 resultsdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home';
+resultsdir = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig5_states_estimates_group_data_and_ AUC/data';
 ff = findFilesBVQX(rootdir, 'pkg_states*10_min*.mat');
 patDatHome = struct();
 for f = 1:length(ff)
@@ -299,6 +301,7 @@ patDatHome = struct2table(patDatHome);
 
 % load in clinic data
 dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
+dirname = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig6_unsupervised_methods/data/rest_3rd_try';
 fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
 load(fnmsave,'patientPSD_in_clinic');
 
@@ -424,6 +427,10 @@ for pp = 1:size(patDatHome)
                 elseif s == 1 & cntplt == 5
                     LineWidth = 1;
                     Alpha = 0.2;
+                else
+                    LineWidth = 0.05;
+                    Alpha = 0.02;
+
                 end
                 plot(psdResults.ff,normalizedPSD(labels,:),...
                     'LineWidth',LineWidth,...

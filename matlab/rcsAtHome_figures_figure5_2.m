@@ -62,8 +62,6 @@ for f = 1:length(ff)
     AUC_results_table.patient{cnt} = AUC_results_table.patient{cntSize};
     AUC_results_table.side{cnt} = AUC_results_table.side{cntSize};
     AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
-    AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
-    AUC_results_table.area{cnt} = [labelAgregateAreas{1} ' all'];
     AUC_results_table.AUC(cnt) = AUCout_agregate(1);
     AUC_results_table.AUCp(cnt) = AUCpOut_agregate(1);
     cnt = cnt + 1; 
@@ -71,10 +69,17 @@ for f = 1:length(ff)
     AUC_results_table.patient{cnt} = AUC_results_table.patient{cntSize};
     AUC_results_table.side{cnt} = AUC_results_table.side{cntSize};
     AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
-    AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
-    AUC_results_table.area{cnt} = [labelAgregateAreas{2} ' all'];
     AUC_results_table.AUC(cnt) = AUCout_agregate(2);
     AUC_results_table.AUCp(cnt) = AUCpOut_agregate(2);
+    cnt = cnt + 1;
+    % cohernece
+    AUC_results_table.patient{cnt} = AUC_results_table.patient{cntSize};
+    AUC_results_table.side{cnt} = AUC_results_table.side{cntSize};
+    AUC_results_table.area{cnt} = labelAgregateAreas_coherence{1};
+    AUC_results_table.AUC(cnt) = AUCout_agregate_coherence(1);
+    AUC_results_table.AUCp(cnt) = AUCpOut_agregate_coherence(1);
+    cnt = cnt + 1
+    
     if f == 1 
         AUCall = AUC_results_table; 
     else
@@ -134,18 +139,29 @@ titlsuse{idxnum,1} = 'MC all';
 idxnum = idxnum + 1; 
 
 
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh beta')),AUCall.area);
-aucadd = AUCall.AUC(idxuse); 
-patsadd   = AUCall.patient(idxuse);
-patients = [patients;patsadd];
-pvalsdd  = AUCall.AUCp(idxuse); 
-pvals  = [pvals ; pvalsdd];
-datbox = [datbox ; aucadd]; 
-xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence beta';
-idxnum = idxnum + 1; 
+% idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh beta')),AUCall.area);
+% aucadd = AUCall.AUC(idxuse); 
+% patsadd   = AUCall.patient(idxuse);
+% patients = [patients;patsadd];
+% pvalsdd  = AUCall.AUCp(idxuse); 
+% pvals  = [pvals ; pvalsdd];
+% datbox = [datbox ; aucadd]; 
+% xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
+% titlsuse{idxnum,1} = 'coherence beta';
+% idxnum = idxnum + 1; 
+% 
+% idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh gamma')),AUCall.area);
+% aucadd = AUCall.AUC(idxuse); 
+% patsadd   = AUCall.patient(idxuse);
+% patients = [patients;patsadd];
+% pvalsdd  = AUCall.AUCp(idxuse); 
+% pvals  = [pvals ; pvalsdd];
+% datbox = [datbox ; aucadd]; 
+% xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
+% titlsuse{idxnum,1} = 'coherence gamma';
+% idxnum = idxnum + 1; 
 
-idxuse = cellfun(@(x) any(strfind(x,'STN-M1 coh gamma')),AUCall.area);
+idxuse = cellfun(@(x) any(strfind(x,'coherence STN & MC')),AUCall.area);
 aucadd = AUCall.AUC(idxuse); 
 patsadd   = AUCall.patient(idxuse);
 patients = [patients;patsadd];
@@ -153,8 +169,8 @@ pvalsdd  = AUCall.AUCp(idxuse);
 pvals  = [pvals ; pvalsdd];
 datbox = [datbox ; aucadd]; 
 xvals  = [xvals; ones(size(aucadd,1),1).*idxnum]; 
-titlsuse{idxnum,1} = 'coherence gamma';
-idxnum = idxnum + 1; 
+titlsuse{idxnum,1} = 'coherence STN & MC';
+idxnum = idxnum + 1;
 
 idxuse = cellfun(@(x) any(strfind(x,'all areas')),AUCall.area);
 aucadd = AUCall.AUC(idxuse); 
@@ -173,9 +189,12 @@ for t = 1:length(titlsuse)
     fprintf('%s %.2f mean range (%.2f - %.2f)\n',titlsuse{t}, mean(datbox(xvals==t)),min(datbox(xvals==t)),max(datbox(xvals==t)));    
 end
 
+% find out how many multiple comarisons were done per subject (including
+% ones not shown)
+ numtests = sum(strcmp(AUCall.patient,'RCS02'));
 
 for i = 1:length(titlsuse)
-    persig = sum(pvals(xvals==i)<0.05)/sum(xvals==i); 
+    persig = sum(pvals(xvals==i)<0.05)/numtests; 
     fprintf('%s %.2f\n',titlsuse{i},persig); 
 end
 if plotpanels
@@ -229,7 +248,11 @@ for i = 1:length(xvalsUse)
     patdat  = patients(xvals==i);
     pvalsdat = pvals(xvals==i);
     unqpat = unique(patdat);
+    % delete all the not box plot stuff: 
     delete(hdat); 
+    delete(nbp(i).sdPtch);
+    delete(nbp(i).semPtch);
+    delete(nbp(i).mu);
     for p = 1:length(unqpat)
         idxpat = strcmp(unqpat{p},patdat);
         xpat = xdat(idxpat); 
@@ -352,7 +375,7 @@ if ~plotpanels
     prfig.plotwidth           = 10;
     prfig.plotheight          = 7;
     prfig.figdir              = figdirout;
-    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v4';
+    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v5';
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     % close(hfig);
