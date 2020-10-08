@@ -1,4 +1,4 @@
-function [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple]  = loadDeviceSettingsFromFirstInitialStructure(DeviceSettings)
+function [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple,stimStateChanges]  = loadDeviceSettingsFromFirstInitialStructure(DeviceSettings)
 warning('off','MATLAB:table:RowsAddedExistingVars');
 
 timenum = DeviceSettings{1}.RecordInfo.HostUnixTime;

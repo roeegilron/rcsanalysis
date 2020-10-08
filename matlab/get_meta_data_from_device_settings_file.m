@@ -19,6 +19,7 @@ metaData.senseSettings{1}               = struct();
 metaData.senseSettingsMultiple{1}       = struct();
 metaData.stimStatus{1}                  = struct();
 metaData.stimState{1}                   = struct();
+metaData.stimStateChanges{1}            = struct();
 metaData.fftTable{1}                    = struct();
 metaData.powerTable{1}                  = struct();
 metaData.adaptiveSettings{1}            = struct();
@@ -71,12 +72,13 @@ try
     end
     
     % load device settings from the first structure of device settings 
-    [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple]  = ...
+    [senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple,stimStateChanges]  = ...
         loadDeviceSettingsFromFirstInitialStructure(DeviceSettings);
     metaData.senseSettings{1}               = senseSettings;
     metaData.senseSettingsMultiple{1}       = senseSettingsMultiple;
     metaData.stimStatus{1}                  = stimStatus;
     metaData.stimState{1}                   = stimState;
+    metaData.stimStateChanges{1}            = stimStateChanges;
     metaData.fftTable{1}                    = fftTable;
     metaData.powerTable{1}                  = powerTable;
     metaData.adaptiveSettings{1}            = adaptiveSettings;

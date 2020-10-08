@@ -2,7 +2,33 @@ function [montageData, montageDataRaw] = extract_montage_data(dirname)
 badFile = 0; % default
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(dirname);
 deviceSettingsFn = fullfile(dirname,'DeviceSettings.json');
-deviceSettings = loadDeviceSettingsForMontage(deviceSettingsFn);
+warning('off','MATLAB:table:RowsAddedExistingVars');
+DeviceSettings = jsondecode(fixMalformedJson(fileread(deviceSettingsFn),'DeviceSettings'));
+% fix issues with device settings sometiems being a cell array and
+% sometimes not
+if isstruct(DeviceSettings)
+    DeviceSettings = {DeviceSettings};
+end
+[senseSettings,stimState,stimStatus,fftTable,powerTable,adaptiveSettings,senseSettingsMultiple,stimStateChanges]  = loadDeviceSettingsFromFirstInitialStructure(DeviceSettings);
+senseSettingsTable =  senseSettingsMultiple(~isnan(senseSettingsMultiple.recNum),:);
+deviceSettings = table(); 
+uniqueRecs = unique(senseSettingsTable.recNum);
+for u = 1:length(uniqueRecs)
+    montageRecDetailsIdx = senseSettingsTable.recNum == uniqueRecs(u);
+    montageRecDetailsTable = senseSettingsTable(montageRecDetailsIdx,:); 
+    deviceSettings.timeStart(u) = montageRecDetailsTable.timeStart{1};
+    deviceSettings.timeStop(u) = montageRecDetailsTable.timeStart{2};
+    deviceSettings.duration(u) = montageRecDetailsTable.timeStart{2} - montageRecDetailsTable.timeStart{1};
+    idxNotDisabled = cellfun(@(x) any(strfind(x,'Hz')),{montageRecDetailsTable.tdDataStruc{1}.sampleRate});
+    structNotDisabeled = montageRecDetailsTable.tdDataStruc{1}(idxNotDisabled);
+    deviceSettings.samplingRate(u)   = str2num(strrep(structNotDisabeled(1).sampleRate,'Hz',''));
+    deviceSettings.chan1{u}   = montageRecDetailsTable.chan1{1};
+    deviceSettings.chan2{u}   = montageRecDetailsTable.chan2{1};
+    deviceSettings.chan3{u}   = montageRecDetailsTable.chan3{1};
+    deviceSettings.chan4{u}   = montageRecDetailsTable.chan4{1};
+    deviceSettings.TimeDomainDataStruc{u}   = montageRecDetailsTable.tdDataStruc{1};
+end
+
 % get rid of any montage files that are less than 20 seconcds 
 idxkeep = deviceSettings.duration > seconds(20);
 deviceSettings = deviceSettings(idxkeep,:); 

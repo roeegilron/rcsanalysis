@@ -23,8 +23,6 @@ for s = 1:length(sessionIds)
     savename    = fullfile(fdeviceDir{1},'rawMontageData.mat');
     if exist(savename,'file')
     else
-        deviceSettingsFn = fullfile(fdeviceDir{1},'DeviceSettings.json');
-        deviceSettings = loadDeviceSettingsForMontage(deviceSettingsFn);
         fileload = fullfile(fdeviceDir{1},'EventLog.json');
         eventTable = loadEventLog(fileload);
         % get and save data
