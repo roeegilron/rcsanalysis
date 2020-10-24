@@ -8,7 +8,7 @@ move_and_delete_folders();
 move_and_delete_folders(); % second call is to delete folders that are empty 
 
 %% get stim and sense database 
-maintain_stim_sense_database();
+% maintain_stim_sense_database();
 
 %% new way to matinain a database - replaces previous functions - needs to completly replace it 
 dirname  = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/';
@@ -34,6 +34,9 @@ plot_database_figures()
 
 %% plot impedence values 
 plot_impedence_values()
+
+%% plot embededdat 
+plot_all_embedded_adaptive_from_database()
 
 
 

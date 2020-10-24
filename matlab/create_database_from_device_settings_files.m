@@ -5,7 +5,7 @@ warning('off','MATLAB:table:RowsAddedExistingVars');
 
 start = tic; 
 rootdir = dirname;
-database_dir = dirname;
+database_dir = fullfile(dirname,'database');
 allDeviceSettingsOut = findFilesBVQX(rootdir,'DeviceSettings.json');
 fprintf('took %.2f to find all device settings\n',toc(start));
 
@@ -52,7 +52,9 @@ for ss = 1:size(masterTableOut,1)
     end
 end
 
-
+if ~exist(database_dir,'dir')
+    mkdir(database_dir);
+end
 fnsave = fullfile(database_dir,'database_from_device_settings.mat');
 save(fnsave,'*Out');
 timeTook = seconds(toc(start));

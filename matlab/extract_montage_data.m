@@ -1,6 +1,13 @@
 function [montageData, montageDataRaw] = extract_montage_data(dirname)
 badFile = 0; % default
 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerTable] =  MAIN_load_rcs_data_from_folder(dirname);
+% fix this with the new assing time algorithm that Kristin has written 
+outdatcomplete =  assignTime(outdatcomplete);
+timenum = outdatcomplete.DerivedTime;
+t = datetime(timenum/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+outdatcomplete.derivedTimes = t; 
+%% 
+
 deviceSettingsFn = fullfile(dirname,'DeviceSettings.json');
 warning('off','MATLAB:table:RowsAddedExistingVars');
 DeviceSettings = jsondecode(fixMalformedJson(fileread(deviceSettingsFn),'DeviceSettings'));
@@ -13,6 +20,13 @@ end
 senseSettingsTable =  senseSettingsMultiple(~isnan(senseSettingsMultiple.recNum),:);
 deviceSettings = table(); 
 uniqueRecs = unique(senseSettingsTable.recNum);
+for u = 1:length(uniqueRecs)
+    if sum(senseSettingsTable.recNum == uniqueRecs(u)) ~=2 
+        montageData = [];
+        montageDataRaw = []; 
+        return; 
+    end
+end
 for u = 1:length(uniqueRecs)
     montageRecDetailsIdx = senseSettingsTable.recNum == uniqueRecs(u);
     montageRecDetailsTable = senseSettingsTable(montageRecDetailsIdx,:); 

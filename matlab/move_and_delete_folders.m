@@ -4,8 +4,8 @@ clc;
 % set destination folders
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
-patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10'};
-% patdirs = {'RCS10'};
+patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10','RCS11'};
+% patdirs = {'RCS08'};
 
 
 for p = 1:length(patdirs)% loop on patient directories
@@ -23,10 +23,11 @@ for p = 1:length(patdirs)% loop on patient directories
             sessionsfound = findFilesBVQX(dirfound,'*ession*',struct('dirs',1,'depth',1));
             fprintf('%d sessions found %s\n',length(sessionsfound),fn);
             % find destination:
-            patnum = sprintf('%0.2d',p);
+            patNumRaw = regexp(patdirs{p},'[0-9]+','match'); % for cases when patient number doesn't increase in oreder of loop / running partial loop 
+            patnum = sprintf('%0.2d',str2num(patNumRaw{1}));
             destfolder = findFilesBVQX(rootdir_dest,['*' patnum '*'],struct('dirs',1,'depth',1));
             
-            if p == 1
+            if strcmp(patdirs{p},'RCS01 LTE')
                 destpath = fullfile(destfolder,'SummitData',recordingPrograms{rp},'RCS01L');
             else
                 destpath = fullfile(destfolder,'SummitData',recordingPrograms{rp},fn);

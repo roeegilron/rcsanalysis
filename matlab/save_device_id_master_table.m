@@ -207,6 +207,30 @@ masterTable.diagnosis{cnt} = 'PD';
 masterTable.implntDate(cnt)= datetime('28-May-2020','TimeZone','America/Los_Angeles');
 masterTable.progDate(cnt) = datetime('26-Jun-2020','TimeZone','America/Los_Angeles');
 cnt = cnt + 1;
+
+
+% rcs11
+% 
+masterTable.deviceId{cnt}  =  lower('NPC700472H');
+masterTable.patient{cnt}   = 'RCS11';
+masterTable.side{cnt}      = 'L';
+masterTable.area{cnt}      = 'STN'; 
+masterTable.diagnosis{cnt} = 'PD'; 
+masterTable.implntDate(cnt)= datetime('01-Oct-2020','TimeZone','America/Los_Angeles');
+masterTable.progDate(cnt) = datetime('26-Jun-3000','TimeZone','America/Los_Angeles');
+
+cnt = cnt + 1;masterTable.deviceId{cnt}  =  lower('NPC700473H');
+masterTable.patient{cnt}   = 'RCS11';
+masterTable.side{cnt}      = 'R';
+masterTable.area{cnt}      = 'STN'; 
+masterTable.diagnosis{cnt} = 'PD'; 
+masterTable.implntDate(cnt)= datetime('01-Oct-2020','TimeZone','America/Los_Angeles');
+masterTable.progDate(cnt) = datetime('26-Jun-3000','TimeZone','America/Los_Angeles');
+cnt = cnt + 1;
+
+% save 
 save(fullfile(dirSave, 'deviceIdMasterList.mat'),'masterTable'); 
 writetable(masterTable,fullfile(dirSave,'deviceIdMasterList.csv'));
+
+
 end

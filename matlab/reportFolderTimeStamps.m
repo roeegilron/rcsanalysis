@@ -7,13 +7,20 @@ else
     dirname = varargin{1};
 end
 fdirs = findFilesBVQX(dirname,'Sess*',struct('depth',1,'dirs',1));
-% report fast 
-fid = fopen(fullfile(dirname,'folderTimes.txt'),'w+'); 
+allFolds = table(); 
 for f = 1:size(fdirs,1)
     [pn,fn,ext] = fileparts(fdirs{f});
     rawTime = str2num(strrep(lower(fn),'session',''));
     t = datetime(rawTime/1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-    fprintf(fid,'%s %s\n',t,fn);
+    sessname = fn; 
+    allFolds.time(f) = t; 
+    allFolds.sessName{f} = fn;
+end
+allFolds = sortrows(allFolds,'time'); 
+% report fast 
+fid = fopen(fullfile(dirname,'folderTimes.txt'),'w+');
+for f = 1:size(allFolds,1); 
+    fprintf(fid,'%s %s\n',allFolds.time(f),allFolds.sessName{f});
 end
 fclose(fid)
 return; 

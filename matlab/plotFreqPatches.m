@@ -10,7 +10,7 @@ for p = 1:size(handles.freqranges,1)
     handles.hPatches(p) = patch('XData',xdat,'YData',ydat,'YLimInclude','off');
     handles.hPatches(p).Parent = hax;
     handles.hPatches(p).FaceColor = cuse(p,:);
-    handles.hPatches(p).FaceAlpha = 0.3;
+    handles.hPatches(p).FaceAlpha = 0.1;
     handles.hPatches(p).EdgeColor = 'none';
     handles.hPatches(p).Visible = 'on';
 end

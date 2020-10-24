@@ -21,6 +21,8 @@ for c = 1:4
     senseSettings.(fnuse){1} = tdDataStruc(c).chanFullStr;
 end
 senseSettings.TimeDomainDataStruc{1} = tdDataStruc;
+senseSettings.TelmMode{1} =  DeviceSettings{1}.TelemetryModuleInfo.TelmMode;
+senseSettings.TelmRatio(1) =  DeviceSettings{1}.TelemetryModuleInfo.TelmRatio;
 % load all the sense settings in the whole file 
 
 try
@@ -418,14 +420,14 @@ stimStatus = stimStatus(:,{'time','duration','group','stimulation_on','activeGro
 % loop on programs to find different stim states 
 % print all device settings to see if I am missing somethings 
 clc;
-for ds = 2:length(DeviceSettings)
-    fns = fieldnames(DeviceSettings{ds});
-    fprintf('%0.2d:\n',ds); 
-    for f = 1:length(fns)
-    fprintf('%s\n',fns{f});
-    end
-    fprintf('\n\n');
-end
+% for ds = 2:length(DeviceSettings)
+%     fns = fieldnames(DeviceSettings{ds});
+%     fprintf('%0.2d:\n',ds); 
+%     for f = 1:length(fns)
+%     fprintf('%s\n',fns{f});
+%     end
+%     fprintf('\n\n');
+% end
 stimStateChanges = stimStatus;
 
 for ds = 2:length(DeviceSettings)

@@ -1,4 +1,4 @@
-function plot_stim_titrations_from_auto_montage()
+function plot_stim_titrations_from_auto_montagem()
 
 %% plot stim titration run on SCBS
 % plot time domain verification 
@@ -19,25 +19,22 @@ if useThis
             MAIN_load_rcs_data_from_folder(pn);
         ds = get_meta_data_from_device_settings_file(ff{f});
         %%
-        if isempty(eventTable) % first check if empty, otherweise check other stuff 
-            eStart = [];
+        
+        if iscell(eventTable.EventType)
+            idxStartStop = cellfun(@(x) any(strfind(x,'StimSweep')),eventTable.EventType);
+            eventTableUse = eventTable(idxStartStop,:);
+            idxStart = cellfun(@(x) any(strfind(lower(x),'start')),eventTableUse.EventType);
+            idxEnd = cellfun(@(x) any(strfind(lower(x),'stop')),eventTableUse.EventType);
+            eStart = eventTableUse(idxStart,:);
+            eEnd = eventTableUse(idxEnd,:);
+            durations = eEnd.HostUnixTime - eStart.HostUnixTime;
+            idxuse = durations > seconds(25);
+            eStart = eStart(idxuse,:);
+            eEnd = eEnd(idxuse,:);
+
         else
-            if iscell(eventTable.EventType)
-                idxStartStop = cellfun(@(x) any(strfind(x,'StimSweep')),eventTable.EventType);
-                eventTableUse = eventTable(idxStartStop,:);
-                idxStart = cellfun(@(x) any(strfind(lower(x),'start')),eventTableUse.EventType);
-                idxEnd = cellfun(@(x) any(strfind(lower(x),'stop')),eventTableUse.EventType);
-                eStart = eventTableUse(idxStart,:);
-                eEnd = eventTableUse(idxEnd,:);
-                durations = eEnd.HostUnixTime - eStart.HostUnixTime;
-                idxuse = durations > seconds(25);
-                eStart = eStart(idxuse,:);
-                eEnd = eEnd(idxuse,:);
-                
-            else
-                idxStartStop = zeros(size(eventTable,1),1);
-                eStart = [];
-            end
+            idxStartStop = zeros(size(eventTable,1),1);
+            eStart = [];
         end
         
         if ~isempty(eStart)
@@ -124,8 +121,7 @@ if useThis
                     dataChoppedStimTitration.stimRate{cntData} = stimChanges.rate_Hz;
                     
                     % sense electrode 
-                    dataChoppedStimTitration.senseElectrode{cntData} = ds.senseSettings{1}.TimeDomainDataStruc{1}(c).chanOut;
-                    dataChoppedStimTitration.duration(cntData) = ds.senseSettings{1}.duration;
+                    dataChoppedStimTitration.senseElectrode{cntData} = ds.senseSettingsMultiple{1}.tdDataStruc{1}(c).chanOut;
                     dataChoppedStimTitration.timeDomainTime{cntData} = tplot; 
                     dataChoppedStimTitration.timeDomainData{cntData} = yplot;
                     % get power data 
@@ -254,7 +250,7 @@ save(fileSave,'dataChoppedStimTitration');
 
 return;
 
-%% load data base with all trimmed data 
+%% load data and plot per patient data - embedded power vs stim levels 
 close all; clc;
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 resdir  = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/stim_titrations_2/results';
@@ -264,42 +260,7 @@ load(fileSave,'dataChoppedStimTitration');
 uniqePatients = unique(dataChoppedStimTitration.patient); 
 uniqueSides = unique(dataChoppedStimTitration.side); 
 
-%% report patient with problems 
-clc;
-for p = 1:size(uniqePatients,1) % loop on patients
-    idxPat = strcmp(dataChoppedStimTitration.patient,uniqePatients{p});
-    dbPatTwoSides = dataChoppedStimTitration(idxPat,:);
-    uniqueSides = unique(dbPatTwoSides.side);
-    for s = 1:size(uniqueSides,1) % loop on sides 
-        idxPatAnDSise = strcmp(dbPatTwoSides.side,uniqueSides{s});
-        dbPat = dbPatTwoSides(idxPatAnDSise,:);
-        pat = unique(dbPat.patient);
-        side = unique(dbPat.side);
-        fprintf('%s %s:\n',pat{1},side{1});
-        stimElectrodes = unique(dbPat.stimElectrode);
-        fprintf('\tstim electrode: %s:\n',stimElectrodes{1});
-        fprintf('\tnum stim electrode: %d:\n',length(stimElectrodes));
-        senseElectrodes = unique(dbPat.senseElectrode);
-        for ss = 1:length(senseElectrodes)
-            fprintf('\t\tsense electrodes: %s:',senseElectrodes{ss});
-            idxSense = strcmp(dbPat.senseElectrode,senseElectrodes{ss});
-            uniqeTimeStart = unique(dbPat.timeStartSession(idxSense));
-            uniqeDurations = unique(dbPat.duration(idxSense));
-            if length(uniqeTimeStart) == 1 
-            fprintf('\t(%s - time)\n',uniqeTimeStart);
-            else
-                fprintf('\t(%s - time (%s duration))',uniqeTimeStart(1),uniqeDurations(1));
-                fprintf('\t(%s - time (%s duration))\n',uniqeTimeStart(2),uniqeDurations(2));
-            end
-        end
-        fprintf('\n\n');
-        
-    end
-end
-%% plot per patient data - embedded power vs stim levels 
-
-
-for p = 1:size(uniqePatients,1) % loop on patients  XXX
+for p = 1:size(uniqePatients,1) % loop on patients 
     for s = 1:size(uniqueSides,1) % loop on sides 
         hfig = figure;
         hfig.Color = 'w';
@@ -352,7 +313,7 @@ for p = 1:size(uniqePatients,1) % loop on patients  XXX
                 end
             end
         end
-        % plot 
+        %%
         hpanel.fontsize = 10;  % global font
         hpanel.de.margin = 15;
         hpanel.marginleft =  20;
@@ -367,7 +328,7 @@ for p = 1:size(uniqePatients,1) % loop on patients  XXX
         prfig.figname             = figname;
         prfig.figtype             = '-dpdf';
         plot_hfig(hfig,prfig)
-        %
+        %%
     end
 end
 
@@ -430,8 +391,6 @@ for p = 1:size(uniqePatients,1) % loop on patients
                         hsc = scatter(meanPower,meanPowerval,100,'filled',...
                             'MarkerFaceColor',clrUse,...
                             'MarkerFaceAlpha',0.4);
-                        stimLevelText = sprintf('%.2f',stimLevel);
-                        text(meanPower,meanPowerval,stimLevelText,'FontSize',4);
                         xlabel('Power computed');
                         ylabel('Embedded power'); 
                         ttlstr = sprintf('%s %.2f(Hz)-%.2f(Hz)',...
@@ -442,7 +401,7 @@ for p = 1:size(uniqePatients,1) % loop on patients
                 end
             end
         end
-        %
+        %%
         hpanel.fontsize = 10;  % global font
         hpanel.de.margin = 15;
         hpanel.marginleft =  20;
@@ -518,11 +477,11 @@ for p = 1:size(uniqePatients,1) % loop on patients
                         idxusefreq = tdFrqs >= embedderPower(1) & tdFrqs <= embedderPower(2);
                         meanPower = mean(tdPwer(idxusefreq));
                         
-                        hsc = scatter(stimLevel,meanPower,100,'filled',...
+                        hsc = scatter(meanPower,meanPowerval,100,'filled',...
                             'MarkerFaceColor',clrUse,...
                             'MarkerFaceAlpha',0.4);
-                        xlabel('Stim Level');
-                        ylabel('Power computed TD'); 
+                        xlabel('Power computed');
+                        ylabel('Embedded power'); 
                         ttlstr = sprintf('%s %.2f(Hz)-%.2f(Hz)',...
                             dbSection.senseElectrode{r},...
                             embedderPower(1),embedderPower(2));
@@ -531,7 +490,7 @@ for p = 1:size(uniqePatients,1) % loop on patients
                 end
             end
         end
-        %
+        %%
         hpanel.fontsize = 10;  % global font
         hpanel.de.margin = 15;
         hpanel.marginleft =  20;
@@ -542,7 +501,7 @@ for p = 1:size(uniqePatients,1) % loop on patients
         prfig.plotwidth           = 12;
         prfig.plotheight          = 9;
         prfig.figdir             = figdir;
-        figname = sprintf('%s_%s_all_computed_power_vs_stim',uniqePatients{p},uniqueSides{s});
+        figname = sprintf('%s_%s_all_embedded_vs_computed_power',uniqePatients{p},uniqueSides{s});
         prfig.figname             = figname;
         prfig.figtype             = '-dpdf';
         plot_hfig(hfig,prfig)

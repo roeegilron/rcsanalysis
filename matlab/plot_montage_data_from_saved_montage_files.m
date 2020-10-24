@@ -16,7 +16,8 @@ for f = 1:length(ff)
     if exist('montagDataRawManualIdxs','var')
         montageDataRaw = montagDataRawManualIdxs;
     end
-    plot_data_per_recording(montageDataRaw,figdir,ff{f});
+    montageDataRaw
+%     plot_data_per_recording(montageDataRaw,figdir,ff{f});
     %     plot_pac_montage_data_within(montageData,figdir,ff{f});
     [pn,fn] = fileparts(ff{f});
     
@@ -48,7 +49,7 @@ for i = 1:size(montageData,1)
         badMontageRec = 1;
     end
     % check if there is a gap in this data selection is larger than 10 * 1/smaple rate - which is too much
-    if seconds(max(diff(x))) > (1/ montageData.samplingRate(i))*10
+    if max(diff(seconds(x))) > (1/ montageData.samplingRate(i))*100
         badMontageRec = 1;
     end
     if ~badMontageRec
