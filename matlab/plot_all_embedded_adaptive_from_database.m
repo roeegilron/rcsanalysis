@@ -7,11 +7,12 @@ patientFolders  = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
 
 database_folder = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data','database');
 figdir          = fullfile(database_folder,'figures_adaptive');
-
-load(fullfile(database_folder,'sense_stim_database.mat'));
-load(fullfile(database_folder,'database_raw_from_device_settings.mat'));
+% XXX 
+database_folder = '/Volumes/RCS_DATA/adaptive_at_home_testing/temp_data_power_shut_off/database';
+% XXXX 
+load(fullfile(database_folder,'database_from_device_settings.mat'));
 %%
-db = sense_stim_database;
+db = masterTableOut;
 
 
 params.group = 'D';
@@ -19,6 +20,7 @@ params.stim  = 1;
 params.min_size = hours(1);
 
 %% old version of doing this 
+%{
 reloadDB = 0;
 
 if reloadDB
@@ -94,6 +96,7 @@ else
     load(fullfile(database_folder,'adaptive_database.mat'),'db');
 end
 %%
+%}
 %% new version of doing this 
 reloadDB = 1;
 
@@ -137,7 +140,10 @@ for p = 1:length(uniquePatients)
         hasSCBSdata = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),aDBSplot.allFilesWithDetection) ;
         totalTime = sum(aDBSplot.duration); 
         totalTime.Format = 'hh:mm:ss';
-        if sum(hasSCBSdata) >= 1 
+        if sum(hasSCBSdata) >= 1  
+            plot_adbs_day(aDBSplot,figdir,patDB)
+        else % sometiems it's worth checking if you have reocded from SCBS somteims not... 
+            warning('not reocrded with SCBS according to path');
             plot_adbs_day(aDBSplot,figdir,patDB)
         end
     end
@@ -219,7 +225,7 @@ hpanel.pack('h',{15 [] 15});
 hpanel(2).pack({5 24 24 24 24});
 hpanel.select('all');
 hpanel.fontsize = 12;
-%%
+
 nrows = 5;
 cntpltPanel = 1; 
 titles = {'control signal L','current L', 'control signal R','current R'};
@@ -231,8 +237,9 @@ for i = 2:nrows
     cntpltPanel = cntpltPanel + 1;
 end
 %% plot data
-idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),db.allFilesWithDetection);
-dbTiming = db(idxSCBS,:);
+% idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),db.allFilesWithDetection);
+% dbTiming = db(idxSCBS,:);
+dbTiming = db;
 xAxisLimits = [min(dbTiming.timeStart) max(dbTiming.timeEnd)];
 
 unqSides = unique(db.side);
@@ -242,16 +249,16 @@ for ss = 1:length(unqSides)
     dbuse = db(idxuse,:);
     adbsSettings = struct();
     % get the last device settings on this day
-    idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.deviceSettings) == 1,1,'last');
+    idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.senseSettingsMultiple) == 1,1,'last');
     if ~isempty(idxDeviceSettings)
-        adbsSettings.deviceSettings = dbuse.deviceSettings{idxDeviceSettings};
+        adbsSettings.deviceSettings = dbuse.senseSettingsMultiple{idxDeviceSettings};
     else
         % need to find ffet settings from the backup database
         backupdbCorrectSide = backupdb( strcmp(backupdb.side,unqSides{ss}), :);
         backupdbCorrectSide = sortrows(backupdbCorrectSide,'timeStart');
         idxBaxkupBeforeThisSession = backupdbCorrectSide.timeStart < dbuse.timeStart(1);
         backupUse = backupdbCorrectSide(idxBaxkupBeforeThisSession,:);
-        idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),backupUse.deviceSettings) == 1,1,'last');
+        idxDeviceSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),backupUse.senseSettingsMultiple) == 1,1,'last');
         if isempty(idxDeviceSettings)
             % device settings  missing
             adbsSettings.deviceSettings = table();
@@ -261,10 +268,10 @@ for ss = 1:length(unqSides)
     end
 
     % get the last stim status on this day 
-    adbsSettings.stimStatus = dbuse.stimStatus{end};
-    idxStimSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.stimStatus) == 1,1,'last');
+    adbsSettings.stimStatus = dbuse.stimStateChanges{end};
+    idxStimSettings = find(cellfun(@(x) (istable(x) & size(x,1)>=1),dbuse.stimStateChanges) == 1,1,'last');
     if ~isempty(idxStimSettings)
-        adbsSettings.stimStatus = dbuse.stimStatus{idxStimSettings};
+        adbsSettings.stimStatus = dbuse.stimStateChanges{idxStimSettings};
     end
     
     % get the last stim state on this day 
@@ -317,8 +324,11 @@ for ss = 1:length(unqSides)
         end
     end
     
-    idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),dbuse.allFilesWithDetection);
-    dbuse = dbuse(idxSCBS,:);
+    % XXXX 
+    % don't check to see if recorded with SCBS 
+    % XXXX 
+%     idxSCBS  = cellfun(@(x) any(strfind(x,'SummitContinuousBilateralStreaming')),dbuse.allFilesWithDetection);
+%     dbuse = dbuse(idxSCBS,:);
     % only plot data from 
     for d = 1:size(dbuse,1)
         % plot the detector
@@ -435,7 +445,7 @@ for i  =  1:length(hsb)
     end
 end
 linkaxes(hsb,'x');
-hsb(1).XLim = xAxisLimits;
+% hsb(1).XLim = xAxisLimits;
 ttlLarge{1,1} = dbuse.patient{1};
 [y,m,d] = ymd(dbuse.timeStart(1));
 % use the top plot to plot the title 

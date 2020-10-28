@@ -136,7 +136,7 @@ for e = 1:length(events)
     
 end
 %%
-at = adaptiveLogTable(1:100,:);
+at = adaptiveLogTable(1:20,:);
 idxzero = at.newstate==0;
 unique(at.prog0(idxzero))
 %%

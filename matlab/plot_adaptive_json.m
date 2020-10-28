@@ -1,32 +1,148 @@
-function plot_adaptive_json(fn); 
+function plot_adaptive_json(fnAdaptive)
+%% this file plots an adaptive json file as well as current
 
-figure;
-hold on;
-rawTime = adaptiveTable.PacketRxUnixTime;
-secsAdaptive = datetime(rawTime./1000,'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-idxuseAdaptive = 1:length(secsAdaptive);
-secsAdaptive = secsAdaptive(idxuseAdaptive);
-state = adaptiveTable.CurrentAdaptiveState(idxuseAdaptive);
-detector = adaptiveTable.LD0_output(idxuseAdaptive);
-highThresh = adaptiveTable.LD0_highThreshold(idxuseAdaptive);
-lowThresh = adaptiveTable.LD0_lowThreshold(idxuseAdaptive);
-current   = adaptiveTable.CurrentProgramAmplitudesInMilliamps(idxuseAdaptive);
-% 1. detector
-plot(secsAdaptive,detector,'LineWidth',3);
-hplt = plot(secsAdaptive,highThresh,'LineWidth',3);
+
+
+%% get data
+[pn,fn] = fileparts(fnAdaptive);
+fnDeviceSettings = fullfile(pn,'DeviceSettings.json');
+%     ds = get_meta_data_from_device_settings_file(fnDeviceSettings);
+%     str = getAdaptiveHumanReadaleSettings(ds);
+mintrim = 10;
+
+% load adapative
+res = readAdaptiveJson(fnAdaptive);
+tim = res.timing;
+fnf = fieldnames(tim);
+for fff = 1:length(fnf)
+    tim.(fnf{fff})= tim.(fnf{fff})';
+end
+
+ada = res.adaptive;
+fnf = fieldnames(ada);
+for fff = 1:length(fnf)
+    ada.(fnf{fff})= ada.(fnf{fff})';
+end
+
+timingTable = struct2table(tim);
+adaptiveTableTemp = struct2table(ada);
+adaptiveTable = [timingTable, adaptiveTableTemp];
+% get sampling rate
+deviceSettingsTable = get_meta_data_from_device_settings_file(fnDeviceSettings);
+fftInterval = deviceSettingsTable.fftTable{1}.interval;
+samplingRate = 1000/fftInterval;
+samplingRateCol = repmat(samplingRate,size(adaptiveTable,1),1);
+adaptiveTable.samplerate = samplingRateCol;
+adaptiveTable.packetsizes  = repmat(1,size(adaptiveTable,1),1);
+
+adaptiveTable = assignTime(adaptiveTable);
+ts = datetime(adaptiveTable.DerivedTime/1000,...
+    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+
+adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts;
+
+
+
+
+
+%% plot data
+
+hfig = figure;
+hfig.Color = 'w';
+for i = 1:2
+    hsb(i) = subplot(2,1,i); 
+    hold(hsb(i),'on');
+end
+% only remove outliers in the threshold
+timesUseDetector = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable; 
+ld0 = adaptiveTable.LD0_output;
+ld0_high = adaptiveTable.LD0_highThreshold;
+ld0_low = adaptiveTable.LD0_lowThreshold;
+
+outlierIdx = isoutlier(ld0_high);
+ld0 = ld0(~outlierIdx);
+ld0_high = ld0_high(~outlierIdx);
+ld0_low = ld0_low(~outlierIdx);
+timesUseDetector = timesUseDetector(~outlierIdx);
+
+idxplot = 1; % first plot is detecorr
+hold(hsb(idxplot),'on');
+hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
+hplt = plot(hsb(idxplot),timesUseDetector,ld0_high,'LineWidth',2,'Color',[0.8 0 0 ]);
 hplt.LineStyle = '-.';
 hplt.Color = [hplt.Color 0.7];
-hplt = plot(secsAdaptive,lowThresh,'LineWidth',3);
+hplt = plot(hsb(idxplot),timesUseDetector,ld0_low,'LineWidth',2,'Color',[0.8 0 0]);
 hplt.LineStyle = '-.';
 hplt.Color = [hplt.Color 0.7];
+prctile_99 = prctile(ld0,99);
+prctile_1  = prctile(ld0,1);
+if prctile_1 > ld0_low(1)
+    prctile_1 = ld0_low(1) * 0.9;
+end
+if prctile_99 < ld0_high(1)
+    prctile_99 = ld0_high(1)*1.1;
+end
+ylim(hsb(idxplot),[prctile_1 prctile_99]);
+ttlus = sprintf('Control signal');
+title(hsb(idxplot),ttlus);
+ylabel(hsb(idxplot),'Control signal (a.u.)');
+set(hsb(idxplot),'FontSize',16);
+
+%% write to screen
+clc; 
+prctile(ld0,10); 
+fprintf('LD0 data:\n\n');
+
+fprintf('\tmean:\t%.2f\n',mean(ld0));
+fprintf('\tmedian:\t%.2f\n',median(ld0));
+fprintf('\n'); 
+for i = 5:5:100
+    fprintf('\t prctile %0.2d:\t%.2f\n',i,prctile(ld0,i));
+end
+%% write to file 
+filePrctile = fullfile(pn,'prctilesAdaptiveRun.txt'); 
+fid = fopen(filePrctile,'w+');
+
+fprintf(fid,'LD0 data:\n\n');
+
+fprintf(fid,'\tmean:\t%.2f\n',mean(ld0));
+fprintf(fid,'\tmedian:\t%.2f\n',median(ld0));
+fprintf(fid,'\n'); 
+for i = 5:5:100
+    fprintf(fid,'\t prctile %0.2d:\t%.2f\n',i,prctile(ld0,i));
+end
+fclose(fid);
 %% 
-% 2. threshold
-ylims = get(gca,'YLim');
-rescaleVals = [ylims(2)*1.1 (ylims(2) + ceil(ylims(2)-ylims(1))/3)];
-stateRescaled = rescale(state,rescaleVals(1),rescaleVals(2));
-% 3. state - rescaled on the second y axis above current
-plot(secsAdaptive,stateRescaled,'LineWidth',3,'Color',[0 0.8 0 0.6]);
-title('state and detector');
-set(gca,'FontSize',16);
+
+
+idxplot = 2; % current
+hold(hsb(idxplot),'on');
+timesUseCur = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
+cur = adaptiveTable.CurrentProgramAmplitudesInMilliamps;
+cur = cur(:,1); % assumes only one program running ;
+% don't  remove outliers for current
+% but remove current above 10 as they are unlikely to be real
+outlierIdx = cur>10;
+cur = cur(~outlierIdx);
+timesUseCur = timesUseCur(~outlierIdx);
+
+
+
+plot(hsb(idxplot),timesUseCur,cur,'LineWidth',3,'Color',[0 0.8 0 0.7]);
+%         for i = 1:3
+%             states{i} = sprintf('%0.1fmA',dbuse.cur(d,i));
+%
+%             if i == 2
+%                 if dbuse.cur(d,i) == 25.5
+%                     states{i} = 'HOLD';
+%                 end
+%             end
+%         end
+%         ttlus = sprintf('Current in mA %s [%s, %s, %s]',unqSides{ss},states{1},states{2},states{3});
+%         title(hsb(idxplot) ,ttlus);
+title('Current'); 
+ylabel( hsb(idxplot) ,'Current (mA)');
+set( hsb(idxplot),'FontSize',16);
 
 end

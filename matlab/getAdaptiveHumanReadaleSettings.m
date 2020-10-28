@@ -23,7 +23,7 @@ fftTable = adaptiveSettingsStruc.ffTable;
 powerTable = adaptiveSettingsStruc.powerTable;
 adaptiveSettings = adaptiveSettingsStruc.adaptiveSettings;
 
-stimStateRaw = stimState;
+stimStateRaw = stimStatus;
 stimState = table();
 % choose the stim state with the longest duration and with an
 % active group
@@ -133,7 +133,7 @@ if size(fftTable,1) == 1 & length(fieldnames(fftTable))>= 1
     
     
     fftsize = fftTable.fftSize;
-    sr = deviceSettingsOut.samplingRate(end);
+    sr = str2num(strrep(deviceSettingsOut.tdDataStruc{1}(1).sampleRate,'Hz',''));
     
     fftinterval = fftTable.interval;
     fftime = ceil((fftsize/sr).*1000);

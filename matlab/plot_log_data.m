@@ -1,6 +1,7 @@
 function plot_log_data()
 %%
 rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/RCS06 Un_Synced Data/SummitData/SummitContinuousBilateralStreaming/RCS06R';
+rootdir = '/Volumes/RCS_DATA/adaptive_at_home_testing/temp_data_power_shut_off/RCS06L';
 ff = findFilesBVQX(rootdir,'LogData*',struct('dirs',1));
 dsOut = table(); 
 for f = 1:length(ff)
@@ -23,7 +24,11 @@ dsDate = dsOut(idxuse,:);
 hfig = figure; 
 for d = 1:size(dsDate,1)
     ftf = findFilesBVQX( dsDate.LogFolder{d},'*LOG.txt');
-    adaptiveLogTable = read_adaptive_txt_log(ftf{1});
+    if length(ftf) > 1 
+        adaptiveLogTable = read_adaptive_txt_log(ftf{2});
+    else
+        adaptiveLogTable = read_adaptive_txt_log(ftf{1});
+    end
     %% load adaptive data
     [devdir,~]  = fileparts(dsDate.deviceSettingsFn{d});
     fnAdaptive = fullfile(devdir,'AdaptiveLog.json');
@@ -34,6 +39,37 @@ for d = 1:size(dsDate,1)
     
     % load adapative 
     res = readAdaptiveJson(fnAdaptive);
+    tim = res.timing;
+    fnf = fieldnames(tim);
+    for fff = 1:length(fnf)
+        tim.(fnf{fff})= tim.(fnf{fff})';
+    end
+    
+    ada = res.adaptive;
+    fnf = fieldnames(ada);
+    for fff = 1:length(fnf)
+        ada.(fnf{fff})= ada.(fnf{fff})';
+    end
+    
+    timingTable = struct2table(tim);
+    adaptiveTableTemp = struct2table(ada);
+    adaptiveTable = [timingTable, adaptiveTableTemp];
+    % get sampling rate 
+    deviceSettingsTable = get_meta_data_from_device_settings_file(dsDate.deviceSettingsFn{d});
+    fftInterval = deviceSettingsTable.fftTable{1}.interval; 
+    samplingRate = 1000/fftInterval;
+    samplingRateCol = repmat(samplingRate,size(adaptiveTable,1),1);
+    adaptiveTable.samplerate = samplingRateCol;
+    adaptiveTable.packetsizes  = repmat(1,size(adaptiveTable,1),1);
+    
+    adaptiveTable = assignTime(adaptiveTable);
+    ts = datetime(adaptiveTable.DerivedTime/1000,...
+        'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+
+    
+    adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts; 
+    
+    
     currentTimeSeries = res.adaptive.CurrentProgramAmplitudesInMilliamps(1,:);
     timestamps = datetime(datevec(res.timing.timestamp./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
     uxtimes = datetime(res.timing.PacketGenTime/1000,...
@@ -81,7 +117,43 @@ for d = 1:size(dsDate,1)
         db.adaptive_running(d) = 1; 
     end
     db.adaptiveLogTable{d} = adaptiveLogTable;
+    db.adativeTable{d} = adaptiveTable;
 end
+%% process adaptive log table and 
+%% expand to fit streaming data 
+adaptiveLogTable = db.adaptiveLogTable{2};
+adativeTable1  = db.adativeTable{1};
+adativeTable2  = db.adativeTable{2};
+fnsave = fullfile(rootdir,'for_simon_adpative_log_vs_adpative_table.mat');
+save(fnsave,'adaptiveLogTable','adativeTable1','adativeTable2');
+
+%% plot 
+hfig = figure;
+hfig.Color = 'w';
+adaptiveLogTable.time.TimeZone = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable.TimeZone;
+hsb(1) = subplot(2,1,1);
+plot(adativeTable1.DerivedTimesFromAssignTimesHumanReadable,adativeTable1.CurrentProgramAmplitudesInMilliamps(:,1));
+set(gca,'FontSize',16);
+title('Stimulation Current from Streaming Data');
+hsb(2) = subplot(2,1,2);
+plot(adaptiveLogTable.time,adaptiveLogTable.prog0)
+set(gca,'FontSize',16);
+linkaxes(hsb,'x');
+title('Stimulation Current from Log File');
+
+
+%%
+
+for d = 1:length(dbuse.currentTimeSeries)
+        % plot the raw states 
+        adaptiveLogTable = dbuse.adaptiveLogTable{d};
+        adaptiveLogTable = sortrows(adaptiveLogTable,'time');
+        states = adaptiveLogTable.newstate;
+        timeUse = adaptiveLogTable.time;
+        % artificial time 
+        timeExpanded = timeUse(1) : seconds(1) : timeUse(end);
+end
+
 %% open figure 
 close all;
 hfig = figure; 
@@ -176,17 +248,29 @@ for d = 1:length(dbuse.currentTimeSeries)
         adaptiveLogTable = sortrows(adaptiveLogTable,'time');
         states = adaptiveLogTable.newstate;
         timeUse = adaptiveLogTable.time;
+        % artificial time 
+        timeExpanded = timeUse(1) : seconds(1) : timeUse(end);
        %%
        cla(hsb(idxplot));
        incX = 1;
        incY = 0; 
        hold(hsb(idxplot),'on');
+       yout = [];
+       tout = [];
         for t = 2:length(timeUse)-1
             plot(hsb(idxplot),[timeUse(t-1) timeUse(t)],[states(t-1) states(t-1)],...
                 'LineWidth',1,'Color',[0 0 0.8]);
             plot(hsb(idxplot),[timeUse(t) timeUse(t)],[states(t-1) states(t)],...
                 'LineWidth',1,'Color',[0 0 0.8]);
+            yout = [yout , states(t-1) states(t-1)];
+            yout = [yout , states(t-1) states(t)];
+            tout = [tout, timeUse(t-1) timeUse(t)];
+            tout = [tout, timeUse(t) timeUse(t)];
         end
+        ymvmena = movmean(yout,20,2);
+        plot(hsb(idxplot),tout,ymvmena,...
+            'LineWidth',4,'Color',[0.8 0 0 0.2]);
+        
         hsb(idxplot).YTick = [0 1 2];
         ylabel('State (Log File)');
         ylim([-0.5 2.5]);
