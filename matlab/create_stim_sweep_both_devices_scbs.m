@@ -1,20 +1,20 @@
 function create_stim_sweep_both_devices_scbs()
 clc;
 %% params to set 
-patient         = 'RCS01'; % patient plotting stim sweep for 
+patient         = 'RCS07'; % patient plotting stim sweep for 
 groupUse        = 'C';    % group to use 
 
 % RIGHT: 
-maxAmp_R        = 0.1; % max amp for the stim sweep on the R side 
-openLoopR       = 0.1; % open loop level for the stim sweep on the R side (often lower) 
+maxAmp_R        = 2.0; % max amp for the stim sweep on the R side 
+openLoopR       = 1.8; % open loop level for the stim sweep on the R side (often lower) 
 % LEFT 
-maxAmp_L        = 2.4; % max amp for the stim sweep on the L side 
-openLoopL       = 2.4; % open loop level for the stim sweep on the L side (often lower) 
+maxAmp_L        = 2.0; % max amp for the stim sweep on the L side 
+openLoopL       = 1.8; % open loop level for the stim sweep on the L side (often lower) 
 
 stimfreq        = 130.2; % assume same stim frequnecy through out stim titration; 
 pulsewidth      = 60; % assume same stim frequnecy through out stim titration; 
-timesInBetween  = 20; % time in seconds to go back to zero in between each stim level 
-timRunInSeconds = 50; % time to run each "primary" sweep 
+timesInBetween  = 30; % time in seconds to go back to zero in between each stim level 
+timRunInSeconds = 45; % time to run each "primary" sweep 
 
 evMarkerDelay   = 5; % event marker dealy in seconds 
 %% create the psuedo random sequence

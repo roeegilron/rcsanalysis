@@ -136,8 +136,10 @@ for e = 1:length(events)
     
 end
 %%
-at = adaptiveLogTable(1:20,:);
-idxzero = at.newstate==0;
-unique(at.prog0(idxzero))
+if size(adaptiveLogTable,1) > 30
+    at = adaptiveLogTable(1:20,:);
+    idxzero = at.newstate==0;
+    unique(at.prog0(idxzero))
+end
 %%
 end

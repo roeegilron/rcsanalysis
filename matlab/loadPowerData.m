@@ -108,6 +108,9 @@ try
                 valInHz = fftBins(i)+fftBins(2)/2;
                 upper(i) = valInHz;
             end
+            for i = 1:size(upper,2) 
+                fprintf('\t%0.2f \t%0.2f\n',lower(i), upper(i)); 
+            end
             
             %%
             powerChannelsIdxs = powerChannelsIdxs + 1; % since C# is 0 indexed and Matlab is 1 indexed.

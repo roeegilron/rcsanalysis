@@ -183,6 +183,7 @@ timesUseDetector = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
 timesUseDetectorDuration = timesUseDetector - timesUseDetector(1); 
 outlierIdxTime = timesUseDetectorDuration < minutes(5);
 ld0 = adaptiveTable.LD0_output;
+ld0_high = adpaptive
 outlierIdxLD = isoutlier(ld0_high);
 outliersUse = outlierIdxLD | outlierIdxCur | outlierIdxState | outlierIdxTime;
 atUse = adaptiveTable(~outliersUse,:);
@@ -191,8 +192,7 @@ controlSignal = atUse.LD0_output;
 diffs = diff(controlSignal);
 firstIdx = find(diffs>1,1)+1;
 atUse = atUse(firstIdx:end,:);
-%%
-
+%% 1:1 current 
 
 hfig = figure;
 hfig.Color = 'w';
@@ -212,7 +212,7 @@ hplt.LineStyle = '-.';
 
 hplt = plot(xlims,[ld0_low(1) ld0_low(end)],'LineWidth',2,'Color',[0.8 0 0 ]);
 hplt.LineStyle = '-.';
-%%
+%% using update rate to average 
 t = atUse.DerivedTimesFromAssignTimesHumanReadable;
 current = atUse.CurrentProgramAmplitudesInMilliamps(:,1);
 controlSignal = atUse.LD0_output;
@@ -281,7 +281,7 @@ view(2)
 title('histogram');
 axis tight; 
 
-%% plot auto corelatio n
+%% plot auto corelation
 
 
 
