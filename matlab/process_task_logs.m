@@ -7,19 +7,32 @@ ff = findFilesBVQX(dirname,'*.csv',struct('depth',1));
 
 for f = 1:length(ff)
     taskData = table();
-    try 
-        taskDataRaw = readtable(ff{f});
-        t = datetime(taskDataRaw.Var1/1000,'ConvertFrom','posixTime',...
-            'TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-        tStart = datetime(t(1),'Format','uuuu-MM-dd HH_mm_ss');
-        tEnd = datetime(t(end),'Format','uuuu-MM-dd HH_mm_ss');
-        taskData.time = t;
-        taskData.event = taskDataRaw.Var2;
-        filenameUse = sprintf('task_file_name___%s___%s.mat',tStart,tEnd);
-        fnsave = fullfile(dirname,filenameUse);
-        save(fnsave,'taskData');
-        clear t
-
+    try
+            taskDataRaw = readtable(ff{f});
+            if max(taskDataRaw.Var1) < 500 % var 1 is not time, open differently
+                t = datetime(taskDataRaw.Var2/1000,'ConvertFrom','posixTime',...
+                    'TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                tStart = datetime(t(1),'Format','uuuu-MM-dd HH_mm_ss');
+                tEnd = datetime(t(end),'Format','uuuu-MM-dd HH_mm_ss');
+                taskData.time = t;
+                taskData.event = taskDataRaw.Var3;
+                filenameUse = sprintf('task_file_name___%s___%s.mat',tStart,tEnd);
+                fnsave = fullfile(dirname,filenameUse);
+                save(fnsave,'taskData');
+                clear t
+            else
+                taskDataRaw = readtable(ff{f});
+                t = datetime(taskDataRaw.Var1/1000,'ConvertFrom','posixTime',...
+                    'TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                tStart = datetime(t(1),'Format','uuuu-MM-dd HH_mm_ss');
+                tEnd = datetime(t(end),'Format','uuuu-MM-dd HH_mm_ss');
+                taskData.time = t;
+                taskData.event = taskDataRaw.Var2;
+                filenameUse = sprintf('task_file_name___%s___%s.mat',tStart,tEnd);
+                fnsave = fullfile(dirname,filenameUse);
+                save(fnsave,'taskData');
+                clear t
+            end
     catch
         % it didn't work bcs of delimters - fix
         fid = fopen(ff{f});

@@ -30,6 +30,24 @@ metaData.timeDomainStreaming(1)         = NaN;
 metaData.accelerometryStreaming(1)      = NaN;
 metaData.deviceSettingsFn{1}            = deviceSettingsFn;
 
+metaData.session{1}                     = 'NA';
+metaData.recordedWithScbs(1)            = NaN; 
+metaData.recordedWithResearchApp(1)     = NaN; 
+
+
+% create some more defaultvariables (that are contained within variables above):
+% these are commonly used for sorting / indexing into database  
+metaData.chan1{1}                       = 'NA';
+metaData.chan2{1}                       = 'NA';
+metaData.chan3{1}                       = 'NA';
+metaData.chan4{1}                       = 'NA';
+
+metaData.stimulation_on(1)              = NaN;
+metaData.electrodes{1}                  = 'NA';
+metaData.amplitude_mA(1)                = NaN;
+metaData.rate_Hz(1)                     = NaN;
+
+
 % get session name 
 idxSession = strfind(lower(deviceSettingsFn),'session');
 metaData.session{1}                     = deviceSettingsFn( idxSession: idxSession + 19);
@@ -82,6 +100,25 @@ try
     metaData.fftTable{1}                    = fftTable;
     metaData.powerTable{1}                  = powerTable;
     metaData.adaptiveSettings{1}            = adaptiveSettings;
+    
+    
+    % get some inital values for database within sense settings:
+    if istable(senseSettings)
+        metaData.chan1{1} = senseSettings.chan1{1};
+        metaData.chan2{1} = senseSettings.chan2{1};
+        metaData.chan3{1} = senseSettings.chan3{1};
+        metaData.chan4{1} = senseSettings.chan4{1};
+    end
+    
+    % get some initail values for database within stim settings
+    if istable(stimStatus)
+        metaData.stimulation_on(1)  = stimStatus.stimulation_on(1);
+        metaData.electrodes{1}      = stimStatus.electrodes{1};
+        metaData.amplitude_mA(1)    = stimStatus.amplitude_mA(1);
+        metaData.rate_Hz(1)         = stimStatus.rate_Hz(1);
+    end
+
+
     
     % for each subsequent structure, need to write code that will estimate
     % all settings changes within the file and update the total time for

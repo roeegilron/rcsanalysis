@@ -25,6 +25,16 @@ masterTable.implntDate(cnt)= datetime('30-Jul-0000','TimeZone','America/Los_Ange
 masterTable.progDate(cnt) = datetime('01-Apr-2020','TimeZone','America/Los_Angeles');
 cnt = cnt + 1;
 
+% uknown INS 3
+masterTable.deviceId{cnt}  =  lower('NPC700239H');
+masterTable.patient{cnt}   = 'benchtop';
+masterTable.side{cnt}      = '3';
+masterTable.area{cnt}      = 'unknown'; 
+masterTable.diagnosis{cnt} = 'unknown'; 
+masterTable.implntDate(cnt)= datetime('30-Jul-0000','TimeZone','America/Los_Angeles');
+masterTable.progDate(cnt) = datetime('01-Apr-2020','TimeZone','America/Los_Angeles');
+cnt = cnt + 1;
+
 %UCSF ins 1
 masterTable.deviceId{cnt}  =  lower('NPC700354H');
 masterTable.patient{cnt}   = 'benchtop';
@@ -225,6 +235,25 @@ masterTable.side{cnt}      = 'R';
 masterTable.area{cnt}      = 'STN'; 
 masterTable.diagnosis{cnt} = 'PD'; 
 masterTable.implntDate(cnt)= datetime('01-Oct-2020','TimeZone','America/Los_Angeles');
+masterTable.progDate(cnt) = datetime('26-Jun-3000','TimeZone','America/Los_Angeles');
+cnt = cnt + 1;
+
+% rcs12
+% 
+masterTable.deviceId{cnt}  =  lower('NPC700477H');
+masterTable.patient{cnt}   = 'RCS12';
+masterTable.side{cnt}      = 'L';
+masterTable.area{cnt}      = 'STN'; 
+masterTable.diagnosis{cnt} = 'PD'; 
+masterTable.implntDate(cnt)= datetime('27-Oct-2020','TimeZone','America/Los_Angeles');
+masterTable.progDate(cnt) = datetime('26-Jun-3000','TimeZone','America/Los_Angeles');
+
+cnt = cnt + 1;masterTable.deviceId{cnt}  =  lower('NPC700476H');
+masterTable.patient{cnt}   = 'RCS12';
+masterTable.side{cnt}      = 'R';
+masterTable.area{cnt}      = 'STN'; 
+masterTable.diagnosis{cnt} = 'PD'; 
+masterTable.implntDate(cnt)= datetime('27-Oct-2020','TimeZone','America/Los_Angeles');
 masterTable.progDate(cnt) = datetime('26-Jun-3000','TimeZone','America/Los_Angeles');
 cnt = cnt + 1;
 

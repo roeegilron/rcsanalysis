@@ -6,7 +6,8 @@ close all;
 %% get data
 [pn,fn] = fileparts(fnAdaptive);
 fnDeviceSettings = fullfile(pn,'DeviceSettings.json');
-%     ds = get_meta_data_from_device_settings_file(fnDeviceSettings);
+ds = get_meta_data_from_device_settings_file(fnDeviceSettings);
+
 %     str = getAdaptiveHumanReadaleSettings(ds);
 mintrim = 10;
 
@@ -42,6 +43,41 @@ ts = datetime(adaptiveTable.DerivedTime/1000,...
 
 adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts;
 
+
+
+%% plot both lds 
+close all;
+hfig = figure;
+hfig.Color = 'w';
+rows = 4; 
+cols = 1; 
+cntplt = 1;
+hsb(cntplt) = subplot(rows,cols,cntplt); cntplt = cntplt + 1; 
+hplt = plot(adaptiveTable.DerivedTimesFromAssignTimesHumanReadable, adaptiveTable.LD0_output);
+hplt.Color = [0 0 0.8 0.7];
+hplt.LineWidth = 2;
+title('LD0');
+
+hsb(cntplt) = subplot(rows,cols,cntplt); cntplt = cntplt + 1; 
+hplt = plot(adaptiveTable.DerivedTimesFromAssignTimesHumanReadable, adaptiveTable.LD1_output);
+hplt.Color = [0 0 0.8 0.7];
+hplt.LineWidth = 2;
+title('LD1');
+
+hsb(cntplt) = subplot(rows,cols,cntplt); cntplt = cntplt + 1; 
+hplt = plot(adaptiveTable.DerivedTimesFromAssignTimesHumanReadable, adaptiveTable.CurrentAdaptiveState);
+hplt.Color = [0.8 0 0 0.7];
+hplt.LineWidth = 2;
+title('state');
+
+hsb(cntplt) = subplot(rows,cols,cntplt); cntplt = cntplt + 1; 
+cur  = adaptiveTable.CurrentProgramAmplitudesInMilliamps(:,1);
+hplt = plot(adaptiveTable.DerivedTimesFromAssignTimesHumanReadable, cur);
+hplt.Color = [0 0.8 0 0.7];
+hplt.LineWidth = 2;
+title('current');
+
+linkaxes(hsb,'x');
 
 
 
@@ -183,7 +219,7 @@ timesUseDetector = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
 timesUseDetectorDuration = timesUseDetector - timesUseDetector(1); 
 outlierIdxTime = timesUseDetectorDuration < minutes(5);
 ld0 = adaptiveTable.LD0_output;
-ld0_high = adpaptive
+ld0_high = adaptiveTable.LD0_highThreshold;
 outlierIdxLD = isoutlier(ld0_high);
 outliersUse = outlierIdxLD | outlierIdxCur | outlierIdxState | outlierIdxTime;
 atUse = adaptiveTable(~outliersUse,:);

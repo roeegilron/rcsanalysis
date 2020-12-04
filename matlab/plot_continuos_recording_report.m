@@ -16,10 +16,15 @@ if exist(fullfile(dirname,'database.mat'),'file')
 else
     error('file database.mat doesn''t exist need to create it with MAIN_report_data_in_folder.m');
 end
-
-tblNonEmpty = tblout(~cellfun(@(x) isempty(x),tblout.startTime),:);
-timeDomainFileDur(:,1) = cellfun(@(x) datetime(x),tblNonEmpty.startTime);
-timeDomainFileDur(:,2) = cellfun(@(x) datetime(x),tblNonEmpty.endTime);
+if iscell(tblout.startTime)
+    tblNonEmpty = tblout(~cellfun(@(x) isempty(x),tblout.startTime),:);
+    timeDomainFileDur(:,1) = cellfun(@(x) datetime(x),tblNonEmpty.startTime);
+    timeDomainFileDur(:,2) = cellfun(@(x) datetime(x),tblNonEmpty.endTime);
+else
+    tblNonEmpty = tblout;
+    timeDomainFileDur(:,1) = tblNonEmpty.startTime;
+    timeDomainFileDur(:,2) = tblNonEmpty.endTime;
+end
 idxNotSameDay = day(timeDomainFileDur(:,1)) ~= day(timeDomainFileDur(:,2));
 allTimesSameDay = timeDomainFileDur(~idxNotSameDay,:); 
 allTimesDiffDay = timeDomainFileDur(idxNotSameDay,:); 

@@ -1,10 +1,11 @@
 function move_and_delete_folders()
 %% this function moves folders from synced dropbox folders to unsynced folders
+fprintf('the time is:\n%s\n',datetime('now'));
 clc;
 % set destination folders
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
-patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10','RCS11'};
+patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10','RCS11','RCS12'};
 % patdirs = {'RCS08'};
 
 
@@ -44,8 +45,8 @@ for p = 1:length(patdirs)% loop on patient directories
                 fprintf('[%0.3d] \t %s\n',ff,times(ff));
             end
             if ~isempty(sessionsfound)
-                % only move files that have been started at least 24 hours ago
-                timeBefore = (datetime(datevec(now))-hours(24));
+                % only move files that have been started at least 12 hours ago
+                timeBefore = (datetime(datevec(now))-hours(12));
                 timeBefore.TimeZone = 'America/Los_Angeles';
                 idxkeep = times < timeBefore;
                 sessionsfound = sessionsfound(idxkeep);

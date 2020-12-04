@@ -16,10 +16,10 @@ elseif length(varargin) == 2
     plotData = varargin{2}; 
 end
 
-deviceSettingsOut = adaptiveSettingsStruc.deviceSettings;
+deviceSettingsOut = adaptiveSettingsStruc.senseSettings;
 stimStatus = adaptiveSettingsStruc.stimStatus;
 stimState = adaptiveSettingsStruc.stimState;
-fftTable = adaptiveSettingsStruc.ffTable;
+fftTable = adaptiveSettingsStruc.fftTable;
 powerTable = adaptiveSettingsStruc.powerTable;
 adaptiveSettings = adaptiveSettingsStruc.adaptiveSettings;
 
@@ -133,7 +133,7 @@ if size(fftTable,1) == 1 & length(fieldnames(fftTable))>= 1
     
     
     fftsize = fftTable.fftSize;
-    sr = str2num(strrep(deviceSettingsOut.tdDataStruc{1}(1).sampleRate,'Hz',''));
+    sr = deviceSettingsOut{1}.samplingRate;
     
     fftinterval = fftTable.interval;
     fftime = ceil((fftsize/sr).*1000);

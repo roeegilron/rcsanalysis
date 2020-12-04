@@ -17,8 +17,8 @@ for f = 1:length(ff)
         montageDataRaw = montagDataRawManualIdxs;
     end
     montageDataRaw
-%     plot_data_per_recording(montageDataRaw,figdir,ff{f});
-    %     plot_pac_montage_data_within(montageData,figdir,ff{f});
+    plot_data_per_recording(montageDataRaw,figdir,ff{f});
+    plot_pac_montage_data_within(montageData,figdir,ff{f});
     [pn,fn] = fileparts(ff{f});
     
     %     plot_montage_data(pn);

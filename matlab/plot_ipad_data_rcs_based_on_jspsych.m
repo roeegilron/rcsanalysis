@@ -3,12 +3,22 @@ function plot_ipad_data_rcs_based_on_jspsych()
 % and not on deslys allignemtn
 clc;
 close all;
-createFileDatabase = 0;
+createFileDatabase = 1;
 outlierFunc = @isoutlier;
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % dektop
 boxdir = '/Users/roee/Box/movement_task_data_at_home/data'; % laptop
 resdir = '/Users/roee/Box/movement_task_data_at_home/results'; % laptop
 figdir = '/Users/roee/Box/movement_task_data_at_home/figures'; % laptop
+
+boxdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS12/10 Day';
+resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS12/10 Day/results';
+figdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS12/10 Day/figures';
+
+boxdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS11/10 Day';
+resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS11/10 Day/results';
+figdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS11/10 Day/figures';
+
+
 patdirs = findFilesBVQX(boxdir,'RCS*',struct('dirs',1,'depth',1));
 
 %% create database
@@ -46,7 +56,7 @@ if createFileDatabase == 1
     taskDataLocs = taskDataLocs(idxKeep,:);
     % create patient database
     create_database_from_device_settings_files(boxdir)
-    load(fullfile(boxdir,'database_from_device_settings.mat'));
+    load(fullfile(boxdir,'database','database_from_device_settings.mat'));
     masterTableOut.allDeviceSettingsOut = allDeviceSettingsOut;
     idxTable = cellfun(@(x) istable(x), masterTableOut.stimState);
     masterTableUse = masterTableOut(idxTable,:);
@@ -89,7 +99,7 @@ if createFileDatabase == 1
         end
         if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc right hand')),eventTable.EventSubType)) > 0
             masterTableUse.handUsedForTask {ss} = 'right';
-        end
+            endllll
         if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc left hand')),eventTable.EventSubType)) > 0
             masterTableUse.handUsedForTask {ss} = 'left';
         end
@@ -109,18 +119,18 @@ end
 
 
 %% loop on task data and plot a nice figure for each subject
-load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
+% load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
 sides = {'L','R'};
 % so far all subject are using the ipislateral hand
 % XXXX
-% XXXX
-[y,m,d] = ymd(taskDataLocs.taskStart);
-idsUse = taskDataLocs.taskDuration > seconds(30) & ...
-    d >= 28;
-
-[y,m,d] = ymd(masterTableUse.timeStart);
-idxUseRcs =  d >= 28;
-masterTableUse = masterTableUse(idxUseRcs,:);
+% % XXXX
+% [y,m,d] = ymd(taskDataLocs.taskStart);
+% idsUse = taskDataLocs.taskDuration > seconds(30) & ...
+%     d >= 28;
+% 
+% [y,m,d] = ymd(masterTableUse.timeStart);
+% idxUseRcs =  d >= 28;
+% masterTableUse = masterTableUse(idxUseRcs,:);
 
 
 for m =1:size(masterTableUse,1)
@@ -134,7 +144,7 @@ for m =1:size(masterTableUse,1)
 end 
 masterTableUse = sortrows(masterTableUse,{'patient','unixTimeStart'});
 masterTableUse(:,{'patient','side', 'unixTimeStart','chan1','chan2','chan3', 'chan4','active_recharge','stimulation_on','samplingRate'})
-taskDataLocs = taskDataLocs(idsUse,:);
+% taskDataLocs = taskDataLocs(idsUse,:);
 
 % XXXX
 % XXXX
@@ -146,7 +156,7 @@ idsUse = strcmp(taskDataLocs.patient,'RCS07');
 % XXXX
 
 % XXXXX Plot the behavioural data 
-plotBehavioural = 0; 
+plotBehavioural = 1; 
 % xxxxx
 handBrainRelation = {'contralateral','ipsilateral'};
 ccc = 1;
@@ -168,6 +178,23 @@ for ttt = 1:size(taskDataLocs)
         if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
             candidateRCSdata.handUsedForTask {pp} = 'NA';
         end
+        % exceptions - when we forgot to include in report - the task
+        % event: 
+        [yy,mm,dd] = ymd(candidateRCSdata.unixTimeStart(pp));
+        [hh,MM] = hms(candidateRCSdata.unixTimeStart(pp));
+        isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 13) & (MM == 2);
+        if isExcep
+            candidateRCSdata.handUsedForTask {pp} = 'right';
+        end
+        isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 13) & (MM == 13);
+        if isExcep
+            candidateRCSdata.handUsedForTask {pp} = 'left';
+        end
+        isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 14) & (MM == 48);
+        if isExcep
+            candidateRCSdata.handUsedForTask {pp} = 'right';
+        end
+
     end
     unqHandUsed = unique(candidateRCSdata.handUsedForTask);
     if strcmp(handBrainRelation{ccc},'contralateral')
@@ -242,6 +269,22 @@ for ttt = 1:size(taskDataLocs)
             end
             if sum(cellfun(@(x) any(strfind( x,'Movement task JSpsyc ')),eventTable.EventSubType)) == 0
                 candidateRCSdata.handUsedForTask {pp} = 'NA';
+            end
+            % exceptions - when we forgot to include in report - the task
+            % event:
+            [yy,mm,dd] = ymd(candidateRCSdata.unixTimeStart(pp));
+            [hh,MM] = hms(candidateRCSdata.unixTimeStart(pp));
+            isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 13) & (MM == 2);
+            if isExcep
+                candidateRCSdata.handUsedForTask {pp} = 'right';
+            end
+            isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 13) & (MM == 13);
+            if isExcep
+                candidateRCSdata.handUsedForTask {pp} = 'left';
+            end
+            isExcep = (yy == 2020) & (mm == 11) & (dd == 6) & (hh == 14) & (MM == 48);
+            if isExcep
+                candidateRCSdata.handUsedForTask {pp} = 'left';
             end
         end
         unqHandUsed = unique(candidateRCSdata.handUsedForTask);
@@ -320,7 +363,7 @@ for ttt = 1:size(taskDataLocs)
         end
         
         analysisToDo = {'center_prep','center_move','center_keyUp'};
-        analysisToDo = {'center_keyUp'};
+%         analysisToDo = {'center_keyUp'};
         for aaa = 1:length(analysisToDo)
             timeparams = getTaskTimings(taskData,analysisToDo{aaa});
             %% plot ipad data based on this alligmment

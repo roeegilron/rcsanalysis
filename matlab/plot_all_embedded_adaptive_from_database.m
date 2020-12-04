@@ -18,7 +18,7 @@ params.min_size = hours(1);
 
 
 %% new version of doing this 
-reloadDB = 0;
+reloadDB = 1;
 
 if reloadDB
     load(fullfile(database_folder,'database_from_device_settings.mat'));
@@ -28,8 +28,7 @@ if reloadDB
     idxRcsPatient = cellfun(@(x) any(strfind(x,'RCS')),masterTableOut.patient);
     idxuse        = idxDetection & idxRcsPatient; 
     dbWithDetection = masterTableOut(idxuse,:); 
-    allFilesWithDetection = allDeviceSettingsOut(idxuse);
-    dbWithDetection.allFilesWithDetection = allFilesWithDetection;
+    dbWithDetection.allFilesWithDetection = dbWithDetection.deviceSettingsFn;
     % loop on the database with detection and make sure current is changing
     for d = 1:size(dbWithDetection)
         adaptiveSettings = dbWithDetection.adaptiveSettings{d};

@@ -298,6 +298,9 @@ end
 
 
 patient = database.patient{1};
+areaname = lower(database.area{1});
+% deprecate this - since now have area name re above 
+%{
 switch patient
     case 'RCS01'
         areaname = 'stn';
@@ -319,12 +322,17 @@ switch patient
         areaname = 'gpi';
     case 'RCS10'
         areaname = 'gpi';
+    case 'RCS11'
+        areaname = 'stn';
+    case 'RCS12'
+        areaname = 'stn';
 end
+%}
 
 startall = tic;
 startload = tic;
 fprintf('file loaded in %.2f seconds \n',toc(startload));
-%% do fft but on sep recordings
+% do fft but on sep recordings
 for i = 1:length( tdProcDat )
     for c = 1:4
         fn = sprintf('key%d',c-1);

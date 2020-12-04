@@ -3,8 +3,10 @@ function plot_subject_specific_data_psd_coherence_home_data_raw()
 rootdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data/';
 figdirout = fullfile(rootdir,'figures');
 ff = findFilesBVQX(rootdir,'RCS*psdAndCoherence*.mat');
-params.plotpsds = 0;
-%% plot all raw data PSS plots
+%% plot subject specific - comment out if you dont want specific fsubject 
+ff = findFilesBVQX(rootdir,'RCS12_*psdAndCoherence*off.mat');
+params.plotpsds = 1;
+%% plot all raw data PSD plots
 if params.plotpsds
     for fnf = 1:length(ff)
         try
@@ -155,6 +157,11 @@ if params.plotpsds
         end
     end
 end
+
+%% plot daily PSD plots for days in which more than 4 hours were recorded 
+
+%% 
+return 
 %% find peaks, plot all violin plots for specific patients and sidespatientsUse(cntpt) = 2; 
 close all;
 cntpt = 1;

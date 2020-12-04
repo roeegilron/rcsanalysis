@@ -1,10 +1,28 @@
-function print_report_from_device_settings_database_file_per_patient()
+function print_report_from_device_settings_database_file_per_patient(varargin)
 %% this repots some stats from the database for all patients
+fprintf('the time is:\n%s\n',datetime('now'));
+close all; clc; 
+warning('off','MATLAB:table:RowsAddedExistingVars');
+startTic = tic;
 
 %% load the database
-dropboxdir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
-reportsDir = fullfile(dropboxdir,'reports');
-databaseFile = fullfile(dropboxdir,'database_from_device_settings.mat');
+if isempty(varargin)
+    dropboxFolder = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
+    if length(dropboxFolder) == 1
+        dirname  = fullfile(dropboxFolder{1}, 'RC+S Patient Un-Synced Data');
+    else
+        error('can not find dropbox folder, you may be on a pc');
+    end
+elseif length(varargin) == 1
+    dirname = varargin{1};
+else
+    error('too many input variable , max of one input - string of file folder');
+end
+dropboxdir = dirname;
+
+databasedir = fullfile(dropboxdir,'database');
+reportsDir = fullfile(databasedir,'reports');
+databaseFile = fullfile(databasedir,'database_from_device_settings.mat');
 load(databaseFile);
 %%
 % clean up database a bit
@@ -14,32 +32,6 @@ masterTableOut = masterTableOut(idxkeep,:);
 % only keep RC+S patients, not benchtop devices etc.
 idxkeep = cellfun(@(x) any(strfind(x,'RCS')),masterTableOut.patient);
 masterTableOut = masterTableOut(idxkeep,:);
-for ss = 1:size(masterTableOut,1)
-    if istable(masterTableOut.senseSettings{ss})
-        masterTableOut.chan1{ss} = masterTableOut.senseSettings{ss}.chan1{1};
-        masterTableOut.chan2{ss} = masterTableOut.senseSettings{ss}.chan2{1};
-        masterTableOut.chan3{ss} = masterTableOut.senseSettings{ss}.chan3{1};
-        masterTableOut.chan4{ss} = masterTableOut.senseSettings{ss}.chan4{1};
-    else
-        masterTableOut.chan1{ss} = 'NA';
-        masterTableOut.chan2{ss} = 'NA';
-        masterTableOut.chan3{ss} = 'NA';
-        masterTableOut.chan4{ss} = 'NA';
-    end
-    if istable(masterTableOut.stimStatus{ss})
-        masterTableOut.stimulation_on(ss) = masterTableOut.stimStatus{ss}.stimulation_on;
-        masterTableOut.electrodes{ss} = masterTableOut.stimStatus{ss}.electrodes{1};
-        masterTableOut.amplitude_mA(ss) = masterTableOut.stimStatus{ss}.amplitude_mA(1);
-        masterTableOut.rate_Hz(ss) = masterTableOut.stimStatus{ss}.rate_Hz(1);
-    else
-        masterTableOut.stimulation_on(ss) = NaN;
-        masterTableOut.electrodes{ss} = 'NA';
-        masterTableOut.amplitude_mA(ss) = NaN;
-        masterTableOut.rate_Hz(ss) = NaN;
-    end
-end
-save(databaseFile,'masterTableOut','-append');
-
 %%
 uniqPatients = unique(masterTableOut.patient);
 for p = 1:length(uniqPatients)
@@ -64,7 +56,7 @@ for p = 1:length(uniqPatients)
             dbUse.amplitude_mA(ss) = dbUse.stimStatus{ss}.amplitude_mA(1);
             dbUse.rate_Hz(ss) = dbUse.stimStatus{ss}.rate_Hz(1);
         end
-        
+        dbUse = sortrows(dbUse,'timeStart');
         fnSave = sprintf('%s_%s_sense_stim_report.txt',uniqPatients{p},uniqSides{s});
         fid = fopen(fullfile(reportsDir,fnSave),'w+');
         
@@ -73,7 +65,16 @@ for p = 1:length(uniqPatients)
         fprintf(fid, 'information in brackets contains amount of data in that condition in the format:\n');
         fprintf(fid, '[HH:MM:SS]\n\n\n');
         
-        fprintf(fid,'\t *note that this only accounts for SCBS data for now\n\n')
+        fprintf(fid,'\t *note that this may not have all data for now\n\n')
+        
+        % get last few files and recorded: 
+        fprintf(fid,'\t this file was created on: %s\n',datetime('now'))
+        fprintf(fid,'\t these are the most recent (5) sessions in this report:\n\n')
+        dbLast = dbUse(end-4:end,:);
+        for DL = 1:size(dbLast,1)
+            fprintf(fid,'\t[%0.2d]\tstart:\t%s\tduration:\t%s\n',DL,dbLast.timeStart(DL),dbLast.duration(DL))
+        end
+        
         
         fprintf(fid, '%%%%%%%%\n');
         fprintf(fid, '%%%%%%%%\n');
@@ -155,3 +156,7 @@ for p = 1:length(uniqPatients)
         fclose(fid);
     end
 end
+timeTook = seconds(toc(startTic));
+timeTook.Format = 'hh:mm:ss';
+fprintf('finished all data base in %s\n',timeTook);
+fprintf('finished job and time is:\n%s\n',datetime('now'))

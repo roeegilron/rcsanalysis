@@ -1,8 +1,20 @@
 function convert_all_files_from_mat_into_json()
 clc;
+warning('off','MATLAB:table:RowsAddedExistingVars');
+startTic = tic;
+
+
 % set destination folders
-rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
-rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
+dropboxFolder = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
+if length(dropboxFolder) == 1
+    dirname  = fullfile(dropboxFolder{1}, 'RC+S Patient Un-Synced Data');
+    rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
+    rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
+
+else
+    error('can not find dropbox folder, you may be on a pc');
+end
+
 
 errorfilename = fullfile(rootdir_dest,'database','convert_from_json_to_mat_errors.txt');
 fid = fopen(errorfilename,'w+');
@@ -27,5 +39,10 @@ for p = 1:length(patdirs)% loop on patient directories
     end
 end
 fclose(fid); 
+timeTook = seconds(toc(startTic));
+timeTook.Format = 'hh:mm:ss';
+fprintf('finished all data base in %s\n',timeTook);
+fprintf('finished job and time is:\n%s\n',datetime('now'))
+
 end
 

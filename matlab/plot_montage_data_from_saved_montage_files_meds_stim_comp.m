@@ -2,6 +2,10 @@ function plot_montage_data_from_saved_montage_files_meds_stim_comp(dirname)
 % you need to run this function first:
 % open_and_save_montage_data_in_sessions_directory
 resdir = '/Users/roee/Box/Starr_Lab_Folder/Data_Analysis/RCS_data/results/stim_titrations_2/results';
+resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS12/10 Day/RCS_data/results';
+resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS12/10 Day/RCS_data/results';
+resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/RCS11/10 Day/results';
+
 ff = findFilesBVQX(dirname,'rawMontageData.mat');
 figdir = fullfile(dirname,'figures');
 mkdir(figdir);
@@ -15,7 +19,6 @@ if extractAllData
     cntData = 1;
     for f = 1:length(ff)
         load(ff{f});
-        
         if exist('montagDataRawManualIdxs','var')
             montageDataRaw = montagDataRawManualIdxs;
             montageDataHasBeenAdjusted = 1;
@@ -73,13 +76,13 @@ end
 % XXX need to fix manual adjustment here that is not workign well
 for a = 1:size(allDataPerPatient,1)
     if ~logical(allDataPerPatient.montageDataHasBeenAdjusted)
-        %         adjustMontageIdxs( allDataPerPatient.DataFolder{a} );
+%                 adjustMontageIdxs( allDataPerPatient.DataFolder{a} );
     end
 end
 
 
 %% plot psd on a per patient  basis - 500Hz, stim aware
-plotPsds = 0;
+plotPsds = 1;
 if plotPsds
     uniqePatients = unique(allDataPerPatient.patient);
     uniqueSides = unique(allDataPerPatient.side);
@@ -292,7 +295,7 @@ uniqePatients = unique(allDataPerPatient.patient);
 uniqueSides = unique(allDataPerPatient.side);
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 
-for p = 3:size(uniqePatients,1) % loop on patients
+for p = 1:size(uniqePatients,1) % loop on patients
     for s = 1:size(uniqueSides,1) % loop on sides
         idxPatAnDSise = strcmp(allDataPerPatient.patient,uniqePatients{p}) & ...
             strcmp(allDataPerPatient.side,uniqueSides{s});
