@@ -88,7 +88,7 @@ end
             load(fullfile(datadir,'EventLog.mat'),'eventTable');
             
             % process and analyze time domain data
-            processedData = processTimeDomainData_TEMP_VECTOR(td,params);
+            processedData = processTimeDomainData(td,params);
             if ~isempty(processedData)
                 save(fullfile(datadir,'processedTDdata.mat'),'processedData','params');
             end
@@ -126,85 +126,6 @@ end
 % end
 % save( fullfile(rootdir,'processedData.mat'),'params','tdProcDat','accProcDat','-v7.3')
 % fclose(fid);
-end
-
-function processedData = processTimeDomainData(td,params)
-% for each channel, find out if:
-% a. max gap condition is met
-% b. overlap step size is set
-% c. max gap factor is set
-% d. compute fft
-% e. always skip the first params.datasize seconds
-timeStart = td.derivedTimes(1)+seconds(params.datasize);
-timeEnd = td.derivedTimes(1) + seconds(params.datasize)*2;
-cnt = 1;
-processedData = [];
-% if all the data isn't from the same year - reject this session
-%
-%
-if sum(year(td.derivedTimes) ~= 2019) > 0
-  return;
-end
-while timeEnd < td.derivedTimes(end)
-    idxuse = td.derivedTimes >= timeStart & td.derivedTimes <= timeEnd;
-    times = td.derivedTimes(idxuse);
-    sratesIdx = td.samplerate~=0;
-    srates = unique(td.samplerate(sratesIdx));
-    reject = 0;
-    % check if sapmpling rates are the same
-    if length(srates)>1
-        reject = 1;
-    else
-        sr = srates;
-    end
-    % check if sampling rate matches
-    if ~(sr == params.tdSR)
-        reject = 1;
-    end
-    % check times and max gap
-    if prctile(seconds(diff(times)),99) > (1/sr)* params.maxGapFactor
-        % check if 99% of data has gaps that are a max of 2x sr diffs
-        reject = 1;
-    end
-    % check max inter gap interval
-    if max(seconds(diff(times))) > params.maxGap
-        reject = 1;
-    end
-    % check if your segment is at least of length data size
-    if isempty(times)
-        reject = 1;
-    else
-        if ~ (seconds(times(end)-times(1)) > params.datasize-1) % at least larger than data size - 1 seconds
-            reject = 1;
-        end
-    end
-    % check if segment has enough data point (may be a little shy bcs of
-    % packet loss 
-    if ~(length(times)  > ((params.datasize-1)*sr))
-            reject = 1;
-    end
-    
-    if ~reject
-        processedData(cnt).timeStart = timeStart;
-        processedData(cnt).timeEnd = timeEnd;
-        for c = 1:4
-            fn = sprintf('key%d',c-1);
-            x = td.(fn)(idxuse);
-            x = x - mean(x);
-            % trim x by 1 second to insure can save everything to matrix
-            % form
-            datapoints = (params.datasize-1)*sr;
-            
-            %             [fftOut,ff]   = pwelch(x,sr,sr/2,0:1:sr/2,sr,'psd');
-            processedData(cnt).(fn) = x(1:datapoints);
-            
-        end
-        cnt = cnt+1;
-    end
-    timeStart = timeStart + seconds(params.overlap);
-    timeEnd = timeStart + seconds(params.datasize);
-end
-
 end
 
 function  processedData = processActigraphyData(accTable,params)
@@ -286,7 +207,7 @@ end
 
 end
 
-function processedData = processTimeDomainData_TEMP_VECTOR(td,params)
+function processedData = processTimeDomainData(td,params)
 % reshape data (no overlap) - this will be faster 
 % since using vectorization to check for issues with bad files etc. 
 fprintf('reshaping data in vector format\n'); 

@@ -22,6 +22,11 @@ cnttime = 1;
 
 for ss = 1:size(database,1) 
     [pn,fn] = fileparts( database.deviceSettingsFn{ss});
+    % remove hard dependency of data path dir as recorded in
+    % deviceSettingsFn
+    idxuserdir = patdir(1:findstr(patdir,'Starr Lab Dropbox')-1);
+    idxdatapn = pn(findstr(pn,'Starr Lab Dropbox'):end);
+    pn = [idxuserdir,idxdatapn]
     ff = findFilesBVQX(pn, 'proc*TD*.mat');
     if ~isempty(ff)
         processedTDFiles{ss,1} = ff{1};
@@ -91,6 +96,12 @@ cnttime = 1;
 
 for ss = 1:size(database,1) 
     [pn,fn] = fileparts( database.deviceSettingsFn{ss});
+    
+    % remove depency to user as saved in file
+    idxuserdir = patdir(1:findstr(patdir,'Starr Lab Dropbox')-1);
+    idxdatapn = pn(findstr(pn,'Starr Lab Dropbox'):end);
+    pn = [idxuserdir,idxdatapn] 
+    
     ff = findFilesBVQX(pn, 'processedAccData.mat');
     if ~isempty(ff)
         processedActigraphyFiles{ss,1} = ff{1};
@@ -225,7 +236,9 @@ for c = 1:4
     fn = sprintf('key%d',c-1);
     dat = [tdProcDat.(fn)];
     sr = 250; 
-    [fftOut,ff]   = pwelch(dat,sr,sr/2,0:1:sr/2,sr,'psd');
+    % ### scaling value from millivots to microVolts ### juan
+	mV2uVolt = 1e3; % the value from TD.json comes in millivolts
+    [fftOut,ff]   = pwelch(mV2uVolt*dat,sr,sr/2,0:1:sr/2,sr,'psd');
     fftResultsTd.([fn 'fftOut']) = log10(fftOut); 
     fprintf('chanel %d done in %.2f\n',c,toc(start))
 end

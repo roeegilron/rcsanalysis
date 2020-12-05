@@ -1,6 +1,6 @@
 function agregate_patient_databases()
 %% agregate all stim and sense tables acorss subjects 
-rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
+rootdir_orig = '/Users/juananso/Starr Lab Dropbox/';
 rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
 ff = 'stim_and_sense_settings_table.mat';
 databasefiles = findFilesBVQX(rootdir_dest,ff);

@@ -10,6 +10,7 @@ if isempty(varargin)
 else
     dirname  = varargin{1};
 end
+
 % check if a database folder exists, if not run  the MAIN_repot function:
 if ~exist(fullfile(dirname,'database_from_device_settings.mat'),'file')
     % MAIN_report_data_in_folder(dirname); old way of doing this - created
@@ -64,7 +65,8 @@ for f = 1:size(tbluse,1)
 
         start = tic;
         ftd = findFilesBVQX(foldername{1},'RawDataTD.mat');
-        if ~isempty(ftd)
+        fds = findFilesBVQX(foldername{1},'DeviceSettings.mat');
+        if ~isempty(ftd) && ~isempty(fds)
             fprintf('this folder was opened before, skippinn\n'); 
             fprintf('folder %d/%d done in %.2f secs\n',f,size(tbluse,1),toc(start));
         else

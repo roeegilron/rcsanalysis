@@ -5,7 +5,9 @@ warning('off','MATLAB:table:RowsAddedExistingVars');
 
 start = tic; 
 rootdir = dirname;
-database_dir = fullfile(dirname,'database');
+
+% database_dir = fullfile(dirname,'database');% ### removing this ### juan (the database file needs to stay in same level as session folders)
+database_dir = fullfile(dirname);
 allDeviceSettingsOut = findFilesBVQX(rootdir,'DeviceSettings.json');
 fprintf('took %.2f to find all device settings\n',toc(start));
 

@@ -2,7 +2,8 @@ function meta = get_device_id_return_meta_data(fn)
 %% this function takes a device settings.json file 
 %% and returns device ID and other meta data about the recording 
 warning('off','MATLAB:table:RowsAddedExistingVars');
-dirSave = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
+dirSave = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database';
+
 load(fullfile(dirSave, 'deviceIdMasterList.mat'),'masterTable'); 
 
 tic 
