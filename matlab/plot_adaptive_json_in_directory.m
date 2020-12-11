@@ -178,7 +178,7 @@ end
 ds.timeStart.Format = 'dd-MMM-uuuu';
 lrgTitle = sprintf('%s %s %s',ds.patient{1},ds.side{1},ds.timeStart(1));
 sgtitle(lrgTitle)
-
+linkaxes(hsb,'x');
 
 %% write to screen
 clc; 
@@ -206,5 +206,5 @@ for i = 5:5:100
 end
 fclose(fid);
 
-%     linkaxes(hsb,'x');
+
 

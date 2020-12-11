@@ -6,37 +6,37 @@ sourceDir = '/Users/roee/Documents/Data_Analysis/RCS_data';
 runDataBaseFunction = input('run databse function again? (1 == yes 0 == no ');
 if runDataBaseFunction
     create_database_from_device_settings_files(sourceDir);
-    load(fullfile(sourceDir, 'database_from_device_settings.mat'));
+    load(fullfile(sourceDir,'database', 'database_from_device_settings.mat'));
+    sourceDB = masterTableLightOut;
+    clear masterTableLightOut;
 else
-    load(fullfile(sourceDir, 'database_from_device_settings.mat'));
+    load(fullfile(sourceDir,'database', 'database_from_device_settings.mat'),'masterTableLightOut');
+    sourceDB = masterTableLightOut;
+    clear masterTableLightOut;
 end
 
+targetDir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data';
 if runDataBaseFunction
-    targetDir = '/Users/roee/Starr Lab Dropbox/RC+S Patient Un-Synced Data';
-    % make table of target dirs per patients
-    patDirs = findFilesBVQX(targetDir,'RCS*',struct('dirs',1,'depth',1));
-    programStr = {'StarrLab','SummitContinuousBilateralStreaming'};
-    tblPat = table();
-    cntTbl = 1;
-    for p = 1:length(patDirs)
-        for s = 1:length(programStr)
-            programDir = findFilesBVQX(patDirs{p},programStr{s},struct('dirs',1));
-            patSideDires = findFilesBVQX(programDir{1},'RCS*',struct('dirs',1,'depth',1));
-            for ss = 1:length(patSideDires)
-                [pn,fn] = fileparts(patSideDires{ss});
-                tblPat.patient{cntTbl} = fn(1:5);
-                tblPat.side{cntTbl} = fn(end);
-                tblPat.program{cntTbl} = programStr{s};
-                tblPat.path{cntTbl}    = pn;
-                cntTbl = cntTbl + 1;
-            end
-            
-        end
-    end
-    save(fullfile(sourceDir, 'database_from_device_settings.mat'),'tblPat','-append');
+    create_database_from_device_settings_files(targetDir);
+    targetDB = masterTableLightOut;
+    clear masterTableLightOut;
 else
-    load(fullfile(sourceDir, 'database_from_device_settings.mat'),'tblPat');
+    load(fullfile(targetDir,'database', 'database_from_device_settings.mat'),'masterTableLightOut');
+    targetDB = masterTableLightOut;
+    clear masterTableLightOut;
 end
+
+%% report missing files found in patient report 
+missingFilesDB = table();
+for s = 1:size(sourceDB,1)
+     x = 2;
+     if ~isempty(sourceDB.patient(s))
+         sourceDB.
+     end
+end
+x  = 2;
+%% 
+
 %%
 idxuse = strcmp(masterTableOut.patient,'RCS02');
 masterTableOut =  masterTableOut(idxuse,:);

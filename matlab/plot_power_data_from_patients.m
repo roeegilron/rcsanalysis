@@ -146,7 +146,7 @@ for s = 1:length(uniqueSides)
         dateRec = tblPatient.timeStart(1);
         dateRec.Format = 'dd-MMM-uuuu';
         cntttl = 1;
-        ttlLrg{cntttl,1} = sprintf('%s %s %s',tblPatient.patient{1},tblPatient.side{1},dateRec);
+        ttlLrg{cntttl,1} = sprintf('%s %s %s',tblSide.patient{1},tblSide.side{1},dateRec);
         sgtitle(ttlLrg);
         %%
         

@@ -68,7 +68,7 @@ for f = 1:length(ffTD)
     fprintf('time domain file %d/%d done\n',f,length(ffTD));
 end
 fnsave = sprintf('%s_%s_processedData__%s.mat',database.patient{1},database.side{1}, label);
-save( fullfile(patdir,fnsave),'tdProcDat','params','timeDomainFileDur','database','-v7.3')
+save( fullfile(patdir,fnsave),'tdProcDat','timeDomainFileDur','database','-v7.3')
 %%%%%%%%%%
 %%%%%%%%%%
 % END TD 
@@ -403,9 +403,9 @@ save( fullfile(patdir,fnsave),'params','coherenceResultsTd','timeDomainFileDur',
 
 % save one big file 
 fnsave = sprintf('%s_%s_psdAndCoherence__%s.mat',database.patient{1},database.side{1}, label);
-save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+save( fullfile(patdir,fnsave),'fftResultsTd','idxkeep','timeDomainFileDur','database')
 save( fullfile(patdir,fnsave),'accProcDat','accFileDur','database','-v7.3')
-save( fullfile(patdir,fnsave),'params','fftResultsTd','idxkeep','timeDomainFileDur','database')
+save( fullfile(patdir,fnsave),'fftResultsTd','idxkeep','timeDomainFileDur','database')
 
 allDataCoherencePsd = struct();
 

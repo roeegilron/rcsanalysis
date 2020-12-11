@@ -1,5 +1,9 @@
 function eventTable  = loadEventLog(fn)
-eventLog = jsondecode(fixMalformedJson(fileread(fn),'EventLog'));
+try
+    eventLog = jsondecode(fixMalformedJson(fileread(fn),'EventLog'));
+catch
+    eventLog = deserializeJSON(fn);
+end
 [pn,fnm,ext ] = fileparts(fn);
 if isempty(eventLog)
     fprintf('event table is empty\n'); 

@@ -19,6 +19,7 @@ if ~exist(databasefile,'file')
     create_database_from_device_settings_files(dirname);
     load(databasefile);
 else
+    create_database_from_device_settings_files(dirname);
     load(databasefile);
 end
 

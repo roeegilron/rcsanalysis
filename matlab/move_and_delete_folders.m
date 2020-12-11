@@ -6,7 +6,6 @@ clc;
 rootdir_orig = '/Users/roee/Starr Lab Dropbox/';
 rootdir_dest = fullfile(rootdir_orig,'RC+S Patient Un-Synced Data');
 patdirs = {'RCS01 LTE','RC02LTE','RCS03','RCS04','RCS05','RCS06','RCS07','RCS08','RCS09','RCS10','RCS11','RCS12'};
-% patdirs = {'RCS08'};
 
 
 for p = 1:length(patdirs)% loop on patient directories
@@ -68,6 +67,14 @@ for p = 1:length(patdirs)% loop on patient directories
                         fullDest = fullfile(destpath{1},sessFold,devName);
                         mkdir(fullDest);
                         for j = 1:length(jsonsmove)
+                            % check if file exists in destination - this
+                            % can be from previous copy that has failed. 
+                            % delete the file at the destination, and try
+                            % copying again: 
+                            [~,fileNameToMoveForCheck,extCheck] = fileparts(jsonsmove{j});
+                            if exist(fullfile(fullDest,[fileNameToMoveForCheck extCheck]),'file')
+                                delete(fullfile(fullDest,[fileNameToMoveForCheck extCheck]));
+                            end
                             copyfile(jsonsmove{j},fullDest);
                             fs(j) = dir(jsonsmove{j});
                             [~,filenamemove,ext] = fileparts(jsonsmove{j});

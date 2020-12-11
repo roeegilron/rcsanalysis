@@ -38,7 +38,7 @@ pkgDB
 %% 
 
 %% print the database and choose the date range you want to look for overlapping RC+S data within: 
-patient = 'RCS08'; 
+patient = 'RCS10'; 
 patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot 
 % will have a suffix chosenn during the creation process 
 
@@ -62,7 +62,9 @@ pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'d
 cnt = 1; 
 for ss = 1:length(pat_side_folders)
     ff = findFilesBVQX(pat_side_folders{ss},'*pkg_and_rcs_dat_synced_10_min*.mat');
-    psdrFiles{ss} = ff{1};
+    if ~isempty(ff)
+        psdrFiles{ss} = ff{1};
+    end
     [~, patraw] = fileparts(pat_side_folders{ss});
     
     patientUse{ss} = patraw(1:end-1); 
@@ -80,7 +82,7 @@ figdirout = figdircreate;
 %%
 
 %% decide what to plot 
-plotComparisonRCS_ACC_PKG = 0;
+plotComparisonRCS_ACC_PKG = 1;
 plotStates = 1;
 plost_states_base_on_coherence = 1;
 plotTremor = 0;

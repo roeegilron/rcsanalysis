@@ -33,6 +33,9 @@ globalparams.normalizeData = 1; % normalize the data along psd rows (normalize e
 % find Box directory
 boxDir = findFilesBVQX('/Users','Box',struct('dirs',1,'depth',2));
 pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
+dropboxDir = findFilesBVQX('/Users','RC-S_Studies_Regulatory_and_Data',struct('dirs',1,'depth',3));
+
+procDataDir = fullfile(dropboxDir,'database','processed_data');
 load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
 pkgDB
 %%
@@ -58,6 +61,13 @@ timeBefore = datetime('2019-06-19'); % only using second data sprint of PKG
 timeAfer =   datetime('2019-07-10');
 patient = 'RCS03';
 patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
+
+% here you go: 
+timeBefore = datetime('2020-06-16'); % only using second data sprint of PKG 
+timeAfer =   datetime('2020-06-27');
+patient = 'RCS10';
+patient_psd_file_suffix = 'stim_off'; % the specific psd file trying to plot
+
 
 % will have a suffix chosenn during the creation process
 
@@ -118,6 +128,7 @@ for sd = 1:length(sides)
     pat_side_folders = findFilesBVQX(scbs_folder{1},[patient sides{sd}],struct('dirs',1,'depth',1));
     % find the actual psd file lookign for 
     ff = findFilesBVQX(pat_side_folders,['psdResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
+    ff = findFilesBVQX(procDataDir,['psdAndCoherence' '*' patient_psd_file_suffix '*'],struct('depth',1));
     load(ff{1});
     % find the coherence files 
     ff = findFilesBVQX(pat_side_folders,['coherenceResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
