@@ -20,22 +20,16 @@ clc;
 
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 %% load the data
-
 globalparams.use10minute = 1; % use 10 minute averaging
 globalparams.useIndStates = 1; % use a different state mix for each patient to define on/off
 globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row)
 
-
-
-
 %% data selection PKG data
 % '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code';
 % find Box directory
-boxDir = findFilesBVQX('/Users','Box',struct('dirs',1,'depth',2));
+boxDir = findFilesBVQX('/Users','Box Sync',struct('dirs',1,'depth',2));
 pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
 load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
-pkgDB
-%%
 
 %% print the database and choose the date range you want to look for overlapping RC+S data within:
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -47,17 +41,17 @@ pkgDB
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
 timeBefore = datetime('2020-03-03'); % only using second data sprint of PKG 
 timeBefore = datetime('2020-02-01'); % using both data sprints 
 timeAfer =   datetime('2020-03-14');
 patient = 'RCS08';
 patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
 
-timeBefore = datetime('2019-06-19'); % only using second data sprint of PKG 
-timeAfer =   datetime('2019-07-10');
-patient = 'RCS03';
-patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot
+timeBefore = datetime('2020-06-16'); % only using second data sprint of PKG 
+timeAfer =   datetime('2020-06-27');
+patient = 'RCS10';
+
+patient_psd_file_suffix = 'stim_off'; % the specific psd file trying to plot
 
 % will have a suffix chosenn during the creation process
 
@@ -117,13 +111,13 @@ for sd = 1:length(sides)
     % assumign you want the same settings for L and R side
     pat_side_folders = findFilesBVQX(scbs_folder{1},[patient sides{sd}],struct('dirs',1,'depth',1));
     % find the actual psd file lookign for 
-    ff = findFilesBVQX(pat_side_folders,['psdResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
+    ff = findFilesBVQX(fullfile(rootfolder,'database','processed_data'),[patient '_' sides{sd} '_' 'psdResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
     load(ff{1});
     % find the coherence files 
-    ff = findFilesBVQX(pat_side_folders,['coherenceResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
+    ff = findFilesBVQX(fullfile(rootfolder,'database','processed_data'),[patient '_' sides{sd} '_' 'coherenceResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
     load(ff{1}); 
-    % create rootdir 
-    rootdir = pat_side_folders{1};
+    % create rootdir to store the sync pkg and rcs data
+    rootdir = char(fullfile(rootfolder,'database','processed_data'));
     
     savefn = sprintf('%s%s_pkg-%s_and_rcs_dat_synced_10_min.mat',patient,sides{sd},sidesPKG{sd});
     %%
@@ -340,8 +334,6 @@ for sd = 1:length(sides)
     %%
     
 end
-
-
 
 
 end
