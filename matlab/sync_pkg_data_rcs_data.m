@@ -27,7 +27,7 @@ globalparams.normalizeData = 1; % normalize the data along psd rows (normalize e
 %% data selection PKG data
 % '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code';
 % find Box directory
-boxDir = findFilesBVQX('/Users','Box Sync',struct('dirs',1,'depth',2));
+boxDir = findFilesBVQX('/Users',['Box','*'],struct('dirs',1,'depth',2));
 pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
 load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
 
