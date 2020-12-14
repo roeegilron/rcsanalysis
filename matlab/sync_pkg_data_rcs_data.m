@@ -117,7 +117,7 @@ for sd = 1:length(sides)
     ff = findFilesBVQX(fullfile(rootfolder,'database','processed_data'),[patient '_' sides{sd} '_' 'coherenceResults' '*' patient_psd_file_suffix '*'],struct('depth',1));
     load(ff{1}); 
     % create rootdir to store the sync pkg and rcs data
-    rootdir = char(fullfile(rootfolder,'database','processed_data'));
+    rootdir = char(fullfile(boxDir,'RC-S_Studies_Regulatory_and_Data','pkg_data','pkg_sync_rcs_processed_data',patient));
     
     savefn = sprintf('%s%s_pkg-%s_and_rcs_dat_synced_10_min.mat',patient,sides{sd},sidesPKG{sd});
     %%
@@ -267,8 +267,9 @@ for sd = 1:length(sides)
         end
     end
     allDataPkgRcsAcc.ffCoh = coherenceResultsTd.ff;
-    
-    fnmsave = fullfile(rootdir,savefn);
+    resultsdirout = fullfile(rootdir,'results');
+    mkdir(resultsdirout)
+    fnmsave = fullfile(resultsdirout,savefn);
     save(fnmsave,'allDataPkgRcsAcc');
     
     %%
@@ -296,7 +297,7 @@ for sd = 1:length(sides)
     else % stn case 
         titlsUse = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11','STN 0-2 m1 8-10','STN 0-2 m1 9-11','STN 1-3 m1 8-10','STN 1-3 m1 9-11'};
     end
-    
+     
     cntplt = 1;
     for f = 1:length(fieldnamesloop)
         subplot(nrows,ncols,cntplt); cntplt = cntplt + 1;
