@@ -23,6 +23,7 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 globalparams.use10minute = 1; % use 10 minute averaging
 globalparams.useIndStates = 1; % use a different state mix for each patient to define on/off
 globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row)
+PAT_GROUP = 'GP';
 
 %% data selection PKG data
 % '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code';
@@ -51,6 +52,14 @@ timeBefore = datetime('2020-06-16'); % only using second data sprint of PKG
 timeAfer =   datetime('2020-06-27');
 patient = 'RCS10';
 
+timeBefore = datetime('2020-01-23'); % only using second data sprint of PKG 
+timeAfer =   datetime('2020-02-04');
+patient = 'RCS03';
+
+% timeBefore = datetime('2020-04-22'); % only using second data sprint of PKG 
+% timeAfer =   datetime('2020-05-03');
+% patient = 'RCS09';
+
 patient_psd_file_suffix = 'stim_off'; % the specific psd file trying to plot
 
 % will have a suffix chosenn during the creation process
@@ -75,6 +84,7 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 %% loop on both sides seperatly:
 sides = {'L','R'}; % these sides refer to RC+S 
 sidesPKG = {'R','L'}; % you need contralateral sides for PKG 
+
 for sd = 1:length(sides)
     
     
@@ -118,8 +128,11 @@ for sd = 1:length(sides)
     load(ff{1}); 
     % create rootdir to store the sync pkg and rcs data
     rootdir = char(fullfile(boxDir,'RC-S_Studies_Regulatory_and_Data','pkg_data','pkg_sync_rcs_processed_data',patient));
+
+    lrgTitle{1} = sprintf('%s%s',patient,sides{sd});
+    lrgTitle{2} = sprintf('%s - %s %s',timeBefore,timeAfer,patient_psd_file_suffix); 
+    savefn = sprintf('%s_pkg-%s_and_rcs_dat_synced_10_min_%s.mat',lrgTitle{1},sidesPKG{sd},lrgTitle{2});
     
-    savefn = sprintf('%s%s_pkg-%s_and_rcs_dat_synced_10_min.mat',patient,sides{sd},sidesPKG{sd});
     %%
     
     %% loop on pkg data to creat one strucutre
@@ -141,7 +154,11 @@ for sd = 1:length(sides)
     % close(hfig);
     % confirm that this is a good way to get rid of outliers
     hfig = figure;
-    ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+    switch PAT_GROUP
+        case 'STN', ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+        case 'GP', ttls = {'GP 0-1','GP 2-3','S1 8-9','M1 10-11'};
+    end
+
     for c = 1:4
         fn = sprintf('key%dfftOut',c-1);
         hsub = subplot(2,2,c);
@@ -226,7 +243,12 @@ for sd = 1:length(sides)
     throwout = (1- sum(idxkeepcoherence)/length(idxkeepcoherence))*100;
     % confirm that this is a good way to get rid of outliers
     hfig = figure;
-    ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+    
+    switch PAT_GROUP
+        case 'STN', ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+        case 'GP', ttls = {'GP 0-1','GP 2-3','S1 8-9','M1 10-11'};
+    end
+    
     for c = 1:4
         fn = fieldnamesloop{c};
         hsub = subplot(2,2,c);
@@ -237,7 +259,7 @@ for sd = 1:length(sides)
     end
     % close(hfig);
     
-    cohResults.ff = coherenceResultsTd.ff;
+    cohResults.ff = coherenceResultsTd.ff;hsub
     cohResults.timeStart  = coherenceResultsTd.timeStart(idxkeepcoherence);
     cohResults.timeEnd  = coherenceResultsTd.timeEnd(idxkeepcoherence);
     cohTimes = cohResults.timeStart;
@@ -295,7 +317,12 @@ for sd = 1:length(sides)
     if sum(idxusefncoh)==0 % gpi case 
         error('need to fill this out for GPi'); 
     else % stn case 
-        titlsUse = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11','STN 0-2 m1 8-10','STN 0-2 m1 9-11','STN 1-3 m1 8-10','STN 1-3 m1 9-11'};
+        
+        
+       switch PAT_GROUP
+            case 'STN', titlsUse = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11','STN 0-2 m1 8-10','STN 0-2 m1 9-11','STN 1-3 m1 8-10','STN 1-3 m1 9-11'};
+            case 'GP', titlsUse = {'GP 0-1','GP 2-3','S1 8-9','M1 10-11','GP 0-1 S1 8-9','GP 0-1 M1 10-11','GP 2-3 S1 8-9','GP 2-3 M1 10-11'};
+        end
     end
      
     cntplt = 1;
@@ -312,14 +339,12 @@ for sd = 1:length(sides)
             ylabel('Power (log_1_0\muV^2/Hz)');
         end
     end
-    
-    lrgTitle{1} = sprintf('%s %s',patient,sides{sd});
-    lrgTitle{2} = sprintf('%s - %s',timeBefore,timeAfer); 
+
     sgtitle(lrgTitle,'FontSize',18);
     
     figdirout = fullfile(rootdir,'figures');
     mkdir(figdirout);
-    savefn = sprintf('%s%s_praw_rcs_dat_synced_with_pkg_10_min__%s',patient,sides{sd},lrgTitle{2});
+    savefn = sprintf('%s_praw_rcs_dat_synced_with_pkg_10_min__%s%s',lrgTitle{1},lrgTitle{2});
     savefnFig = [savefn '.fig'];
     savefig(hfig,fullfile(figdirout,savefnFig));
     

@@ -1,4 +1,4 @@
-function plot_pkg_data_single_subject()
+% function plot_pkg_data_single_subject()
 % relies on these function to run: 
 
 % for RC+S: 
@@ -15,33 +15,33 @@ function plot_pkg_data_single_subject()
 % and extracts all the PKG data 
 
 %% houskeeping
-close all;
+close all; clear all
 clc;
 
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 %% load the data
-
 globalparams.use10minute = 1; % use 10 minute averaging 
 globalparams.useIndStates = 1; % use a different state mix for each patient to define on/off 
-globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row) 
-
-
-
+globalparams.normalizeData = 0; % normalize the data along psd rows (normalize each row) 
+globalparams.fontsize = 12;
+globalparams.anglexticks = 45;
 
 %% data selection PKG data 
 % '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/pkg_data/code'; 
 % find Box directory 
-boxDir = findFilesBVQX('/Users','Box',struct('dirs',1,'depth',2));
-pkgDB_location = fullfile(boxDir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
+boxdir = findFilesBVQX('/Users',['Box','*'],struct('dirs',1,'depth',2));
+pkgDB_location = fullfile(boxdir{1},'RC-S_Studies_Regulatory_and_Data','pkg_data','results','processed_data');
 load(fullfile(pkgDB_location,'pkgDataBaseProcessed.mat'),'pkgDB');
 pkgDB
 %% 
 
 %% print the database and choose the date range you want to look for overlapping RC+S data within: 
-patient = 'RCS08'; 
-patient_psd_file_suffix = 'before_stim'; % the specific psd file trying to plot 
+STATE_USE_ON = 'on';    % 1) on (no DK)
+STATE_USE_OFF = 'off_tremorScore_50percentile';   % 1) off_tremor (off & tremor)
+PAT_GROUP = 'GP';
+patient = 'RCS10'; 
+patient_psd_file_suffix = 'stim_off'; % the specific psd file trying to plot 
 % will have a suffix chosenn during the creation process 
-
 
 %% data selection - RC+S Data 
 dropboxdir = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
@@ -58,11 +58,16 @@ scbs_folder = findFilesBVQX(patdir{1},'SummitContinuousBilateralStreaming',struc
 % assumign you want the same settings for L and R side  
 pat_side_folders = findFilesBVQX(scbs_folder{1},[patient '*'],struct('dirs',1,'depth',1));
 
+%% data selection - PKG Sync RCS\
+boxsyncdatadir = fullfile(boxdir,'RC-S_Studies_Regulatory_and_Data','pkg_data','pkg_sync_rcs_processed_data',patient);
 
 cnt = 1; 
-for ss = 1:length(pat_side_folders)
-    ff = findFilesBVQX(pat_side_folders{ss},'*pkg_and_rcs_dat_synced_10_min*.mat');
-    psdrFiles{ss} = ff{1};
+
+ff = findFilesBVQX(boxsyncdatadir,['*pkg','*','_and_rcs_dat_synced_10_min*.mat']);
+for ss = 1:length(ff)
+    if ~isempty(ff)
+        psdrFiles{ss} = ff{ss};
+    end
     [~, patraw] = fileparts(pat_side_folders{ss});
     
     patientUse{ss} = patraw(1:end-1); 
@@ -74,13 +79,16 @@ for ss = 1:length(pat_side_folders)
     end
     rcsSideUse{ss} = patraw(end);
 end
-figdircreate = fullfile(patdir{1},'figures');
-mkdir(figdircreate);
-figdirout = figdircreate;
+
+figdircreate = fullfile(boxsyncdatadir,'figures',[STATE_USE_ON,'_',STATE_USE_OFF]);
+resultsdircreate = fullfile(boxsyncdatadir,'results',[STATE_USE_ON,'_',STATE_USE_OFF]);
+mkdir(figdircreate{1});
+mkdir(resultsdircreate{1});
+figdirout = figdircreate{1};
+resdirout = resultsdircreate{1};
 %%
 
 %% decide what to plot 
-plotComparisonRCS_ACC_PKG = 0;
 plotStates = 1;
 plost_states_base_on_coherence = 1;
 plotTremor = 0;
@@ -91,6 +99,7 @@ plot_effect_of_normazliation = 0;
 plot_raw_psds_all_rcs_data = 0; 
 plot_raw_psds_all_rcs_data_coherence = 0;
 plot_AUC_vs_segement_length = 0;
+plotComparisonRCS_ACC_PKG = 0;
 
 %% loop on patients
 cntOut = 1;
@@ -149,9 +158,9 @@ for dd = 1:length(psdrFiles)
             plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
             plot([13 13],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
             plot([30 30],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-            set(gca,'FontSize',16);
+            set(gca,'FontSize',globalparams.fontsize);
         end
-        savenm = fullfile(figdirout,...
+        savenm = fullfile(resdirout,...
             sprintf('%s %s pkg %s 10_min_avgerage.mat','mean_normalized_psd_all_psds',patient{dd},pkgSideUse));
         save(savenm,'psdResults','allDataPkgRcsAcc');
         savefigname = fullfile(figdirout,...
@@ -217,7 +226,7 @@ for dd = 1:length(psdrFiles)
             plot([30 30],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
             set(gca,'FontSize',16);
         end
-        savenm = fullfile(figdirout,...
+        savenm = fullfile(resdirout,...
             sprintf('%s %s pkg %s 10_min_avgerage.mat','coherece_mean_normalized',patient{dd},pkgSideUse));
         save(savenm,'psdResults','allDataPkgRcsAcc');
         savefigname = fullfile(figdirout,...
@@ -254,7 +263,7 @@ for dd = 1:length(psdrFiles)
             xlabel('Time (Hz)');
             ylabel('Power (log_1_0\muV^2/Hz)');
             title(['mean psd (3-90Hz) ' titles{c}]);
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',globalparams.fontsize);
         end
         sgtitle(sprintf('mean psds %s PKG %s', patient{dd},pkgSideUse),'FontSize',20);
         prfig.plotwidth           = 9;
@@ -265,7 +274,7 @@ for dd = 1:length(psdrFiles)
 
     end
     %%
-    
+   
     %% get and plot various states
     if globalparams.useIndStates
         rawstates = allDataPkgRcsAcc.states;
@@ -282,6 +291,33 @@ for dd = 1:length(psdrFiles)
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
 %                 statesUse = {'off','on','sleep'};
+
+            case 'RCS03'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                        cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offtremoridx) = {'off tremor'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off tremor','on'};
+                % duration time per labeled state
+                statesDuration = table();
+                statesDuration.total = sum(allDataPkgRcsAcc.duration);
+                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
+                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
+                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
+                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
+                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
+                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
+                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
+                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;                
+                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
+                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
+                statesDuration
                 
             case 'RCS05'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
@@ -341,7 +377,68 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-                statesUse = {'off','on','sleep'};
+%                 statesUse = {'off','on','sleep'};
+
+            case 'RCS09'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                            cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);              
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offtremoridx) = {'off tremor'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off tremor','on'};
+                % duration time per labeled state
+                statesDuration = table();
+                statesDuration.total = sum(allDataPkgRcsAcc.duration);
+                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
+                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
+                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
+                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
+                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
+                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
+                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
+                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;     
+                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
+                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
+                statesDuration
+                
+                
+            case 'RCS10'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                            cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);                              
+%                 tremorScores = allDataPkgRcsAcc.tremorScore; 
+%                 idxwithScores = allDataPkgRcsAcc.tremorScore~=0; 
+%                 tremscore = prctile(tremorScores(idxwithScores),50);
+%                 idxOver50     = allDataPkgRcsAcc.tremorScore >= tremscore;
+%                 
+%                 offtremoridx = idxwithScores & idxOver50;
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offtremoridx) = {'off tremor Score 50%'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off tremor','on'};
+                % duration time per labeled state
+                statesDuration = table();
+                statesDuration.total = sum(allDataPkgRcsAcc.duration);
+                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
+                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
+                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
+                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
+                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
+                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
+                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
+                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;     
+                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
+                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
+                statesDuration
                 
         end
     else
@@ -351,11 +448,15 @@ for dd = 1:length(psdrFiles)
     
     if plotStates
 
+        xticks = [4 8 12 20 30 60 80];
         colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
         colors2 = {'r','g','b','k'};
         hfig = figure;
         hfig.Color = 'w';
-        titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+        switch PAT_GROUP
+            case 'STN', titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+            case 'GP', titles = {'GP 0-1','GP 2-3','S1 8-9','M1 10-11'};
+        end
         labelsCheck = [];
         for c = 1:4
             hsb(c) = subplot(2,2,c);
@@ -367,9 +468,9 @@ for dd = 1:length(psdrFiles)
                 labelsCheck(:,s) = labels;
                 
                 dat = [];
+                psdResults.ff = allDataPkgRcsAcc.ffPSD;
                 if globalparams.normalizeData
                     dat = allDataPkgRcsAcc.(fn);
-                    psdResults.ff = allDataPkgRcsAcc.ffPSD;
                     idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
                     meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
                     % the absolute is to make sure 1/f curve is not flipped
@@ -380,7 +481,14 @@ for dd = 1:length(psdrFiles)
                     dat = allDataPkgRcsAcc.(fn);
                 end
 
-                
+                ylim([-2.5 2])
+                ylims = hsb(c).YLim;
+                for i = 1:length(xticks)
+                    xs = [xticks(i) xticks(i)];
+                    plot(xs,ylims,'LineWidth',1,'Color',[0.5 0.5 0.5 0.2],'LineStyle','-.');
+                end
+                hsb(c).XTick = xticks;
+                xtickangle(globalparams.anglexticks)
                 if sum(labels)>=1
                     hsbH = shadedErrorBar(psdResults.ff,dat(labels,:),{@mean,@(x) std(x)*1},...
                         'lineprops',{colors2{s},'markerfacecolor','r','LineWidth',2});
@@ -394,6 +502,7 @@ for dd = 1:length(psdrFiles)
                     hsbH.edge(2).Color = [colors(s,:) 0.1];
                     hsbH.patch.EdgeAlpha = 0.1;
                     hsbH.patch.FaceAlpha = 0.1;
+                    hForLeg(s) = hsbH.mainLine;
 
                 end
                % save the median data 
@@ -417,14 +526,14 @@ for dd = 1:length(psdrFiles)
                
                 
             end
-            legend(statesUsing);
+            legend(hForLeg,statesUsing);
             xlim([3 100]);
             xlabel('Frequency (Hz)');
             ylabel('Power (log_1_0\muV^2/Hz)');
             title(titles{c});
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',globalparams.fontsize);
         end
-        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','pkg_states',patientUse{dd},pkgSideUse{dd})); 
+        fnmsv = fullfile(resdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','pkg_states',patientUse{dd},pkgSideUse{dd})); 
         save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','psdResults','titles');
         clear prfig;
         sgtitle(sprintf('state estimate %s %s PKG %s', patientUse{dd},rcsSideUse{dd}, pkgSideUse{dd}),'FontSize',20);
@@ -432,7 +541,7 @@ for dd = 1:length(psdrFiles)
         prfig.plotheight          = 10;
         prfig.figdir             = figdirout;
         prfig.figname             = sprintf('%s %s pkg _10_min_avgerage','pkg_states',patientUse{dd},pkgSideUse{dd});
-        plot_hfig(hfig,prfig)
+        plot_hfig(hfig,prfig)   
 %         close(hfig);
 %         fnmsave = fullfile(resultsdir,'patientPSD_at_home.mat');
 %         save(fnmsave,'patientPSD_at_home');
@@ -504,15 +613,31 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
+                                
+%             case 'RCS10'
+%                 onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+%                 ontremoridx = cellfun(@(x) x == 0,num2cell(allDataPkgRcsAcc.tremor));
+%                 
+%                 offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);
+%                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+%                 allstates = rawstates;
+%                 allstates(onidx) = {'on'};
+%                 allstates(offtremoridx) = {'off tremor'};
+%                 allstates(sleeidx) = {'sleep'};
+%                 statesUse = {'off tremor','on'};
+%                 statesUse = {'off','on','sleep'};
 
         end
+        xticks = [4 8 12 20 30 60 80];
         colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
         colors2 = {'r','g','b','k'};
         hfig = figure;
         hfig.Color = 'w';
-        titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+        switch PAT_GROUP
+            case 'STN', titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+            case 'GP', titles = {'GP 0-1','GP 2-3','S1 8-9','M1 10-11'};
+        end
         labelsCheck = [];
-        
         fieldnamesAll = fieldnames(allDataPkgRcsAcc);
         idxfieldnames = cellfun(@(x) any(strfind(x,'stn')),fieldnamesAll);
         if sum(idxfieldnames)>1
@@ -522,8 +647,7 @@ for dd = 1:length(psdrFiles)
             fieldnamesloop = fieldnamesAll(idxfieldnames);
         end
         cohResults.ff = allDataPkgRcsAcc.ffCoh;
-        
-        
+       
         for c = 1:4
             hsb(c) = subplot(2,2,c);
             hold on;
@@ -546,7 +670,8 @@ for dd = 1:length(psdrFiles)
                 else
                     dat = allDataPkgRcsAcc.(fn);
                 end
-
+                
+                xtickangle(globalparams.anglexticks)
                 plotShaded = 1; 
                 if sum(labels)>=1
                     if plotShaded
@@ -584,13 +709,15 @@ for dd = 1:length(psdrFiles)
                patientCOH_at_home.srate(cntOut) = 250;
 
                cntOut = cntOut + 1;
-               % 
-
                
+               % add x ticks
                ylims = hsb(c).YLim;
-               plot([4 4],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-               plot([13 13],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
-               plot([30 30],ylims,'LineWidth',3,'LineStyle','-.','Color',[0.2 0.2 0.2 0.1]);
+               for i = 1:length(xticks)
+                   xs = [xticks(i) xticks(i)];
+                   plot(xs,ylims,'LineWidth',1,'Color',[0.5 0.5 0.5 0.2],'LineStyle','-.');
+               end
+               hsb(c).XTick = xticks;
+               
             end
             legend(hForLeg,statesUsing);
             xlim([3 100]);
@@ -600,10 +727,10 @@ for dd = 1:length(psdrFiles)
             ttluse = sprintf('coh %s',fn);
             title(ttluse);
             
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',globalparams.fontsize);
         end
 
-        fnmsv = fullfile(figdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','coh_states',patientUse{dd},pkgSideUse{dd})); 
+        fnmsv = fullfile(resdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','coh_states',patientUse{dd},pkgSideUse{dd})); 
         save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','patientCOH_at_home');
         clear prfig;
         sgtitle(sprintf('state estimate %s PKG %s coherence', patientUse{dd},pkgSideUse{dd}),'FontSize',20);
@@ -613,43 +740,57 @@ for dd = 1:length(psdrFiles)
         prfig.figname             = sprintf('%s %s pkg coherence_10_min_avgerage','pkg_states',patientUse{dd},pkgSideUse{dd});
         plot_hfig(hfig,prfig)
         close(hfig);
-        fnmsave = fullfile(figdirout,'patientCOH_at_home.mat');
+        fnmsave = fullfile(resdirout,'patientCOH_at_home.mat');
         save(fnmsave,'patientCOH_at_home');
     end
     %%
     
     %% compute correlation with tremor
     if plotTremor
-        allDataPkgRcsAcc.tremor = tremrr';
-        allDataPkgRcsAcc.tremorScore = tremrScore';
+%         allDataPkgRcsAcc.tremor = tremrr';
+%         allDataPkgRcsAcc.tremorScore = tremrScore';
         hfig = figure;
         hfig.Color = 'w';
         idxtremor = logical(allDataPkgRcsAcc.tremor);
         tremscores = allDataPkgRcsAcc.tremorScore(idxtremor);
         
+        xticks = [4 8 12 20 30 60 80];
         for c = 1:4
             hsb(c) = subplot(2,2,c,'Parent',hfig);
             hold on;
             statesUsing = {};cntstt = 1;
             fn = sprintf('key%dfftOut',c-1);
             dat = allDataPkgRcsAcc.(fn)(idxtremor,:);
-            correlations = corr(tremscores,dat,'type','Spearman');
-            plot(fftResultsTd.ff,correlations,'LineWidth',2,'Color','b');
+            [correlations,pval] = corr(tremscores,dat,'type','Spearman');
+            yyaxis left
+            plot(allDataPkgRcsAcc.ffPSD,correlations,'LineWidth',2,'Color','b');
+            yyaxis right
+            plot(allDataPkgRcsAcc.ffPSD,pval,'LineWidth',1,'Color','r');
+            ylabel('P values');
+            ylim([0 0.05])
+            yyaxis left, hold on
             for ccc = 1:20
                 rng(ccc);
                 tremscoresRandom = tremscores(    randperm(length(tremscores)) );
                 correlationsRandom = corr(tremscoresRandom,dat,'type','Spearman');
-                plot(fftResultsTd.ff,correlationsRandom,'LineWidth',0.5,'Color',[0 0 0 0.5],'LineStyle','-.');
+                plot(allDataPkgRcsAcc.ffPSD,correlationsRandom,'LineWidth',0.5,'Color',[0 0 0 0.5],'LineStyle','-.');
+            end         
+%             add x ticks
+            ylims = hsb(c).YLim;
+            for i = 1:length(xticks)
+                xs = [xticks(i) xticks(i)];
+                plot(xs,ylims,'LineWidth',1,'Color',[0.5 0.5 0.5 0.2],'LineStyle','-.');
             end
+            hsb(c).XTick = xticks;
             lgdtitls{1} = sprintf('tremor scores (%d)',length(tremscores));
             lgdtitls{2} = sprintf('randomized tremor scores (%d)',length(tremscores));
             legend(lgdtitls);
             xlim([3 100]);
-            hsb(c).XTick = 5:10:100;
+%             hsb(c).XTick = 5:10:100;
             xlabel('Frequency (Hz)');
             ylabel('Corr. with PKG trem. score');
             title(titles{c});
-            set(gca,'FontSize',20);
+            set(gca,'FontSize',globalparams.fontsize);
             
             % plot correlation scores
             %         hfigCorr = figure;
@@ -679,11 +820,11 @@ for dd = 1:length(psdrFiles)
         end
         linkaxes(hsb,'y');
         clear prfig;
-        sgtitle(sprintf('tremor estimate %s PKG %s', patient{dd},pkgSideUse),'FontSize',20);
+        sgtitle(sprintf('tremor estimate %s PKG %s', patient,pkgSideUse{dd}),'FontSize',20);
         prfig.plotwidth           = 15*1.6;
         prfig.plotheight          = 10*1.6;
         prfig.figdir             = figdirout;
-        prfig.figname             = sprintf('%s %s pkg %s','tremor_estimate',patient{dd},pkgSideUse);
+        prfig.figname             = sprintf('%s %s pkg %s','tremor_estimate',patient,pkgSideUse{dd});
         plot_hfig(hfig,prfig)
         close(hfig);
     end
@@ -820,7 +961,7 @@ for dd = 1:length(psdrFiles)
         hold on;
         lgndTtls = {};
         fprintf('\n');
-        fprintf('%s %s pkg %s\n','ROC_curves',patient{dd},pkgSideUse);
+        fprintf('%s %s pkg %s\n','ROC_curves',patient,pkgSideUse{dd});
         for c = 1:4
             % each area sep
             fn = sprintf('key%dfftOut',c-1);
@@ -836,8 +977,8 @@ for dd = 1:length(psdrFiles)
             lgndTtls{c}  = sprintf('%s (AUC %.2f)',titles{c},AUClog);
             fprintf('%s (AUC %.2f)\t PC1 - %.2f explained PC2 %.2f explained\n',titles{c},AUClog,...
                 expvar(c,1),expvar(c,2));
-            patientROC_at_home.patient{cntOut} = patient{dd}(1:5);
-            patientROC_at_home.side{cntOut} = patient{dd}(end);
+            patientROC_at_home.patient{cntOut} = patient(1:5);
+            patientROC_at_home.side{cntOut} = patient(end);
             patientROC_at_home.electrode{cntOut} = titles{c};
             patientROC_at_home.AUC{cntOut} = AUClog;
             cntOut = cntOut + 1;
@@ -858,8 +999,8 @@ for dd = 1:length(psdrFiles)
         
         legend(lgndTtls,'Location','southeast');
         
-        patientROC_at_home.patient{cntOut} = patient{dd}(1:5);
-        patientROC_at_home.side{cntOut} = patient{dd}(end);
+        patientROC_at_home.patient{cntOut} = patient(1:5);
+        patientROC_at_home.side{cntOut} = patient(end);
         patientROC_at_home.electrode{cntOut} = 'all areas';
         patientROC_at_home.AUC{cntOut} = AUClog;
         cntOut = cntOut + 1;
@@ -868,7 +1009,7 @@ for dd = 1:length(psdrFiles)
         xlabel('False positive rate')
         ylabel('True positive rate')
         legend(lgndTtls);
-        ttlsuse{1} = sprintf('%s pkg %s',patient{dd},pkgSideUse);
+        ttlsuse{1} = sprintf('%s pkg %s',patient,pkgSideUse{dd});
         ttlsuse{2} = 'ROC curves - on/off PKG';
         peron = sum(labels)/length(labels);
         peroff = sum(~labels)/length(labels);
@@ -876,15 +1017,15 @@ for dd = 1:length(psdrFiles)
         ttlsuse{3} = sprintf('%.2f%% off %.2f%% on (%d obs)',peroff,peron,observatiosn);
         
         title(ttlsuse);
-        set(gca,'FontSize',20);
+        set(gca,'FontSize',globalparams.fontsize);
         
         prfig.plotwidth           = 15*1.6;
         prfig.plotheight          = 10*1.6;
         prfig.figdir             = figdirout;
-        prfig.figname             = sprintf('%s %s pkg %s','ROC_curves',patient{dd},pkgSideUse);
+        prfig.figname             = sprintf('%s %s pkg %s','ROC_curves',patient,pkgSideUse{dd});
 %         plot_hfig(hfig,prfig)
         
-        fnmsave = fullfile(resultsdir,'patientROC_at_home.mat');
+        fnmsave = fullfile(resdirout,'patientROC_at_home.mat');
         save(fnmsave,'patientROC_at_home');
 
         % svm
@@ -1046,7 +1187,7 @@ for dd = 1:length(psdrFiles)
         ttlsuse{3} = sprintf('%.2f%% off %.2f%% on (%d obs) (%.2f%% analyzed)',peroff,peron,observatiosn,percentNonSleepObservationsAnalyzed);
         
         title(ttlsuse);
-        set(gca,'FontSize',20);
+        set(gca,'FontSize',globalparams.fontsize);
         
         prfig.plotwidth           = 15*1.6;
         prfig.plotheight          = 10*1.6;
@@ -1639,7 +1780,7 @@ hsb.XTickLabelRotation = 45;
 
 title('coherence comparison - RCS02'); 
 
-set(gca,'FontSize',20);
+set(gca,'FontSize',globalparams.fontsize);
 
 %% 
 
@@ -1651,1090 +1792,1090 @@ set(gca,'FontSize',20);
 fprintf('mean data thrown out %.2f range (%.2f - %.2f)\n',mean(throwout),min(throwout),max(throwout));
 return;
 
-%% plot ROC box plot PCA 
-addpath(fullfile(pwd,'toolboxes','notBoxPlot','code'));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientROC_at_home.mat'); 
-figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures';
-
-toPlot = table(); 
-idxuse = strcmp(patientROC_at_home.electrode,'STN 1-3') | ... 
-    strcmp(patientROC_at_home.electrode,'M1 8-10') | ... 
-    strcmp(patientROC_at_home.electrode,'all areas') ;
-patientROC_at_home = patientROC_at_home(idxuse,:); 
-xvals = zeros(size(patientROC_at_home,1),1);
-xvals( strcmp(patientROC_at_home.electrode,'STN 1-3') ) = 1;
-xvals( strcmp(patientROC_at_home.electrode,'M1 8-10') ) = 2;
-xvals( strcmp(patientROC_at_home.electrode,'all areas') ) = 3;
-
-AUC = cell2mat(patientROC_at_home.AUC);
-
-hfig = figure;
-hfig.Color = 'w';
-hsb = subplot(1,1,1); 
-nbp = notBoxPlot(AUC,xvals); 
-hsb.XTickLabel = {'STN 1-3 (2xPCs)','M1 8-10 (2xPCs)','All areas'};
-ylabel('AUC'); 
-title('M1 & STN best for decoding (4 patients, 8 ''sides'') [PCA]'); 
-ylim([0.4 1.1]);
-set(gca,'FontSize',20);
-prfig.plotwidth           = 15;
-prfig.plotheight          = 10;
-prfig.figname             = 'AUC summary figure';
-prfig.figdir             = figdirout;
-plot_hfig(hfig,prfig)
-%% 
-
-%% plot ROC box plot spec freqs 
-addpath(fullfile(pwd,'toolboxes','notBoxPlot','code'));
-load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientROC_at_home_spec_freq.mat'); 
-figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures';
-
-toPlot = table(); 
-idxuse = strcmp(patientROC_at_home.freqs,'STN beta') | ... 
-    strcmp(patientROC_at_home.freqs,'M1 Gamma') | ... 
-    strcmp(patientROC_at_home.freqs,'all areas') ;
-patientROC_at_home = patientROC_at_home(idxuse,:); 
-xvals = zeros(size(patientROC_at_home,1),1);
-xvals( strcmp(patientROC_at_home.freqs,'STN beta') ) = 1;
-xvals( strcmp(patientROC_at_home.freqs,'M1 Gamma') ) = 2;
-xvals( strcmp(patientROC_at_home.freqs,'all areas') ) = 3;
-
-AUC = cell2mat(patientROC_at_home.AUC);
-
-hfig = figure;
-hfig.Color = 'w';
-hsb = subplot(1,1,1); 
-nbp = notBoxPlot(AUC,xvals); 
-hsb.XTickLabel = {'STN Beta','M1 Gamma','All areas'};
-ylabel('AUC'); 
-ylim([0.4 1.1]);
-title('M1 & STN best for decoding (4 patients, 8 ''sides'') [peak freqs]'); 
-set(gca,'FontSize',20);
-prfig.plotwidth           = 15;
-prfig.plotheight          = 10;
-prfig.figname             = 'AUC summary figure spec freqs';
-prfig.figdir             = figdirout;
-plot_hfig(hfig,prfig)
-%% 
-
-%% plot unsupervised clustering rodtrigez 
-
-close all; clear all; clc; 
-
-% load in clinic data 
-dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
-fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
-load(fnmsave,'patientPSD_in_clinic');
-
-
-addpath(genpath(fullfile('toolboxes','cluster_dp')));
-rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home'; 
-patientDirs = findFilesBVQX(rootdir,'RCS*',struct('dirs',1,'depth',1));
-pruse.minaverage = 10; 
-pruse.maxgap = 120; % seconds 
-for p = 1:length(patientDirs) % loop on patient 
-    patSideFiles = findFilesBVQX(patientDirs{p},'psdResults_*.mat');
-    [fnn,patientName] = fileparts(patientDirs{p});
-    for s = 1:length(patSideFiles)
-        load(patSideFiles{s}); 
-        [~,rawside] = fileparts(patSideFiles{s});
-        patientSide = rawside(end); 
-        % avarege psds on 10 minute increments 
-        times = [fftResultsTd.timeStart];
-        curTime = times(1); 
-        endTime = curTime + minutes(pruse.minaverage); 
-        cntavg = 1; 
-        psdResults = struct();
-        while endTime < times(end)
-            idxbetween = isbetween(times,curTime,endTime); 
-            if max(diff(times(idxbetween))) < seconds(pruse.maxgap)
-                for c = 1:4
-                    fn = sprintf('key%dfftOut',c-1);
-                    psdResults.(fn)(cntavg,:) = mean(fftResultsTd.(fn)(:,idxbetween),2);
-                end
-                psdResults.timeStart(cntavg) = curTime; 
-                psdResults.timeEnd(cntavg) = endTime; 
-                psdResults.numberOfPsds(cntavg) = sum(idxbetween); 
-                cntavg = cntavg + 1; 
-            end
-            curTime = endTime; 
-            endTime = curTime + minutes(pruse.minaverage);
-        end
-        psdResults.ff = fftResultsTd.ff; 
-        % get rid of outliers
-        hfig = figure;
-        idxWhisker = [];
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            meanVals = mean(psdResults.(fn)(:,80:100),2);
-            boxplot(meanVals);
-            q75_test=quantile(meanVals,0.75);
-            q25_test=quantile(meanVals,0.25);
-            w=2.0;
-            wUpper(c) = w*(q75_test-q25_test)+q75_test;
-            idxWhisker(:,c) = meanVals < wUpper(c);
-        end
-        idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
-        sgtitle(sprintf('confriming outlier algo'),'FontSize',20);
-        close(hfig);
-        
-        % confirm that this is a good way to get rid of outliers
-        hfig = figure;
-        ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            plot(psdResults.ff,psdResults.(fn)(idxkeep,:),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
-%             shadedErrorBar(psdResults.ff',psdResults.(fn)(:,idxkeep)',...
-%                 {@median,@(x) std(x)*1.96},...
-%                 'lineprops',{'r','markerfacecolor','r','LineWidth',2})
-        end
-        sgtitle(sprintf('confriming outlier algo psd '),'FontSize',20);
-        close(hfig);
-        % average and normalize data
-        rangekeep = [13 30;
-            13 30;
-            60 80;
-            60 80];
-        fftSpecFreqs = []; 
-        
-        freqranges = [1 4; 4 8; 8 13; 13 20; 20 30; 13 30; 30 50; 50 90];
-        freqnames  = {'Delta', 'Theta', 'Alpha','LowBeta','HighBeta','Beta','LowGamma','HighGamma'}';
-
-        usespecfreq = 1; 
-        cntfreq = 1; 
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            if usespecfreq
-                for sf = 1:size(freqranges,1)
-                    idxfreqs = psdResults.ff >= freqranges(sf,1) & psdResults.ff <= freqranges(sf,2) 
-                    % normalize the data
-                    dat = psdResults.(fn); 
-                    idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
-                    meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
-                    % the absolute is to make sure 1/f curve is not flipped
-                    % since PSD values are negative
-                    meanmat = repmat(meandat,1,size(dat,2));
-                    dat = dat./meanmat;
-
-                    dat = dat(idxkeep,idxfreqs);
-
-                    fftSpecFreqs(:,cntfreq) = mean(dat,2);
-                    cntfreq = cntfreq + 1;
-                end
-
-            else
-                idxfreqs = psdResults.ff >= rangekeep(c,1) & psdResults.ff <= rangekeep(c,2)
-                dat = psdResults.(fn)(idxkeep,idxfreqs);
-                fftSpecFreqs(:,c) = mean(dat,2);
-            end
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-            % ALLL
-            
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-            %XXXXXXXXXX
-        end
-        
-
-        % do clustering
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        % ALLL
-        
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        %XXXXXXXXXX
-        idxfreqs = psdResults.ff >= 1 & psdResults.ff <= 95
-        fn = sprintf('key%dfftOut',2);
-        dat = psdResults.(fn)(idxkeep,idxfreqs);
-        
-        
-        % get distance matrix
-        D = pdist(fftSpecFreqs,'euclidean');
-        distmat = squareform(D);
-        distMatrices = squareform(distmat,'tovector');
-        % get row indices
-        rows = repmat(1:size(distmat,1),size(distmat,2),1)';
-        idx = logical(eye(size(rows)));
-        rows(idx) = 0;
-        rowsColmn = squareform(rows,'tovector');
-        % get column idices
-        colmns = repmat(1:size(distmat,1),size(distmat,2),1);
-        idx = logical(eye(size(colmns)));
-        colmns(idx) = 0;
-        colsColmn = squareform(colmns,'tovector');
-        % save data for rodriges
-        distanceMat = [];
-        distanceMat(:,1) = rowsColmn;
-        distanceMat(:,2) = colsColmn;
-        distanceMat(:,3) = distMatrices;
-        % do cluster 
-        [cl,halo] =  cluster_dp(distanceMat,'results');
-        
-        % plot clusering 
-        clusers = 1:3
-        hfig = figure; 
-        hfig.Color = 'w';
-        
-        colorsUse = [0.8 0 0;...
-            0 0.8 0;...
-            0 0 0.8]
-        uniqueCluster = unique(cl); 
-        colorsUse = parula(length(uniqueCluster));
-        plotShaded = 1; 
-        plotRaw = 0; 
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            hold on; 
-            dat = psdResults.(fn);
-            % normalize the data
-            dat = psdResults.(fn);
-            idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
-            meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
-            % the absolute is to make sure 1/f curve is not flipped
-            % since PSD values are negative
-            meanmat = repmat(meandat,1,size(dat,2));
-            dat = dat./meanmat;
-
-            freqs = psdResults.ff; 
-            for cu = 1:length(uniqueCluster)
-                % cluster 1
-                if plotShaded
-                    hsb = shadedErrorBar(freqs,dat(cl==cu,:),{@median,@(x) std(x)*1});
-                    hsb.mainLine.Color = [colorsUse(cu,:) 0.5];
-                    hsb.mainLine.LineWidth = 3;
-                    hsb.patch.MarkerFaceColor = colorsUse(cu,:);
-                    hsb.patch.FaceColor = colorsUse(cu,:);
-                    hsb.patch.FaceAlpha = 0.1;
-                end
-                if plotRaw
-                    plot(freqs,dat(cl==cu,:),...
-                        'LineWidth',0.1,...
-                        'Color',[colorsUse(cu,:) 0.2]); 
-                end
-            end
-            ylabel('Power (log_1_0\muV^2/Hz)');
-            xlabel('Frequency (Hz)');
-            xlim([0 100]);
-            title(ttls{c}); 
-            % plot the template data 
-            relidx = strcmp(patientPSD_in_clinic.patient,patientName) & ...
-                     strcmp(patientPSD_in_clinic.side,patientSide) & ... 
-                     strcmp(patientPSD_in_clinic.electrode,ttls{c}); 
-            inClinicTable = patientPSD_in_clinic(relidx,:); 
-            colorsForInClinic = [0.8 0 0 0.5; 0 0.8 0 0.6];
-            conds = {'off','on'}; 
-            for oo = 1:2 
-                idxuseonoff = strcmp(inClinicTable.medstate,conds{oo}); 
-                ff = inClinicTable.ff{idxuseonoff}; 
-                fftOut = inClinicTable.fftOutNorm{idxuseonoff}; 
-                plot(ff,fftOut,'LineWidth',4,'Color',colorsForInClinic(oo,:));
-            end
-            set(gca,'FontSize',16);
-        end
-        
-        ttluse = sprintf('%s %s',patientName,patientSide); 
-        sgtitle(ttluse,'FontSize',20);
-        figname = sprintf('unsupervised_clustering_10min_including_sleep_can_freqs and_template_data_ raw %s %s',patientName,patientSide); 
-        prfig.plotwidth           = 15;
-        prfig.plotheight          = 10;
-        prfig.figname             = figname;
-        prfig.figdir              = patientDirs{p};
-        plot_hfig(hfig,prfig)
-
-    end
-    
-end
-
-%% plot template clustering 
-% load home data  and make table of patient and side 
-addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
-close all; clear all; clc;
-rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/17_states_historical'; 
-figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/template_matching';
-ff = findFilesBVQX(rootdir, 'pkg_states*10_min*.mat');
-patDatHome = struct(); 
-for f = 1:length(ff) 
-    [pn,fn] = fileparts(ff{f}); 
-    patient = fn(12:16);
-    side = fn(18);
-    patDatHome(f).patient = patient; 
-    patDatHome(f).side = side; 
-    patDatHome(f).filename = ff{f}; 
-end
-patDatHome = struct2table(patDatHome);
-
-% load in clinic data 
-dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
-fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
-load(fnmsave,'patientPSD_in_clinic');
-
-% loop on patients 
-colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
-for pp = 1:size(patDatHome)
-    load(patDatHome.filename{pp}); 
-    idxPsdClinic = strcmp(patientPSD_in_clinic.patient,patDatHome.patient{pp}) & ...
-                   strcmp(patientPSD_in_clinic.side,patDatHome.side{pp})
-    psdInClinicAllAreas = patientPSD_in_clinic(idxPsdClinic,:); 
-    hfig = figure;
-    hfig.Color = 'w'; 
-    % loop on area 
-    for c = 1:length(titles) % loop on channels 
-        % get clinic template 
-        idxarea = strcmp(psdInClinicAllAreas.electrode,titles{c});
-        psdInClinic = psdInClinicAllAreas(idxarea,:);
-        % get at home data 
-        fieldNameAtHome = sprintf('key%dfftOut',c-1);
-        psdHome = allDataPkgRcsAcc.(fieldNameAtHome);
-        idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
-        meandat = abs(mean(psdHome(:,idxnormalize),2)); % mean within range, by row
-        % the absolute is to make sure 1/f curve is not flipped
-        % since PSD values are negative
-        meanmat = repmat(meandat,1,size(psdHome,2));
-        normalizedPSD = psdHome./meanmat;
-        % normalizedPSD = rescale(normalizedPSD,0,1); 
-
-        % loop on states 
-        unqStates = unique(psdInClinic.medstate); 
-        d = [];
-        fftTemplateUse = []; 
-        % get templates 
-        for m = 1:length(unqStates)
-            idxuse = strcmp(psdInClinic.medstate,unqStates{m});
-            psdUse = psdInClinic(idxuse,:);
-            fftTemplateUse(:,m) = psdUse.fftOut{:};
-        end
-        % normalize templates from in clinic use 
-        fftTemplate = fftTemplateUse';
-        idxnormalize = psdInClinic.ff{1} > 3 &  psdInClinic.ff{1} <90;
-        meandatinclinic = abs(mean(fftTemplate(:,idxnormalize),2)); % mean within range, by row
-        % the absolute is to make sure 1/f curve is not flipped
-        % since PSD values are negative
-        meanmatinclinic = repmat(meandatinclinic,1,size(fftTemplate,2));
-        normalizedFFTtemp = fftTemplate./meanmatinclinic;
-        % normalizedFFTtemp = rescale(normalizedFFTtemp,0,1);
-        normalizedFFTtemp = normalizedFFTtemp';
-        
-        freqsInClinic = psdInClinic.ff{1}'; 
-        freqsAtHome   = psdResults.ff;
-        if length(freqsAtHome) < length(freqsInClinic)
-            normalizedFFTtemp = interp1(freqsInClinic,normalizedFFTtemp,freqsAtHome);
-        end
-        
-        
-
-        % plot raw data
-        
-        % compute distances 
-        fftTempOut = []; fftTempOut = []; 
-        for m = 1:length(unqStates)
-            fftTemRep = repmat(normalizedFFTtemp(:,m)',size(normalizedPSD,1),1);
-            d(:,m) = vecnorm(normalizedPSD' - fftTemRep')';
-        end
-        
-        plotRaw = 0;
-        plotState = 1; 
-        plotDistance = 0; 
-        subplot(2,2,c);
-        if plotRaw 
-            hold on;
-            plot(normalizedPSD','LineWidth',0.1,'Color',[0 0 0.8 0.01]);
-            plot(normalizedFFTtemp(:,1)','LineWidth',6,'Color',[0.8 0 0 0.4]);
-            plot(normalizedFFTtemp(:,2)','LineWidth',6,'Color',[0. 0.8 0 0.4]);
-            xlim([0 100]); 
-            title(titles{c});
-            xlabel('Frequency (Hz)');
-            ylabel('Rescaled power (a.u.)');
-            set(gca,'FontSize',16);
-        end
-
-        if plotState 
-            for s = 1:2
-                if s == 1
-                    labels = d(:,2) > d(:,1);
-                else
-                    labels = d(:,1) > d(:,2);
-                end
-                if sum(labels) > 1
-                    hsbH = shadedErrorBar(psdResults.ff,normalizedPSD(labels,:),{@mean,@(x) std(x)*1});
-                    hsbH.mainLine.Color = [colors(s,:) 0.5];
-                    hsbH.mainLine.LineWidth = 3;
-                    hsbH.patch.MarkerFaceColor = colors(s,:);
-                    hsbH.patch.FaceColor = colors(s,:);
-                    hsbH.patch.EdgeColor = colors(s,:);
-                    hsbH.edge(1).Color = [colors(s,:) 0.1];
-                    hsbH.edge(2).Color = [colors(s,:) 0.1];
-                    hsbH.patch.EdgeAlpha = 0.1;
-                    hsbH.patch.FaceAlpha = 0.1;
-                    hForLeg(s) = hsbH.mainLine;
-                end
-            end
-            xlim([0 100]); 
-            title(titles{c});
-            xlabel('Frequency (Hz)');
-            ylabel('Rescaled power (a.u.)');
-            set(gca,'FontSize',16);
-
-        end
-        
-        if plotDistance
-            hold on; 
-            hs = scatter(d(:,1),d(:,2),10,'filled','MarkerFaceColor',[0 0 0.8],'MarkerFaceAlpha',0.2);
-            axis equal;
-            mind = min(d(:));
-            maxd = max(d(:));
-            x = linspace(mind,maxd,100);
-            y = linspace(mind,maxd,100);
-            plot(x,y,'LineWidth',2,'Color',[0.5 0.5 0.5 0.3]);
-            xlabel('distance to in clinic off');
-            ylabel('distance to in clinic on');
-            set(gca,'FontSize',16);
-        end
-
-        
-        
-        
-        
-    end
-    
-    if plotRaw
-        figname = sprintf('templateMatching - raw  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
-    end
-    if plotState
-        figname = sprintf('templateMatching - state  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
-    end
-    if plotDistance
-        figname = sprintf('templateMatching - distnace  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
-    end
-
-    ttluse = sprintf('template matching %s %s',patDatHome.patient{pp},patDatHome.side{pp});
-    sgtitle(ttluse,'FontSize',20);
-
-    
-    prfig.plotwidth           = 15;
-    prfig.plotheight          = 10;
-    prfig.figname             = figname;
-    prfig.figdir              = figdirout
-    plot_hfig(hfig,prfig)
-
-end
-
-
-%% 
-
-%% plot template matching 
-addpath(genpath(fullfile('toolboxes','cluster_dp')));
-rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home'; 
-load /Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientPSD_in_clinic.mat
-patientDirs = findFilesBVQX(rootdir,'RCS*',struct('dirs',1,'depth',1));
-pruse.minaverage = 10; 
-pruse.maxgap = 120; % seconds 
-for p = 1:length(patientDirs) % loop on patient 
-    patSideFiles = findFilesBVQX(patientDirs{p},'psdResults_*.mat');
-    [fnn,patientName] = fileparts(patientDirs{p});
-    for s = 1:length(patSideFiles)
-        load(patSideFiles{s}); 
-        [~,rawside] = fileparts(patSideFiles{s});
-        patientSide = rawside(end); 
-        % avarege psds on 10 minute increments 
-        times = [fftResultsTd.timeStart];
-        curTime = times(1); 
-        endTime = curTime + minutes(pruse.minaverage); 
-        cntavg = 1; 
-        psdResults = struct();
-        while endTime < times(end)
-            idxbetween = isbetween(times,curTime,endTime); 
-            if max(diff(times(idxbetween))) < seconds(pruse.maxgap)
-                for c = 1:4
-                    fn = sprintf('key%dfftOut',c-1);
-                    psdResults.(fn)(cntavg,:) = mean(fftResultsTd.(fn)(:,idxbetween),2);
-                end
-                psdResults.timeStart(cntavg) = curTime; 
-                psdResults.timeEnd(cntavg) = endTime; 
-                psdResults.numberOfPsds(cntavg) = sum(idxbetween); 
-                cntavg = cntavg + 1; 
-            end
-            curTime = endTime; 
-            endTime = curTime + minutes(pruse.minaverage);
-        end
-        psdResults.ff = fftResultsTd.ff; 
-        % get rid of outliers
-        hfig = figure;
-        idxWhisker = [];
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            meanVals = mean(psdResults.(fn)(:,80:100),2);
-            boxplot(meanVals);
-            q75_test=quantile(meanVals,0.75);
-            q25_test=quantile(meanVals,0.25);
-            w=2.0;
-            wUpper(c) = w*(q75_test-q25_test)+q75_test;
-            idxWhisker(:,c) = meanVals < wUpper(c);
-        end
-        idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
-        sgtitle(sprintf('confriming outlier algo'),'FontSize',20);
-        close(hfig);
-        
-        % confirm that this is a good way to get rid of outliers
-        hfig = figure;
-        ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            plot(psdResults.ff,psdResults.(fn)(idxkeep,:),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
-%             shadedErrorBar(psdResults.ff',psdResults.(fn)(:,idxkeep)',...
-%                 {@median,@(x) std(x)*1.96},...
-%                 'lineprops',{'r','markerfacecolor','r','LineWidth',2})
-        end
-        sgtitle(sprintf('confriming outlier algo psd '),'FontSize',20);
-        close(hfig);
-        
-        
-        % average and normalize data
-        rangekeep = [13 30;
-            13 30;
-            60 80;
-            60 80];
-        fftSpecFreqs = []; 
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            idxfreqs = psdResults.ff >= rangekeep(c,1) & psdResults.ff <= rangekeep(c,2)
-            dat = psdResults.(fn)(idxkeep,idxfreqs);
-            fftSpecFreqs(:,c) = mean(dat,2); 
-        end
-        
-
-        % do clustering 
-                
-        % get distance matrix
-        D = pdist(fftSpecFreqs,'euclidean');
-        distmat = squareform(D);
-        distMatrices = squareform(distmat,'tovector');
-        % get row indices
-        rows = repmat(1:size(distmat,1),size(distmat,2),1)';
-        idx = logical(eye(size(rows)));
-        rows(idx) = 0;
-        rowsColmn = squareform(rows,'tovector');
-        % get column idices
-        colmns = repmat(1:size(distmat,1),size(distmat,2),1);
-        idx = logical(eye(size(colmns)));
-        colmns(idx) = 0;
-        colsColmn = squareform(colmns,'tovector');
-        % save data for rodriges
-        distanceMat = [];
-        distanceMat(:,1) = rowsColmn;
-        distanceMat(:,2) = colsColmn;
-        distanceMat(:,3) = distMatrices;
-        % do cluster 
-        [cl,halo] =  cluster_dp(distanceMat,'results');
-        
-        % plot clusering 
-        clusers = 1:2
-        hfig = figure; 
-        hfig.Color = 'w';
-        for c = 1:4
-            fn = sprintf('key%dfftOut',c-1);
-            hsub = subplot(2,2,c);
-            dat = psdResults.(fn);
-            freqs = psdResults.ff; 
-            % cluster 1 
-            hsb = shadedErrorBar(freqs,dat(cl==1,:),{@median,@(x) std(x)*1});
-            hsb.mainLine.Color = [0.8 0 0 0.5]
-            hsb.mainLine.LineWidth = 3;
-            hsb.patch.MarkerFaceColor = [0.8 0 0];
-            hsb.patch.FaceColor = [0.8 0 0];
-            hsb.patch.FaceAlpha = 0.1;
-            % cluster 2 
-            hsb = shadedErrorBar(freqs,dat(cl==2,:),{@median,@(x) std(x)*1});
-            hsb.mainLine.Color = [0 0.8 0 0.5]
-            hsb.mainLine.LineWidth = 3;
-            hsb.patch.MarkerFaceColor = [0 0.8 0];
-            hsb.patch.FaceColor = [0 0.8 0];
-            hsb.patch.FaceAlpha = 0.1;
-            ylabel('Power (log_1_0\muV^2/Hz)');
-            xlabel('Frequency (Hz)');
-            xlim([0 100]);
-            title(ttls{c}); 
-            set(gca,'FontSize',16);
-        end
-        ttluse = sprintf('%s %s',patientName,patientSide); 
-        sgtitle(ttluse,'FontSize',20);
-        figname = sprintf('unsupervised_clustering_10min_ %s %s',patientName,patientSide); 
-        prfig.plotwidth           = 15;
-        prfig.plotheight          = 10;
-        prfig.figname             = figname;
-        prfig.figdir              = patientDirs{p};
-        plot_hfig(hfig,prfig)
-
-    end
-    
-end
-
-%% plot effect of segment averageing lengh on AUC accuracy 
- % load the data 
- datadirAUC_spec_latecies = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/pkg_rcs_by_minute_average_smaller_times';
- resultsdir_AUC = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/pkg_rcs_by_minute_average_smaller_times_results';
- ff = findFilesBVQX(datadirAUC_spec_latecies,'*.mat');
- titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
- dataTable = struct();
- for f = 1:length(ff)
-     metaData = load(ff{f},'metaData');
-     patData = metaData.metaData;
-     dataTable(f).patient = patData.patient;
-     dataTable(f).patientRCSside = patData.patientRCSside;
-     dataTable(f).patientPKGside = patData.patientPKGside;
-     dataTable(f).filename = patData.filename;
-     dataTable(f).minuteGap = patData.minuteGap;
- end
- dataTable = struct2table(dataTable);
- 
- 
- 
- 
- 
- % loop on patient, side to get AUC for each patient and minute
- % gap
- uniquePatients = unique(dataTable.patient);
- %
- %             uniquePatients = {'RCS07'};
- %
- sides = {'L','R'};
- for p = 1:length(uniquePatients) % loop on patients
-     for s = 1:2 % loop on side
-         idpatientAndSide = strcmp(dataTable.patient,uniquePatients{p}) & ...
-             strcmp(dataTable.patientRCSside,sides{s});
-         patientTable = dataTable(idpatientAndSide,:);
-         patientTable = sortrows(patientTable,'minuteGap');
-         for m = 1:size(patientTable,1)
-             fn = patientTable.filename{m};
-             try
-                 load(fullfile(datadirAUC_spec_latecies,fn));
-             catch
-                 fnbuild = sprintf('RCS02 %s pkg %s_AveragedOn_min_%d.mat',...
-                     patientTable.patientRCSside{m},patientTable.patientPKGside{m},patientTable.minuteGap(m));
-                 load(fullfile(datadirAUC_spec_latecies,fnbuild));
-             end
-             % get states and frequencies per patient
-             % get specific frequenceis per patiet
-             rawstates = allDataPkgRcsAcc.states';
-             switch patientTable.patient{1}
-                 case 'RCS02'
-                     % R
-                     cnls  =  [0  1  2  3  0  1  2  3  ];
-                     freqs =  [19 19 24 25 75 75 76 76];
-                     ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
-                     onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
-                     offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
-                     sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                     allstates = rawstates;
-                     allstates(onidx) = {'on'};
-                     allstates(offidx) = {'off'};
-                     allstates(sleeidx) = {'sleep'};
-                     statesUse = {'off','on'};
-                 case 'RCS05'
-                     cnls  =  [0  1  2  3  0  1  2  3  ];
-                     freqs =  [27 27 27 27 61 61 61 61];
-                     ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
-                     onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'on')),rawstates);
-                     offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
-                     sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                     allstates = rawstates;
-                     allstates(onidx) = {'on'};
-                     allstates(offidx) = {'off'};
-                     allstates(sleeidx) = {'sleep'};
-                     statesUse = {'off','on'};
-                     
-                 case 'RCS06'
-                     cnls  =  [0  1  2  3  0  1  2  3  ];
-                     freqs =  [19 19 14 26 55 55 61 61];
-                     ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
-                     onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'on')),rawstates);
-                     offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
-                     sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                     allstates = rawstates;
-                     allstates(onidx) = {'on'};
-                     allstates(offidx) = {'off'};
-                     allstates(sleeidx) = {'sleep'};
-                     statesUse = {'off','on'};
-                     
-                 case 'RCS07'
-                     cnls  =  [0  1  2  3  0  1  2  3  ];
-                     freqs =  [19 20 21 24 76 79 80 80];
-                     ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
-                     onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'on')),rawstates);
-                     offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
-                     sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                     allstates = rawstates;
-                     allstates(onidx) = {'on'};
-                     allstates(offidx) = {'off'};
-                     allstates(sleeidx) = {'sleep'};
-                     statesUse = {'off','on'};
-             end
-             % fit the model
-             % get the labels
-             idxuse = strcmp(allstates,'off') | strcmp(allstates,'on');
-             labelsRaw = allstates(idxuse);
-             labels = zeros(size(labelsRaw,1),1);
-             labels(strcmp(labelsRaw,'on')) = 1;
-             % loop on areas
-             alldat = [];
-             for c = 1:length(cnls)
-                 % get channel
-                 fn = sprintf('key%dfftOut',cnls(c));
-                 % get freq
-                 idxfreq = allDataPkgRcsAcc.ff >= freqs(c)-1 & allDataPkgRcsAcc.ff <= freqs(c)+1;
-                 dat = mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2);
-                 datuse = dat;
-                 alldat(:,c) = dat;
-                 %% disc
-                 rng(1); % For reproducibility
-                 cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
-                 for k = 1:5
-                     idxTrn = training(cvp,k); % Training set indices
-                     idxTest = test(cvp,k);    % Test set indices
-                     tblTrn = array2table(dat(idxTrn,:));
-                     tblTrn.Y = labels(idxTrn);
-                     Mdl = fitcdiscr(tblTrn,'Y');
-                     [labeltest,scoretest,costest] = predict(Mdl,dat(idxTest,:));
-                     [X,Y,T,AUC(k),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
-                 end
-                 %%
-                 headinguse = sprintf('%s %s AUC',ttls{c},titles{cnls(c)+1});
-                 AUCout(c) = mean(AUC);
-             end
-             % use all areas
-             tblTrn = array2table(alldat(idxTrn,:));
-             tblTrn.Y = labels(idxTrn);
-             Mdl = fitcdiscr(tblTrn,'Y');
-             [labeltest,scoretest,costest] = predict(Mdl,alldat(idxTest,:));
-             [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
-             AUCout(c+1) = AUC;
-             %
-             patientTable.AUC{m} = AUCout;
-             fnmmuse = sprintf('%s_%s_pkg%s_AUC_by_min_results.mat',patientTable.patient{1},...
-                 patientTable.patientRCSside{1},...
-                 patientTable.patientPKGside{1});
-             fnmsave = fullfile(resultsdir_AUC,fnmmuse);
-             readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
-             save(fnmsave,'patientTable','cnls','freqs','titles','readme');
-         end
-         % save this patient data
-     end
- end
-%%
-
-%%
-
-
-
-
-end
-
-function previousVersionHardCutOff_AllPatients()
-%% loop on patients
-for dd = 2%length(psdrFiles)
-    
-    %% get td data + pkg data + acc data - correct place
-    load(psdrFiles{dd});
-    
-    % read pkg
-    pkgTable = readtable(pkgChoose{dd});
-    
-    hfig = figure;
-    hfig.Color = 'w';
-    hsb(1) = subplot(2,1,1);
-    plot(pkgTable.Date_Time,pkgTable.BK,'LineWidth',1,'Color',[0 0.8 0 0.5]);
-    title('bk');
-    hsb(2) = subplot(2,1,2);
-    plot(pkgTable.Date_Time,log10(pkgTable.DK),'LineWidth',1,'Color',[0 0 0.8 0.5]);
-    title('dk');
-    linkaxes(hsb,'x');
-    sgtitle(sprintf('%s',patient{dd}));
-    %plot bk vs DK
-    hfig = figure;
-    hfig.Color = 'w';
-    scatter(log10(pkgTable.DK),pkgTable.BK,10,'filled','MarkerFaceColor',[0.8 0 0],'MarkerEdgeAlpha',0.5);
-    sgtitle(sprintf('Log DK vs BK vals %s',patient{dd}),'FontSize',20);
-    xlabel('log DK vals');
-    ylabel('BK vals');
-    grid on
-    axis normal
-    set(gcf,'Color','w');
-    set(gca,'FontSize',20);
-    
-    figure;
-    idxWhisker = [];
-    for c = 1:4
-        fn = sprintf('key%dfftOut',c-1);
-        hsub = subplot(2,2,c);
-        meanVals = mean(fftResultsTd.(fn)(40:60,:));
-        boxplot(meanVals);
-        q75_test=quantile(meanVals,0.75);
-        q25_test=quantile(meanVals,0.25);
-        w=2.0;
-        wUpper(c) = w*(q75_test-q25_test)+q75_test;
-        idxWhisker(:,c) = meanVals' < wUpper(c);
-        
-    end
-    idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
-    sgtitle(sprintf('confriming outlier algo %s',patient{dd}),'FontSize',20);
-    
-    % confirm that this is a good way to get rid of outliers
-    hfig = figure;
-    ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
-    for c = 1:4
-        fn = sprintf('key%dfftOut',c-1);
-        hsub = subplot(2,2,c);
-        %         plot(fftResultsTd.ff,fftResultsTd.(fn)(:,idxkeep),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
-        shadedErrorBar(fftResultsTd.ff,fftResultsTd.(fn)(:,idxkeep)',...
-            {@median,@(x) std(x)*1.96},...
-            'lineprops',{'r','markerfacecolor','r','LineWidth',2})
-    end
-    sgtitle(sprintf('confriming outlier algo psd %s',patient{dd}),'FontSize',20);
-    
-    
-    % get the pkg data
-    timesPKG = pkgTable.Date_Time;
-    timesPKG.TimeZone = 'America/Los_Angeles';
-    idxLoop = find(idxkeep==1);
-    cnt = 1;
-    dkVals = []; bkVals = []; idxThatHasPKGVals = [];
-    for i = 1:length(idxLoop)
-        timeGoal = fftResultsTd.timeEnd(idxLoop(i));
-        [val(i),idx(i)] = min(abs(timeGoal - timesPKG));
-        if val(i) < minutes(3)
-            dkVals(cnt) = pkgTable.DK(idx(i));
-            bkVals(cnt) = pkgTable.BK(idx(i));
-            idxThatHasPKGVals(cnt) = idxLoop(i);
-            cnt = cnt + 1;
-        end
-    end
-    
-    % make a table with pkg values and td results
-    allDataPkgRcsAcc = struct();
-    allDataPkgRcsAcc.key0fftOut = fftResultsTd.key0fftOut(:,idxThatHasPKGVals)';
-    allDataPkgRcsAcc.key1fftOut = fftResultsTd.key1fftOut(:,idxThatHasPKGVals)';
-    allDataPkgRcsAcc.key2fftOut = fftResultsTd.key2fftOut(:,idxThatHasPKGVals)';
-    allDataPkgRcsAcc.key3fftOut = fftResultsTd.key3fftOut(:,idxThatHasPKGVals)';
-    allDataPkgRcsAcc.timeStart  = fftResultsTd.timeStart(idxThatHasPKGVals)';
-    allDataPkgRcsAcc.timeEnd  = fftResultsTd.timeEnd(idxThatHasPKGVals)';
-    allDataPkgRcsAcc.dkVals = dkVals';
-    allDataPkgRcsAcc.bkVals = bkVals';
-    allDatTable = struct2table(allDataPkgRcsAcc);
-    
-    % plot histogrma correlate with pkg
-    %     betaIdxUse  = 23:25;
-    %     gamaIdxUse  = 74:76;
-    %     powerBeta13  = mean(allDataPkgRcsAcc.key1fftOut(:,betaIdxUse),2);
-    %     powerGama810 = mean(allDataPkgRcsAcc.key3fftOut(:,gamaIdxUse),2);
-    %     powerGamma = mean(allDataPkgRcsAcc.key3fftOut(:,betaIdxUse),2);
-    measureUse = {'clas. using BK','clas. using DK'};
-    for m = 1:2
-        if m == 1
-            pkgOffMeds  = allDataPkgRcsAcc.bkVals > -120 & allDataPkgRcsAcc.bkVals < -60;
-            pkgOnMeds   = allDataPkgRcsAcc.bkVals > -60 & allDataPkgRcsAcc.bkVals < -10;
-        else
-            pkgOffMeds  = allDataPkgRcsAcc.dkVals > 0 & allDataPkgRcsAcc.dkVals < 30;
-            pkgOnMeds   = allDataPkgRcsAcc.dkVals >= 30 & allDataPkgRcsAcc.dkVals < 300;
-        end
-        
-        bksabs = abs(allDataPkgRcsAcc.bkVals);
-        % pkgOffMeds  = bksabs > 32 & bksabs < 80;
-        % pkgOnMeds   = bksabs <= 20 & bksabs > 0;
-        %{
-    We use BKS>26<40 (BKS=26 =UPDRS III~30)as a marker of
-    ?OFF? and >32<40 as (BKS=32 =UPDRS III~45)marker of very OFF
-    We use DKS>7 as a marker of dyskinesia and > 16 as significant dyskinesia
-    Generally when BKS>26, DKS will be low.
-    We don?t usually use the terminology of OFF/On/dyskinesia use in diaries
-    because they are categorical states compared to a continuous variable.
-    If I can ask you the same question for UPDRS and AIMS score
-    what cut-off would you like to use to indicate those
-    same states and then I can give you approximate numbers for the BKS DKS.
-    We have good evidence thatTreatable bradykinesia
-    (i.e. presumable OFF according to a clinician) is when the
-     BKS>26 (or <-26 as per the csv files)
-    Good control (i.e. neither OFF nor ON) is when BKS <26 AND DKS<7
-    Dyskinesia is when DKS>7 and BKS <26.
-    However you should not use single epochs alone.
-    We tend to use the 4/7 or 3/5 rule ?
-    that is use take the first 7 epochs of BKS (or DKS),
-    then the middle epoch will be ?OFF? if 4/7 of the epochs >26.
-    Slide along one and apply the rule again etc.
-    Mal Horne
-    Wed 7/24/2019 7:12 PM email
-        %}
-        prfig.figdir = figdir{dd};
-        prfig.figtype = '-djpeg';
-        prfig.resolution = 600;
-        prfig.closeafterprint = 0;
-        
-        % for DBS think tank lecture:
-        ffTemp = fftResultsTd.ff;
-        idxAllDat = pkgOffMeds | pkgOnMeds;
-        dat       = allDataPkgRcsAcc.key1fftOut(idxAllDat,:);
-        % figure;
-        % plot(ffTemp,dat,'Color',[0 0 0.8 0.01],'LineWidth',0.01);
-        
-        
-        hfig = figure;
-        hsb(1) = subplot(1,2,1);
-        hold on;
-        % plot(ffTemp,dat,'Color',[0 0 0.8 0.01],'LineWidth',0.01);
-        % shadedErrorBar(fftResultsTd.ff,dat,{@mean,@(x) std(x)*1.96},'lineprops',{'k','markerfacecolor','r','LineWidth',2});
-        shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'r','markerfacecolor','r','LineWidth',2});
-        shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
-        % legend({'immobile - wearable estimate'});
-        legend({'immobile - wearable estimate','mobile - wearable estimate'});
-        xlim([3 100]);
-        xlabel('Frequency (Hz)');
-        ylabel('Power (log_1_0\muV^2/Hz)');
-        title('STN');
-        set(gca,'FontSize',20);
-        
-        
-        hsb(2) = subplot(1,2,2);
-        hold on;
-        shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'r','markerfacecolor','k','LineWidth',2});
-        shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
-        ylims = get(hsb(2),'YLim');
-        
-        % legend({'immobile - wearable estimate'});
-        legend({'immobile - wearable estimate','mobile - wearable estimate'});
-        %     patch(hsb(2),[15 36 36 15],[ylims(1) ylims(1) ylims(2) ylims(2)],[1 1 0],'FaceAlpha',0.3,'EdgeColor',[1 1 1])
-        %     set(gca,'children',flipud(get(gca,'children')))
-        
-        set(gca,'YLim',[-8 -3.5]);
-        xlim([3 100]);
-        xlabel('Frequency (Hz)');
-        ylabel('Power (log_1_0\muV^2/Hz)');
-        title('M1');
-        set(gca,'FontSize',20);
-        set(gcf,'Color','w');
-        
-        sgtitle(sprintf('%s mobile vs immobile pkg estimate %s',measureUse{m}, patient{dd}),'FontSize',20);
-        prfig.plotwidth           = 15;
-        prfig.plotheight          = 10;
-        prfig.figname             = sprintf('%s %s','pkg_plot_mobile_vs_imobile',measureUse{m});;
-        plot_hfig(hfig,prfig)
-    end
-    
-    
-    
-    
-    %
-    %     figure;
-    %     subplot(2,2,1);
-    %     hold on;
-    %     histogram(powerBeta13(pkgOffMeds),'Normalization','probability','BinWidth',0.1);
-    %     histogram(powerBeta13(pkgOnMeds),'Normalization','probability','BinWidth',0.1);
-    %     legend({'off (PKG estimate)','on (PKG estimate)'});
-    %     ylabel('Probability (%)');
-    %     xlabel('Beta power');
-    %     ttluse = sprintf('Beta (%d-%dHz) on/off(PKG) - STN',betaIdxUse(1),betaIdxUse(end));
-    %     title(ttluse);
-    %     set(gcf,'Color','w')
-    %     set(gca,'FontSize',20)
-    %
-    %     subplot(2,2,2);
-    %     hold on;
-    %     histogram(powerGama810(pkgOffMeds),'Normalization','probability','BinWidth',0.1);
-    %     histogram(powerGama810(pkgOnMeds),'Normalization','probability','BinWidth',0.1);
-    %     legend({'off (PKG estimate)','on (PKG estimate)'});
-    %     xlabel('Gamma power');
-    %     ylabel('Probability (%)');
-    %     ttluse = sprintf('Gama (%d-%dHz) on/off(PKG) - M1',gamaIdxUse(1),gamaIdxUse(end));
-    %     title(ttluse);
-    %     set(gcf,'Color','w')
-    %     set(gca,'FontSize',20)
-    %
-    %     subplot(2,2,3);
-    %     hold on;
-    %     scatter(powerGama810(pkgOffMeds), powerBeta13(pkgOffMeds),4,'filled','MarkerFaceColor',[0.8 0 0],'MarkerFaceAlpha',0.5)
-    %     scatter(powerGama810(pkgOnMeds), powerBeta13(pkgOnMeds),4,'filled','MarkerFaceColor',[0 0 0.8],'MarkerFaceAlpha',0.5)
-    %     legend({'off (PKG estimate)','on (PKG estimate)'});
-    %     title ('Beta (STN) vs Gamma (M1) power');
-    %     xlabel('Power Gamma M1');
-    %     ylabel('Power Beta STN');
-    %     set(gcf,'Color','w')
-    %     set(gca,'FontSize',20)
-    %
-    %
-    %
-    %     % compute roc
-    %     subplot(2,2,4);
-    %     hold on;
-    %
-    %     tbl = table();
-    %     tbl.powerBeta = powerBeta13;
-    %     tbl.powerGamma = powerGama810;
-    %
-    %     labels     = zeros(size(powerBeta13,1),1);
-    %     labels(pkgOnMeds) = 1;
-    %     labels(pkgOffMeds) = 2;
-    %
-    %     idxkeepROC = labels~=0;
-    %     labels = labels(idxkeepROC);
-    %     labels(labels==1) = 0;
-    %     labels(labels==2) = 1;
-    %     dat    = [tbl.powerBeta(idxkeepROC),tbl.powerGamma(idxkeepROC)];
-    %
-    %     % beta
-    %     [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,1),1);
-    %     hplt = plot(X,Y);
-    %     hplt.LineWidth = 3;
-    %     hplt.Color = [0 0 0.8 0.7];
-    %     lgndTtls{1}  = sprintf('%s (AUC %.2f)','stn beta',AUC);
-    %     % gama
-    %     [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,2),0);
-    %     hplt = plot(X,Y);
-    %     hplt.LineWidth = 3;
-    %     hplt.Color = [0.8 0 0 0.7];
-    %     lgndTtls{2}  = sprintf('%s (AUC %.2f)','m1 gamma',AUC);
-    %     % both
-    %     mdl = fitglm(dat,labels,'Distribution','binomial','Link','logit');
-    %     score_log = mdl.Fitted.Probability; % Probability estimates
-    %     [Xlog,Ylog,Tlog,AUClog] = perfcurve(logical(labels),score_log,'true');
-    %     hplt = plot(Xlog,Ylog);
-    %     hplt.LineWidth = 3;
-    %     hplt.Color = [0 0.7 0 0.7];
-    %     lgndTtls{3}  = sprintf('%s (AUC %.2f)','Beta + Gama',AUClog);
-    %     % svm
-    %     SVMModel2 = fitcsvm(dat,labels,...
-    %         'Standardize',true);
-    %     SVMModel2 = fitPosterior(SVMModel2);
-    %     [~,scores2] = resubPredict(SVMModel2);
-    %     [Xlog,Ylog,Tlog,AUClog] = perfcurve(logical(labels),scores2(:,2),'true');
-    %
-    %
-    %
-    %     xlabel('False positive rate')
-    %     ylabel('True positive rate')
-    %     legend(lgndTtls);
-    %     title('ROC curves - beta, gamma, both');
-    %     set(gca,'FontSize',20);
-    
-end
-
-end
+% %% plot ROC box plot PCA 
+% addpath(fullfile(pwd,'toolboxes','notBoxPlot','code'));
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientROC_at_home.mat'); 
+% figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures';
+% 
+% toPlot = table(); 
+% idxuse = strcmp(patientROC_at_home.electrode,'STN 1-3') | ... 
+%     strcmp(patientROC_at_home.electrode,'M1 8-10') | ... 
+%     strcmp(patientROC_at_home.electrode,'all areas') ;
+% patientROC_at_home = patientROC_at_home(idxuse,:); 
+% xvals = zeros(size(patientROC_at_home,1),1);
+% xvals( strcmp(patientROC_at_home.electrode,'STN 1-3') ) = 1;
+% xvals( strcmp(patientROC_at_home.electrode,'M1 8-10') ) = 2;
+% xvals( strcmp(patientROC_at_home.electrode,'all areas') ) = 3;
+% 
+% AUC = cell2mat(patientROC_at_home.AUC);
+% 
+% hfig = figure;
+% hfig.Color = 'w';
+% hsb = subplot(1,1,1); 
+% nbp = notBoxPlot(AUC,xvals); 
+% hsb.XTickLabel = {'STN 1-3 (2xPCs)','M1 8-10 (2xPCs)','All areas'};
+% ylabel('AUC'); 
+% title('M1 & STN best for decoding (4 patients, 8 ''sides'') [PCA]'); 
+% ylim([0.4 1.1]);
+% set(gca,'FontSize',globalparams.fontsize);
+% prfig.plotwidth           = 15;
+% prfig.plotheight          = 10;
+% prfig.figname             = 'AUC summary figure';
+% prfig.figdir             = figdirout;
+% plot_hfig(hfig,prfig)
+% %% 
+% 
+% %% plot ROC box plot spec freqs 
+% addpath(fullfile(pwd,'toolboxes','notBoxPlot','code'));
+% load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/patientROC_at_home_spec_freq.mat'); 
+% figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures';
+% 
+% toPlot = table(); 
+% idxuse = strcmp(patientROC_at_home.freqs,'STN beta') | ... 
+%     strcmp(patientROC_at_home.freqs,'M1 Gamma') | ... 
+%     strcmp(patientROC_at_home.freqs,'all areas') ;
+% patientROC_at_home = patientROC_at_home(idxuse,:); 
+% xvals = zeros(size(patientROC_at_home,1),1);
+% xvals( strcmp(patientROC_at_home.freqs,'STN beta') ) = 1;
+% xvals( strcmp(patientROC_at_home.freqs,'M1 Gamma') ) = 2;
+% xvals( strcmp(patientROC_at_home.freqs,'all areas') ) = 3;
+% 
+% AUC = cell2mat(patientROC_at_home.AUC);
+% 
+% hfig = figure;
+% hfig.Color = 'w';
+% hsb = subplot(1,1,1); 
+% nbp = notBoxPlot(AUC,xvals); 
+% hsb.XTickLabel = {'STN Beta','M1 Gamma','All areas'};
+% ylabel('AUC'); 
+% ylim([0.4 1.1]);
+% title('M1 & STN best for decoding (4 patients, 8 ''sides'') [peak freqs]'); 
+% set(gca,'FontSize',globalparams.fontsize);
+% prfig.plotwidth           = 15;
+% prfig.plotheight          = 10;
+% prfig.figname             = 'AUC summary figure spec freqs';
+% prfig.figdir             = figdirout;
+% plot_hfig(hfig,prfig)
+% %% 
+% 
+% %% plot unsupervised clustering rodtrigez 
+% 
+% close all; clear all; clc; 
+% 
+% % load in clinic data 
+% dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
+% fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
+% load(fnmsave,'patientPSD_in_clinic');
+% 
+% 
+% addpath(genpath(fullfile('toolboxes','cluster_dp')));
+% rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home'; 
+% patientDirs = findFilesBVQX(rootdir,'RCS*',struct('dirs',1,'depth',1));
+% pruse.minaverage = 10; 
+% pruse.maxgap = 120; % seconds 
+% for p = 1:length(patientDirs) % loop on patient 
+%     patSideFiles = findFilesBVQX(patientDirs{p},'psdResults_*.mat');
+%     [fnn,patientName] = fileparts(patientDirs{p});
+%     for s = 1:length(patSideFiles)
+%         load(patSideFiles{s}); 
+%         [~,rawside] = fileparts(patSideFiles{s});
+%         patientSide = rawside(end); 
+%         % avarege psds on 10 minute increments 
+%         times = [fftResultsTd.timeStart];
+%         curTime = times(1); 
+%         endTime = curTime + minutes(pruse.minaverage); 
+%         cntavg = 1; 
+%         psdResults = struct();
+%         while endTime < times(end)
+%             idxbetween = isbetween(times,curTime,endTime); 
+%             if max(diff(times(idxbetween))) < seconds(pruse.maxgap)
+%                 for c = 1:4
+%                     fn = sprintf('key%dfftOut',c-1);
+%                     psdResults.(fn)(cntavg,:) = mean(fftResultsTd.(fn)(:,idxbetween),2);
+%                 end
+%                 psdResults.timeStart(cntavg) = curTime; 
+%                 psdResults.timeEnd(cntavg) = endTime; 
+%                 psdResults.numberOfPsds(cntavg) = sum(idxbetween); 
+%                 cntavg = cntavg + 1; 
+%             end
+%             curTime = endTime; 
+%             endTime = curTime + minutes(pruse.minaverage);
+%         end
+%         psdResults.ff = fftResultsTd.ff; 
+%         % get rid of outliers
+%         hfig = figure;
+%         idxWhisker = [];
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             meanVals = mean(psdResults.(fn)(:,80:100),2);
+%             boxplot(meanVals);
+%             q75_test=quantile(meanVals,0.75);
+%             q25_test=quantile(meanVals,0.25);
+%             w=2.0;
+%             wUpper(c) = w*(q75_test-q25_test)+q75_test;
+%             idxWhisker(:,c) = meanVals < wUpper(c);
+%         end
+%         idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
+%         sgtitle(sprintf('confriming outlier algo'),'FontSize',20);
+%         close(hfig);
+%         
+%         % confirm that this is a good way to get rid of outliers
+%         hfig = figure;
+%         ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             plot(psdResults.ff,psdResults.(fn)(idxkeep,:),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
+% %             shadedErrorBar(psdResults.ff',psdResults.(fn)(:,idxkeep)',...
+% %                 {@median,@(x) std(x)*1.96},...
+% %                 'lineprops',{'r','markerfacecolor','r','LineWidth',2})
+%         end
+%         sgtitle(sprintf('confriming outlier algo psd '),'FontSize',20);
+%         close(hfig);
+%         % average and normalize data
+%         rangekeep = [13 30;
+%             13 30;
+%             60 80;
+%             60 80];
+%         fftSpecFreqs = []; 
+%         
+%         freqranges = [1 4; 4 8; 8 13; 13 20; 20 30; 13 30; 30 50; 50 90];
+%         freqnames  = {'Delta', 'Theta', 'Alpha','LowBeta','HighBeta','Beta','LowGamma','HighGamma'}';
+% 
+%         usespecfreq = 1; 
+%         cntfreq = 1; 
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             if usespecfreq
+%                 for sf = 1:size(freqranges,1)
+%                     idxfreqs = psdResults.ff >= freqranges(sf,1) & psdResults.ff <= freqranges(sf,2) 
+%                     % normalize the data
+%                     dat = psdResults.(fn); 
+%                     idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+%                     meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
+%                     % the absolute is to make sure 1/f curve is not flipped
+%                     % since PSD values are negative
+%                     meanmat = repmat(meandat,1,size(dat,2));
+%                     dat = dat./meanmat;
+% 
+%                     dat = dat(idxkeep,idxfreqs);
+% 
+%                     fftSpecFreqs(:,cntfreq) = mean(dat,2);
+%                     cntfreq = cntfreq + 1;
+%                 end
+% 
+%             else
+%                 idxfreqs = psdResults.ff >= rangekeep(c,1) & psdResults.ff <= rangekeep(c,2)
+%                 dat = psdResults.(fn)(idxkeep,idxfreqs);
+%                 fftSpecFreqs(:,c) = mean(dat,2);
+%             end
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%             % ALLL
+%             
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%             %XXXXXXXXXX
+%         end
+%         
+% 
+%         % do clustering
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         % ALLL
+%         
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         %XXXXXXXXXX
+%         idxfreqs = psdResults.ff >= 1 & psdResults.ff <= 95
+%         fn = sprintf('key%dfftOut',2);
+%         dat = psdResults.(fn)(idxkeep,idxfreqs);
+%         
+%         
+%         % get distance matrix
+%         D = pdist(fftSpecFreqs,'euclidean');
+%         distmat = squareform(D);
+%         distMatrices = squareform(distmat,'tovector');
+%         % get row indices
+%         rows = repmat(1:size(distmat,1),size(distmat,2),1)';
+%         idx = logical(eye(size(rows)));
+%         rows(idx) = 0;
+%         rowsColmn = squareform(rows,'tovector');
+%         % get column idices
+%         colmns = repmat(1:size(distmat,1),size(distmat,2),1);
+%         idx = logical(eye(size(colmns)));
+%         colmns(idx) = 0;
+%         colsColmn = squareform(colmns,'tovector');
+%         % save data for rodriges
+%         distanceMat = [];
+%         distanceMat(:,1) = rowsColmn;
+%         distanceMat(:,2) = colsColmn;
+%         distanceMat(:,3) = distMatrices;
+%         % do cluster 
+%         [cl,halo] =  cluster_dp(distanceMat,'results');
+%         
+%         % plot clusering 
+%         clusers = 1:3
+%         hfig = figure; 
+%         hfig.Color = 'w';
+%         
+%         colorsUse = [0.8 0 0;...
+%             0 0.8 0;...
+%             0 0 0.8]
+%         uniqueCluster = unique(cl); 
+%         colorsUse = parula(length(uniqueCluster));
+%         plotShaded = 1; 
+%         plotRaw = 0; 
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             hold on; 
+%             dat = psdResults.(fn);
+%             % normalize the data
+%             dat = psdResults.(fn);
+%             idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+%             meandat = abs(mean(dat(:,idxnormalize),2)); % mean within range, by row
+%             % the absolute is to make sure 1/f curve is not flipped
+%             % since PSD values are negative
+%             meanmat = repmat(meandat,1,size(dat,2));
+%             dat = dat./meanmat;
+% 
+%             freqs = psdResults.ff; 
+%             for cu = 1:length(uniqueCluster)
+%                 % cluster 1
+%                 if plotShaded
+%                     hsb = shadedErrorBar(freqs,dat(cl==cu,:),{@median,@(x) std(x)*1});
+%                     hsb.mainLine.Color = [colorsUse(cu,:) 0.5];
+%                     hsb.mainLine.LineWidth = 3;
+%                     hsb.patch.MarkerFaceColor = colorsUse(cu,:);
+%                     hsb.patch.FaceColor = colorsUse(cu,:);
+%                     hsb.patch.FaceAlpha = 0.1;
+%                 end
+%                 if plotRaw
+%                     plot(freqs,dat(cl==cu,:),...
+%                         'LineWidth',0.1,...
+%                         'Color',[colorsUse(cu,:) 0.2]); 
+%                 end
+%             end
+%             ylabel('Power (log_1_0\muV^2/Hz)');
+%             xlabel('Frequency (Hz)');
+%             xlim([0 100]);
+%             title(ttls{c}); 
+%             % plot the template data 
+%             relidx = strcmp(patientPSD_in_clinic.patient,patientName) & ...
+%                      strcmp(patientPSD_in_clinic.side,patientSide) & ... 
+%                      strcmp(patientPSD_in_clinic.electrode,ttls{c}); 
+%             inClinicTable = patientPSD_in_clinic(relidx,:); 
+%             colorsForInClinic = [0.8 0 0 0.5; 0 0.8 0 0.6];
+%             conds = {'off','on'}; 
+%             for oo = 1:2 
+%                 idxuseonoff = strcmp(inClinicTable.medstate,conds{oo}); 
+%                 ff = inClinicTable.ff{idxuseonoff}; 
+%                 fftOut = inClinicTable.fftOutNorm{idxuseonoff}; 
+%                 plot(ff,fftOut,'LineWidth',4,'Color',colorsForInClinic(oo,:));
+%             end
+%             set(gca,'FontSize',16);
+%         end
+%         
+%         ttluse = sprintf('%s %s',patientName,patientSide); 
+%         sgtitle(ttluse,'FontSize',20);
+%         figname = sprintf('unsupervised_clustering_10min_including_sleep_can_freqs and_template_data_ raw %s %s',patientName,patientSide); 
+%         prfig.plotwidth           = 15;
+%         prfig.plotheight          = 10;
+%         prfig.figname             = figname;
+%         prfig.figdir              = patientDirs{p};
+%         plot_hfig(hfig,prfig)
+% 
+%     end
+%     
+% end
+% 
+% %% plot template clustering 
+% % load home data  and make table of patient and side 
+% addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
+% close all; clear all; clc;
+% rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/17_states_historical'; 
+% figdirout = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/pkg_data/figures/template_matching';
+% ff = findFilesBVQX(rootdir, 'pkg_states*10_min*.mat');
+% patDatHome = struct(); 
+% for f = 1:length(ff) 
+%     [pn,fn] = fileparts(ff{f}); 
+%     patient = fn(12:16);
+%     side = fn(18);
+%     patDatHome(f).patient = patient; 
+%     patDatHome(f).side = side; 
+%     patDatHome(f).filename = ff{f}; 
+% end
+% patDatHome = struct2table(patDatHome);
+% 
+% % load in clinic data 
+% dirname = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try';
+% fnmsave = fullfile(dirname,'patientPSD_in_clinic.mat');
+% load(fnmsave,'patientPSD_in_clinic');
+% 
+% % loop on patients 
+% colors = [0.8 0 0; 0 0.8 0;0 0 0.8; 0.5 0.5 0.5];
+% for pp = 1:size(patDatHome)
+%     load(patDatHome.filename{pp}); 
+%     idxPsdClinic = strcmp(patientPSD_in_clinic.patient,patDatHome.patient{pp}) & ...
+%                    strcmp(patientPSD_in_clinic.side,patDatHome.side{pp})
+%     psdInClinicAllAreas = patientPSD_in_clinic(idxPsdClinic,:); 
+%     hfig = figure;
+%     hfig.Color = 'w'; 
+%     % loop on area 
+%     for c = 1:length(titles) % loop on channels 
+%         % get clinic template 
+%         idxarea = strcmp(psdInClinicAllAreas.electrode,titles{c});
+%         psdInClinic = psdInClinicAllAreas(idxarea,:);
+%         % get at home data 
+%         fieldNameAtHome = sprintf('key%dfftOut',c-1);
+%         psdHome = allDataPkgRcsAcc.(fieldNameAtHome);
+%         idxnormalize = psdResults.ff > 3 &  psdResults.ff <90;
+%         meandat = abs(mean(psdHome(:,idxnormalize),2)); % mean within range, by row
+%         % the absolute is to make sure 1/f curve is not flipped
+%         % since PSD values are negative
+%         meanmat = repmat(meandat,1,size(psdHome,2));
+%         normalizedPSD = psdHome./meanmat;
+%         % normalizedPSD = rescale(normalizedPSD,0,1); 
+% 
+%         % loop on states 
+%         unqStates = unique(psdInClinic.medstate); 
+%         d = [];
+%         fftTemplateUse = []; 
+%         % get templates 
+%         for m = 1:length(unqStates)
+%             idxuse = strcmp(psdInClinic.medstate,unqStates{m});
+%             psdUse = psdInClinic(idxuse,:);
+%             fftTemplateUse(:,m) = psdUse.fftOut{:};
+%         end
+%         % normalize templates from in clinic use 
+%         fftTemplate = fftTemplateUse';
+%         idxnormalize = psdInClinic.ff{1} > 3 &  psdInClinic.ff{1} <90;
+%         meandatinclinic = abs(mean(fftTemplate(:,idxnormalize),2)); % mean within range, by row
+%         % the absolute is to make sure 1/f curve is not flipped
+%         % since PSD values are negative
+%         meanmatinclinic = repmat(meandatinclinic,1,size(fftTemplate,2));
+%         normalizedFFTtemp = fftTemplate./meanmatinclinic;
+%         % normalizedFFTtemp = rescale(normalizedFFTtemp,0,1);
+%         normalizedFFTtemp = normalizedFFTtemp';
+%         
+%         freqsInClinic = psdInClinic.ff{1}'; 
+%         freqsAtHome   = psdResults.ff;
+%         if length(freqsAtHome) < length(freqsInClinic)
+%             normalizedFFTtemp = interp1(freqsInClinic,normalizedFFTtemp,freqsAtHome);
+%         end
+%         
+%         
+% 
+%         % plot raw data
+%         
+%         % compute distances 
+%         fftTempOut = []; fftTempOut = []; 
+%         for m = 1:length(unqStates)
+%             fftTemRep = repmat(normalizedFFTtemp(:,m)',size(normalizedPSD,1),1);
+%             d(:,m) = vecnorm(normalizedPSD' - fftTemRep')';
+%         end
+%         
+%         plotRaw = 0;
+%         plotState = 1; 
+%         plotDistance = 0; 
+%         subplot(2,2,c);
+%         if plotRaw 
+%             hold on;
+%             plot(normalizedPSD','LineWidth',0.1,'Color',[0 0 0.8 0.01]);
+%             plot(normalizedFFTtemp(:,1)','LineWidth',6,'Color',[0.8 0 0 0.4]);
+%             plot(normalizedFFTtemp(:,2)','LineWidth',6,'Color',[0. 0.8 0 0.4]);
+%             xlim([0 100]); 
+%             title(titles{c});
+%             xlabel('Frequency (Hz)');
+%             ylabel('Rescaled power (a.u.)');
+%             set(gca,'FontSize',16);
+%         end
+% 
+%         if plotState 
+%             for s = 1:2
+%                 if s == 1
+%                     labels = d(:,2) > d(:,1);
+%                 else
+%                     labels = d(:,1) > d(:,2);
+%                 end
+%                 if sum(labels) > 1
+%                     hsbH = shadedErrorBar(psdResults.ff,normalizedPSD(labels,:),{@mean,@(x) std(x)*1});
+%                     hsbH.mainLine.Color = [colors(s,:) 0.5];
+%                     hsbH.mainLine.LineWidth = 3;
+%                     hsbH.patch.MarkerFaceColor = colors(s,:);
+%                     hsbH.patch.FaceColor = colors(s,:);
+%                     hsbH.patch.EdgeColor = colors(s,:);
+%                     hsbH.edge(1).Color = [colors(s,:) 0.1];
+%                     hsbH.edge(2).Color = [colors(s,:) 0.1];
+%                     hsbH.patch.EdgeAlpha = 0.1;
+%                     hsbH.patch.FaceAlpha = 0.1;
+%                     hForLeg(s) = hsbH.mainLine;
+%                 end
+%             end
+%             xlim([0 100]); 
+%             title(titles{c});
+%             xlabel('Frequency (Hz)');
+%             ylabel('Rescaled power (a.u.)');
+%             set(gca,'FontSize',16);
+% 
+%         end
+%         
+%         if plotDistance
+%             hold on; 
+%             hs = scatter(d(:,1),d(:,2),10,'filled','MarkerFaceColor',[0 0 0.8],'MarkerFaceAlpha',0.2);
+%             axis equal;
+%             mind = min(d(:));
+%             maxd = max(d(:));
+%             x = linspace(mind,maxd,100);
+%             y = linspace(mind,maxd,100);
+%             plot(x,y,'LineWidth',2,'Color',[0.5 0.5 0.5 0.3]);
+%             xlabel('distance to in clinic off');
+%             ylabel('distance to in clinic on');
+%             set(gca,'FontSize',16);
+%         end
+% 
+%         
+%         
+%         
+%         
+%     end
+%     
+%     if plotRaw
+%         figname = sprintf('templateMatching - raw  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
+%     end
+%     if plotState
+%         figname = sprintf('templateMatching - state  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
+%     end
+%     if plotDistance
+%         figname = sprintf('templateMatching - distnace  %s %s',patDatHome.patient{pp},patDatHome.side{pp});
+%     end
+% 
+%     ttluse = sprintf('template matching %s %s',patDatHome.patient{pp},patDatHome.side{pp});
+%     sgtitle(ttluse,'FontSize',20);
+% 
+%     
+%     prfig.plotwidth           = 15;
+%     prfig.plotheight          = 10;
+%     prfig.figname             = figname;
+%     prfig.figdir              = figdirout
+%     plot_hfig(hfig,prfig)
+% 
+% end
+% 
+% 
+% %% 
+% 
+% %% plot template matching 
+% addpath(genpath(fullfile('toolboxes','cluster_dp')));
+% rootdir = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home'; 
+% load /Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest_3rd_try/patientPSD_in_clinic.mat
+% patientDirs = findFilesBVQX(rootdir,'RCS*',struct('dirs',1,'depth',1));
+% pruse.minaverage = 10; 
+% pruse.maxgap = 120; % seconds 
+% for p = 1:length(patientDirs) % loop on patient 
+%     patSideFiles = findFilesBVQX(patientDirs{p},'psdResults_*.mat');
+%     [fnn,patientName] = fileparts(patientDirs{p});
+%     for s = 1:length(patSideFiles)
+%         load(patSideFiles{s}); 
+%         [~,rawside] = fileparts(patSideFiles{s});
+%         patientSide = rawside(end); 
+%         % avarege psds on 10 minute increments 
+%         times = [fftResultsTd.timeStart];
+%         curTime = times(1); 
+%         endTime = curTime + minutes(pruse.minaverage); 
+%         cntavg = 1; 
+%         psdResults = struct();
+%         while endTime < times(end)
+%             idxbetween = isbetween(times,curTime,endTime); 
+%             if max(diff(times(idxbetween))) < seconds(pruse.maxgap)
+%                 for c = 1:4
+%                     fn = sprintf('key%dfftOut',c-1);
+%                     psdResults.(fn)(cntavg,:) = mean(fftResultsTd.(fn)(:,idxbetween),2);
+%                 end
+%                 psdResults.timeStart(cntavg) = curTime; 
+%                 psdResults.timeEnd(cntavg) = endTime; 
+%                 psdResults.numberOfPsds(cntavg) = sum(idxbetween); 
+%                 cntavg = cntavg + 1; 
+%             end
+%             curTime = endTime; 
+%             endTime = curTime + minutes(pruse.minaverage);
+%         end
+%         psdResults.ff = fftResultsTd.ff; 
+%         % get rid of outliers
+%         hfig = figure;
+%         idxWhisker = [];
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             meanVals = mean(psdResults.(fn)(:,80:100),2);
+%             boxplot(meanVals);
+%             q75_test=quantile(meanVals,0.75);
+%             q25_test=quantile(meanVals,0.25);
+%             w=2.0;
+%             wUpper(c) = w*(q75_test-q25_test)+q75_test;
+%             idxWhisker(:,c) = meanVals < wUpper(c);
+%         end
+%         idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
+%         sgtitle(sprintf('confriming outlier algo'),'FontSize',20);
+%         close(hfig);
+%         
+%         % confirm that this is a good way to get rid of outliers
+%         hfig = figure;
+%         ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             plot(psdResults.ff,psdResults.(fn)(idxkeep,:),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
+% %             shadedErrorBar(psdResults.ff',psdResults.(fn)(:,idxkeep)',...
+% %                 {@median,@(x) std(x)*1.96},...
+% %                 'lineprops',{'r','markerfacecolor','r','LineWidth',2})
+%         end
+%         sgtitle(sprintf('confriming outlier algo psd '),'FontSize',20);
+%         close(hfig);
+%         
+%         
+%         % average and normalize data
+%         rangekeep = [13 30;
+%             13 30;
+%             60 80;
+%             60 80];
+%         fftSpecFreqs = []; 
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             idxfreqs = psdResults.ff >= rangekeep(c,1) & psdResults.ff <= rangekeep(c,2)
+%             dat = psdResults.(fn)(idxkeep,idxfreqs);
+%             fftSpecFreqs(:,c) = mean(dat,2); 
+%         end
+%         
+% 
+%         % do clustering 
+%                 
+%         % get distance matrix
+%         D = pdist(fftSpecFreqs,'euclidean');
+%         distmat = squareform(D);
+%         distMatrices = squareform(distmat,'tovector');
+%         % get row indices
+%         rows = repmat(1:size(distmat,1),size(distmat,2),1)';
+%         idx = logical(eye(size(rows)));
+%         rows(idx) = 0;
+%         rowsColmn = squareform(rows,'tovector');
+%         % get column idices
+%         colmns = repmat(1:size(distmat,1),size(distmat,2),1);
+%         idx = logical(eye(size(colmns)));
+%         colmns(idx) = 0;
+%         colsColmn = squareform(colmns,'tovector');
+%         % save data for rodriges
+%         distanceMat = [];
+%         distanceMat(:,1) = rowsColmn;
+%         distanceMat(:,2) = colsColmn;
+%         distanceMat(:,3) = distMatrices;
+%         % do cluster 
+%         [cl,halo] =  cluster_dp(distanceMat,'results');
+%         
+%         % plot clusering 
+%         clusers = 1:2
+%         hfig = figure; 
+%         hfig.Color = 'w';
+%         for c = 1:4
+%             fn = sprintf('key%dfftOut',c-1);
+%             hsub = subplot(2,2,c);
+%             dat = psdResults.(fn);
+%             freqs = psdResults.ff; 
+%             % cluster 1 
+%             hsb = shadedErrorBar(freqs,dat(cl==1,:),{@median,@(x) std(x)*1});
+%             hsb.mainLine.Color = [0.8 0 0 0.5]
+%             hsb.mainLine.LineWidth = 3;
+%             hsb.patch.MarkerFaceColor = [0.8 0 0];
+%             hsb.patch.FaceColor = [0.8 0 0];
+%             hsb.patch.FaceAlpha = 0.1;
+%             % cluster 2 
+%             hsb = shadedErrorBar(freqs,dat(cl==2,:),{@median,@(x) std(x)*1});
+%             hsb.mainLine.Color = [0 0.8 0 0.5]
+%             hsb.mainLine.LineWidth = 3;
+%             hsb.patch.MarkerFaceColor = [0 0.8 0];
+%             hsb.patch.FaceColor = [0 0.8 0];
+%             hsb.patch.FaceAlpha = 0.1;
+%             ylabel('Power (log_1_0\muV^2/Hz)');
+%             xlabel('Frequency (Hz)');
+%             xlim([0 100]);
+%             title(ttls{c}); 
+%             set(gca,'FontSize',16);
+%         end
+%         ttluse = sprintf('%s %s',patientName,patientSide); 
+%         sgtitle(ttluse,'FontSize',20);
+%         figname = sprintf('unsupervised_clustering_10min_ %s %s',patientName,patientSide); 
+%         prfig.plotwidth           = 15;
+%         prfig.plotheight          = 10;
+%         prfig.figname             = figname;
+%         prfig.figdir              = patientDirs{p};
+%         plot_hfig(hfig,prfig)
+% 
+%     end
+%     
+% end
+% 
+% %% plot effect of segment averageing lengh on AUC accuracy 
+%  % load the data 
+%  datadirAUC_spec_latecies = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/pkg_rcs_by_minute_average_smaller_times';
+%  resultsdir_AUC = '/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/at_home/pkg_rcs_by_minute_average_smaller_times_results';
+%  ff = findFilesBVQX(datadirAUC_spec_latecies,'*.mat');
+%  titles = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+%  dataTable = struct();
+%  for f = 1:length(ff)
+%      metaData = load(ff{f},'metaData');
+%      patData = metaData.metaData;
+%      dataTable(f).patient = patData.patient;
+%      dataTable(f).patientRCSside = patData.patientRCSside;
+%      dataTable(f).patientPKGside = patData.patientPKGside;
+%      dataTable(f).filename = patData.filename;
+%      dataTable(f).minuteGap = patData.minuteGap;
+%  end
+%  dataTable = struct2table(dataTable);
+%  
+%  
+%  
+%  
+%  
+%  % loop on patient, side to get AUC for each patient and minute
+%  % gap
+%  uniquePatients = unique(dataTable.patient);
+%  %
+%  %             uniquePatients = {'RCS07'};
+%  %
+%  sides = {'L','R'};
+%  for p = 1:length(uniquePatients) % loop on patients
+%      for s = 1:2 % loop on side
+%          idpatientAndSide = strcmp(dataTable.patient,uniquePatients{p}) & ...
+%              strcmp(dataTable.patientRCSside,sides{s});
+%          patientTable = dataTable(idpatientAndSide,:);
+%          patientTable = sortrows(patientTable,'minuteGap');
+%          for m = 1:size(patientTable,1)
+%              fn = patientTable.filename{m};
+%              try
+%                  load(fullfile(datadirAUC_spec_latecies,fn));
+%              catch
+%                  fnbuild = sprintf('RCS02 %s pkg %s_AveragedOn_min_%d.mat',...
+%                      patientTable.patientRCSside{m},patientTable.patientPKGside{m},patientTable.minuteGap(m));
+%                  load(fullfile(datadirAUC_spec_latecies,fnbuild));
+%              end
+%              % get states and frequencies per patient
+%              % get specific frequenceis per patiet
+%              rawstates = allDataPkgRcsAcc.states';
+%              switch patientTable.patient{1}
+%                  case 'RCS02'
+%                      % R
+%                      cnls  =  [0  1  2  3  0  1  2  3  ];
+%                      freqs =  [19 19 24 25 75 75 76 76];
+%                      ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+%                      onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
+%                      offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+%                      sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+%                      allstates = rawstates;
+%                      allstates(onidx) = {'on'};
+%                      allstates(offidx) = {'off'};
+%                      allstates(sleeidx) = {'sleep'};
+%                      statesUse = {'off','on'};
+%                  case 'RCS05'
+%                      cnls  =  [0  1  2  3  0  1  2  3  ];
+%                      freqs =  [27 27 27 27 61 61 61 61];
+%                      ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+%                      onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'on')),rawstates);
+%                      offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+%                      sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+%                      allstates = rawstates;
+%                      allstates(onidx) = {'on'};
+%                      allstates(offidx) = {'off'};
+%                      allstates(sleeidx) = {'sleep'};
+%                      statesUse = {'off','on'};
+%                      
+%                  case 'RCS06'
+%                      cnls  =  [0  1  2  3  0  1  2  3  ];
+%                      freqs =  [19 19 14 26 55 55 61 61];
+%                      ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+%                      onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'on')),rawstates);
+%                      offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+%                      sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+%                      allstates = rawstates;
+%                      allstates(onidx) = {'on'};
+%                      allstates(offidx) = {'off'};
+%                      allstates(sleeidx) = {'sleep'};
+%                      statesUse = {'off','on'};
+%                      
+%                  case 'RCS07'
+%                      cnls  =  [0  1  2  3  0  1  2  3  ];
+%                      freqs =  [19 20 21 24 76 79 80 80];
+%                      ttls  = {'STN beta','STN beta','M1 beta','M1 beta','STN gamma','STN gamma','M1 gamma','M1 gamma'};
+%                      onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'on')),rawstates);
+%                      offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+%                          cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+%                      sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+%                      allstates = rawstates;
+%                      allstates(onidx) = {'on'};
+%                      allstates(offidx) = {'off'};
+%                      allstates(sleeidx) = {'sleep'};
+%                      statesUse = {'off','on'};
+%              end
+%              % fit the model
+%              % get the labels
+%              idxuse = strcmp(allstates,'off') | strcmp(allstates,'on');
+%              labelsRaw = allstates(idxuse);
+%              labels = zeros(size(labelsRaw,1),1);
+%              labels(strcmp(labelsRaw,'on')) = 1;
+%              % loop on areas
+%              alldat = [];
+%              for c = 1:length(cnls)
+%                  % get channel
+%                  fn = sprintf('key%dfftOut',cnls(c));
+%                  % get freq
+%                  idxfreq = allDataPkgRcsAcc.ff >= freqs(c)-1 & allDataPkgRcsAcc.ff <= freqs(c)+1;
+%                  dat = mean(allDataPkgRcsAcc.(fn)(idxuse,idxfreq),2);
+%                  datuse = dat;
+%                  alldat(:,c) = dat;
+%                  %% disc
+%                  rng(1); % For reproducibility
+%                  cvp = cvpartition(logical(labels),'Kfold',5,'stratify',logical(1));
+%                  for k = 1:5
+%                      idxTrn = training(cvp,k); % Training set indices
+%                      idxTest = test(cvp,k);    % Test set indices
+%                      tblTrn = array2table(dat(idxTrn,:));
+%                      tblTrn.Y = labels(idxTrn);
+%                      Mdl = fitcdiscr(tblTrn,'Y');
+%                      [labeltest,scoretest,costest] = predict(Mdl,dat(idxTest,:));
+%                      [X,Y,T,AUC(k),OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
+%                  end
+%                  %%
+%                  headinguse = sprintf('%s %s AUC',ttls{c},titles{cnls(c)+1});
+%                  AUCout(c) = mean(AUC);
+%              end
+%              % use all areas
+%              tblTrn = array2table(alldat(idxTrn,:));
+%              tblTrn.Y = labels(idxTrn);
+%              Mdl = fitcdiscr(tblTrn,'Y');
+%              [labeltest,scoretest,costest] = predict(Mdl,alldat(idxTest,:));
+%              [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels(idxTest)),scoretest(:,2),'true');
+%              AUCout(c+1) = AUC;
+%              %
+%              patientTable.AUC{m} = AUCout;
+%              fnmmuse = sprintf('%s_%s_pkg%s_AUC_by_min_results.mat',patientTable.patient{1},...
+%                  patientTable.patientRCSside{1},...
+%                  patientTable.patientPKGside{1});
+%              fnmsave = fullfile(resultsdir_AUC,fnmmuse);
+%              readme = {'AUC is a matrix with cnls and freqs being the columns used to train a linead disc analysis. the last column is all data combines (all areas'};
+%              save(fnmsave,'patientTable','cnls','freqs','titles','readme');
+%          end
+%          % save this patient data
+%      end
+%  end
+% %%
+% 
+% %%
+% 
+% 
+% 
+% 
+% % end
+% 
+% function previousVersionHardCutOff_AllPatients()
+% %% loop on patients
+% for dd = 2%length(psdrFiles)
+%     
+%     %% get td data + pkg data + acc data - correct place
+%     load(psdrFiles{dd});
+%     
+%     % read pkg
+%     pkgTable = readtable(pkgChoose{dd});
+%     
+%     hfig = figure;
+%     hfig.Color = 'w';
+%     hsb(1) = subplot(2,1,1);
+%     plot(pkgTable.Date_Time,pkgTable.BK,'LineWidth',1,'Color',[0 0.8 0 0.5]);
+%     title('bk');
+%     hsb(2) = subplot(2,1,2);
+%     plot(pkgTable.Date_Time,log10(pkgTable.DK),'LineWidth',1,'Color',[0 0 0.8 0.5]);
+%     title('dk');
+%     linkaxes(hsb,'x');
+%     sgtitle(sprintf('%s',patient{dd}));
+%     %plot bk vs DK
+%     hfig = figure;
+%     hfig.Color = 'w';
+%     scatter(log10(pkgTable.DK),pkgTable.BK,10,'filled','MarkerFaceColor',[0.8 0 0],'MarkerEdgeAlpha',0.5);
+%     sgtitle(sprintf('Log DK vs BK vals %s',patient{dd}),'FontSize',20);
+%     xlabel('log DK vals');
+%     ylabel('BK vals');
+%     grid on
+%     axis normal
+%     set(gcf,'Color','w');
+%     set(gca,'FontSize',globalparams.fontsize);
+%     
+%     figure;
+%     idxWhisker = [];
+%     for c = 1:4
+%         fn = sprintf('key%dfftOut',c-1);
+%         hsub = subplot(2,2,c);
+%         meanVals = mean(fftResultsTd.(fn)(40:60,:));
+%         boxplot(meanVals);
+%         q75_test=quantile(meanVals,0.75);
+%         q25_test=quantile(meanVals,0.25);
+%         w=2.0;
+%         wUpper(c) = w*(q75_test-q25_test)+q75_test;
+%         idxWhisker(:,c) = meanVals' < wUpper(c);
+%         
+%     end
+%     idxkeep = idxWhisker(:,1) &  idxWhisker(:,2) & idxWhisker(:,3) & idxWhisker(:,4) ;
+%     sgtitle(sprintf('confriming outlier algo %s',patient{dd}),'FontSize',20);
+%     
+%     % confirm that this is a good way to get rid of outliers
+%     hfig = figure;
+%     ttls = {'STN 0-2','STN 1-3','M1 8-10','M1 9-11'};
+%     for c = 1:4
+%         fn = sprintf('key%dfftOut',c-1);
+%         hsub = subplot(2,2,c);
+%         %         plot(fftResultsTd.ff,fftResultsTd.(fn)(:,idxkeep),'LineWidth',0.2,'Color',[0 0 0.8 0.2]);
+%         shadedErrorBar(fftResultsTd.ff,fftResultsTd.(fn)(:,idxkeep)',...
+%             {@median,@(x) std(x)*1.96},...
+%             'lineprops',{'r','markerfacecolor','r','LineWidth',2})
+%     end
+%     sgtitle(sprintf('confriming outlier algo psd %s',patient{dd}),'FontSize',20);
+%     
+%     
+%     % get the pkg data
+%     timesPKG = pkgTable.Date_Time;
+%     timesPKG.TimeZone = 'America/Los_Angeles';
+%     idxLoop = find(idxkeep==1);
+%     cnt = 1;
+%     dkVals = []; bkVals = []; idxThatHasPKGVals = [];
+%     for i = 1:length(idxLoop)
+%         timeGoal = fftResultsTd.timeEnd(idxLoop(i));
+%         [val(i),idx(i)] = min(abs(timeGoal - timesPKG));
+%         if val(i) < minutes(3)
+%             dkVals(cnt) = pkgTable.DK(idx(i));
+%             bkVals(cnt) = pkgTable.BK(idx(i));
+%             idxThatHasPKGVals(cnt) = idxLoop(i);
+%             cnt = cnt + 1;
+%         end
+%     end
+%     
+%     % make a table with pkg values and td results
+%     allDataPkgRcsAcc = struct();
+%     allDataPkgRcsAcc.key0fftOut = fftResultsTd.key0fftOut(:,idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.key1fftOut = fftResultsTd.key1fftOut(:,idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.key2fftOut = fftResultsTd.key2fftOut(:,idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.key3fftOut = fftResultsTd.key3fftOut(:,idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.timeStart  = fftResultsTd.timeStart(idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.timeEnd  = fftResultsTd.timeEnd(idxThatHasPKGVals)';
+%     allDataPkgRcsAcc.dkVals = dkVals';
+%     allDataPkgRcsAcc.bkVals = bkVals';
+%     allDatTable = struct2table(allDataPkgRcsAcc);
+%     
+%     % plot histogrma correlate with pkg
+%     %     betaIdxUse  = 23:25;
+%     %     gamaIdxUse  = 74:76;
+%     %     powerBeta13  = mean(allDataPkgRcsAcc.key1fftOut(:,betaIdxUse),2);
+%     %     powerGama810 = mean(allDataPkgRcsAcc.key3fftOut(:,gamaIdxUse),2);
+%     %     powerGamma = mean(allDataPkgRcsAcc.key3fftOut(:,betaIdxUse),2);
+%     measureUse = {'clas. using BK','clas. using DK'};
+%     for m = 1:2
+%         if m == 1
+%             pkgOffMeds  = allDataPkgRcsAcc.bkVals > -120 & allDataPkgRcsAcc.bkVals < -60;
+%             pkgOnMeds   = allDataPkgRcsAcc.bkVals > -60 & allDataPkgRcsAcc.bkVals < -10;
+%         else
+%             pkgOffMeds  = allDataPkgRcsAcc.dkVals > 0 & allDataPkgRcsAcc.dkVals < 30;
+%             pkgOnMeds   = allDataPkgRcsAcc.dkVals >= 30 & allDataPkgRcsAcc.dkVals < 300;
+%         end
+%         
+%         bksabs = abs(allDataPkgRcsAcc.bkVals);
+%         % pkgOffMeds  = bksabs > 32 & bksabs < 80;
+%         % pkgOnMeds   = bksabs <= 20 & bksabs > 0;
+%         %{
+%     We use BKS>26<40 (BKS=26 =UPDRS III~30)as a marker of
+%     ?OFF? and >32<40 as (BKS=32 =UPDRS III~45)marker of very OFF
+%     We use DKS>7 as a marker of dyskinesia and > 16 as significant dyskinesia
+%     Generally when BKS>26, DKS will be low.
+%     We don?t usually use the terminology of OFF/On/dyskinesia use in diaries
+%     because they are categorical states compared to a continuous variable.
+%     If I can ask you the same question for UPDRS and AIMS score
+%     what cut-off would you like to use to indicate those
+%     same states and then I can give you approximate numbers for the BKS DKS.
+%     We have good evidence thatTreatable bradykinesia
+%     (i.e. presumable OFF according to a clinician) is when the
+%      BKS>26 (or <-26 as per the csv files)
+%     Good control (i.e. neither OFF nor ON) is when BKS <26 AND DKS<7
+%     Dyskinesia is when DKS>7 and BKS <26.
+%     However you should not use single epochs alone.
+%     We tend to use the 4/7 or 3/5 rule ?
+%     that is use take the first 7 epochs of BKS (or DKS),
+%     then the middle epoch will be ?OFF? if 4/7 of the epochs >26.
+%     Slide along one and apply the rule again etc.
+%     Mal Horne
+%     Wed 7/24/2019 7:12 PM email
+%         %}
+%         prfig.figdir = figdir{dd};
+%         prfig.figtype = '-djpeg';
+%         prfig.resolution = 600;
+%         prfig.closeafterprint = 0;
+%         
+%         % for DBS think tank lecture:
+%         ffTemp = fftResultsTd.ff;
+%         idxAllDat = pkgOffMeds | pkgOnMeds;
+%         dat       = allDataPkgRcsAcc.key1fftOut(idxAllDat,:);
+%         % figure;
+%         % plot(ffTemp,dat,'Color',[0 0 0.8 0.01],'LineWidth',0.01);
+%         
+%         
+%         hfig = figure;
+%         hsb(1) = subplot(1,2,1);
+%         hold on;
+%         % plot(ffTemp,dat,'Color',[0 0 0.8 0.01],'LineWidth',0.01);
+%         % shadedErrorBar(fftResultsTd.ff,dat,{@mean,@(x) std(x)*1.96},'lineprops',{'k','markerfacecolor','r','LineWidth',2});
+%         shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'r','markerfacecolor','r','LineWidth',2});
+%         shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key1fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
+%         % legend({'immobile - wearable estimate'});
+%         legend({'immobile - wearable estimate','mobile - wearable estimate'});
+%         xlim([3 100]);
+%         xlabel('Frequency (Hz)');
+%         ylabel('Power (log_1_0\muV^2/Hz)');
+%         title('STN');
+%         set(gca,'FontSize',globalparams.fontsize);
+%         
+%         
+%         hsb(2) = subplot(1,2,2);
+%         hold on;
+%         shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOffMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'r','markerfacecolor','k','LineWidth',2});
+%         shadedErrorBar(fftResultsTd.ff,allDataPkgRcsAcc.key3fftOut(pkgOnMeds,:),{@median,@(x) std(x)*1.5},'lineprops',{'b','markerfacecolor','b','LineWidth',2});
+%         ylims = get(hsb(2),'YLim');
+%         
+%         % legend({'immobile - wearable estimate'});
+%         legend({'immobile - wearable estimate','mobile - wearable estimate'});
+%         %     patch(hsb(2),[15 36 36 15],[ylims(1) ylims(1) ylims(2) ylims(2)],[1 1 0],'FaceAlpha',0.3,'EdgeColor',[1 1 1])
+%         %     set(gca,'children',flipud(get(gca,'children')))
+%         
+%         set(gca,'YLim',[-8 -3.5]);
+%         xlim([3 100]);
+%         xlabel('Frequency (Hz)');
+%         ylabel('Power (log_1_0\muV^2/Hz)');
+%         title('M1');
+%         set(gca,'FontSize',globalparams.fontsize);
+%         set(gcf,'Color','w');
+%         
+%         sgtitle(sprintf('%s mobile vs immobile pkg estimate %s',measureUse{m}, patient{dd}),'FontSize',20);
+%         prfig.plotwidth           = 15;
+%         prfig.plotheight          = 10;
+%         prfig.figname             = sprintf('%s %s','pkg_plot_mobile_vs_imobile',measureUse{m});;
+%         plot_hfig(hfig,prfig)
+%     end
+%     
+%     
+%     
+%     
+%     %
+%     %     figure;
+%     %     subplot(2,2,1);
+%     %     hold on;
+%     %     histogram(powerBeta13(pkgOffMeds),'Normalization','probability','BinWidth',0.1);
+%     %     histogram(powerBeta13(pkgOnMeds),'Normalization','probability','BinWidth',0.1);
+%     %     legend({'off (PKG estimate)','on (PKG estimate)'});
+%     %     ylabel('Probability (%)');
+%     %     xlabel('Beta power');
+%     %     ttluse = sprintf('Beta (%d-%dHz) on/off(PKG) - STN',betaIdxUse(1),betaIdxUse(end));
+%     %     title(ttluse);
+%     %     set(gcf,'Color','w')
+%     %     set(gca,'FontSize',globalparams.fontsize)
+%     %
+%     %     subplot(2,2,2);
+%     %     hold on;
+%     %     histogram(powerGama810(pkgOffMeds),'Normalization','probability','BinWidth',0.1);
+%     %     histogram(powerGama810(pkgOnMeds),'Normalization','probability','BinWidth',0.1);
+%     %     legend({'off (PKG estimate)','on (PKG estimate)'});
+%     %     xlabel('Gamma power');
+%     %     ylabel('Probability (%)');
+%     %     ttluse = sprintf('Gama (%d-%dHz) on/off(PKG) - M1',gamaIdxUse(1),gamaIdxUse(end));
+%     %     title(ttluse);
+%     %     set(gcf,'Color','w')
+%     %     set(gca,'FontSize',globalparams.fontsize)
+%     %
+%     %     subplot(2,2,3);
+%     %     hold on;
+%     %     scatter(powerGama810(pkgOffMeds), powerBeta13(pkgOffMeds),4,'filled','MarkerFaceColor',[0.8 0 0],'MarkerFaceAlpha',0.5)
+%     %     scatter(powerGama810(pkgOnMeds), powerBeta13(pkgOnMeds),4,'filled','MarkerFaceColor',[0 0 0.8],'MarkerFaceAlpha',0.5)
+%     %     legend({'off (PKG estimate)','on (PKG estimate)'});
+%     %     title ('Beta (STN) vs Gamma (M1) power');
+%     %     xlabel('Power Gamma M1');
+%     %     ylabel('Power Beta STN');
+%     %     set(gcf,'Color','w')
+%     %     set(gca,'FontSize',globalparams.fontsize)
+%     %
+%     %
+%     %
+%     %     % compute roc
+%     %     subplot(2,2,4);
+%     %     hold on;
+%     %
+%     %     tbl = table();
+%     %     tbl.powerBeta = powerBeta13;
+%     %     tbl.powerGamma = powerGama810;
+%     %
+%     %     labels     = zeros(size(powerBeta13,1),1);
+%     %     labels(pkgOnMeds) = 1;
+%     %     labels(pkgOffMeds) = 2;
+%     %
+%     %     idxkeepROC = labels~=0;
+%     %     labels = labels(idxkeepROC);
+%     %     labels(labels==1) = 0;
+%     %     labels(labels==2) = 1;
+%     %     dat    = [tbl.powerBeta(idxkeepROC),tbl.powerGamma(idxkeepROC)];
+%     %
+%     %     % beta
+%     %     [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,1),1);
+%     %     hplt = plot(X,Y);
+%     %     hplt.LineWidth = 3;
+%     %     hplt.Color = [0 0 0.8 0.7];
+%     %     lgndTtls{1}  = sprintf('%s (AUC %.2f)','stn beta',AUC);
+%     %     % gama
+%     %     [X,Y,T,AUC,OPTROCPT] = perfcurve(logical(labels),dat(:,2),0);
+%     %     hplt = plot(X,Y);
+%     %     hplt.LineWidth = 3;
+%     %     hplt.Color = [0.8 0 0 0.7];
+%     %     lgndTtls{2}  = sprintf('%s (AUC %.2f)','m1 gamma',AUC);
+%     %     % both
+%     %     mdl = fitglm(dat,labels,'Distribution','binomial','Link','logit');
+%     %     score_log = mdl.Fitted.Probability; % Probability estimates
+%     %     [Xlog,Ylog,Tlog,AUClog] = perfcurve(logical(labels),score_log,'true');
+%     %     hplt = plot(Xlog,Ylog);
+%     %     hplt.LineWidth = 3;
+%     %     hplt.Color = [0 0.7 0 0.7];
+%     %     lgndTtls{3}  = sprintf('%s (AUC %.2f)','Beta + Gama',AUClog);
+%     %     % svm
+%     %     SVMModel2 = fitcsvm(dat,labels,...
+%     %         'Standardize',true);
+%     %     SVMModel2 = fitPosterior(SVMModel2);
+%     %     [~,scores2] = resubPredict(SVMModel2);
+%     %     [Xlog,Ylog,Tlog,AUClog] = perfcurve(logical(labels),scores2(:,2),'true');
+%     %
+%     %
+%     %
+%     %     xlabel('False positive rate')
+%     %     ylabel('True positive rate')
+%     %     legend(lgndTtls);
+%     %     title('ROC curves - beta, gamma, both');
+%     %     set(gca,'FontSize',globalparams.fontsize);
+%     
+% end
+% 
+% end
