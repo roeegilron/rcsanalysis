@@ -12,7 +12,10 @@ else
     outTab(1).UnixOnsetTime = outRec(1).timeStart;
     outTab(1).UnixOffsetTime =  outRec(1).timeStart;
 end
-
-eventTable = struct2table(outTab);
+try
+    eventTable = struct2table(outTab);
+catch 
+    eventTable = struct2table(outTab,'AsArray',true);
+end
 
 end

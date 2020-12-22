@@ -1,6 +1,18 @@
 function plot_adaptive_log(fn)
-
-adaptiveLogTable = read_adaptive_txt_log(fn);
+%%
+%%
+[adaptiveLogTable, rechargeSessions, groupChanges] = read_adaptive_txt_log(fn);
+% find device settings so you can also print some meta data on the log 
+[pn,~] = fileparts(fn); 
+[pnn,~] = fileparts(pn); 
+fndeviceSettings = fullfile(pnn,'DeviceSettings.json'); 
+ds = get_meta_data_from_device_settings_file(fndeviceSettings);
+patientAndSide = sprintf('%s %s',ds.patient{1},ds.side{1});
+%% get detector settings 
+addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
+[DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = createAdaptiveSettingsfromDeviceSettings(pnn);
+[TD_SettingsOut, Power_SettingsOut, FFT_SettingsOut, metaData] = createDeviceSettingsTable(pnn);
+strOut = getAdaptiveHumanReadaleSettings(ds,1);
 %%
 allDays =  day(adaptiveLogTable.time);
 allMonths = month(adaptiveLogTable.time);
@@ -35,6 +47,58 @@ for m = 1:length(unqMonth)
                    end
                 end
             end
+            % make a timeline of group changes for the day 
+            % based on the last time a setting was changed in the log 
+%             groupChangeBeforeIdx = groupChanges.time <= dayPlot.time(1);
+%             groupChangeBefor = groupChanges(groupChangeBeforeIdx,:);
+%             [yAdaptive,mAdaptive,dAdaptive] = ymd(dayPlot.time(1)); 
+%             for gc = 1:size(groupChangeBefor,1)
+%                 [yGc,mGc,dGc] = ymd(groupChangeBefor.time(gc)); 
+%                 if yAdaptive == yGc & mAdaptive == mGc & dGc == dAdaptive
+%                 else
+%                     idxBreak = gc; 
+%                     break; 
+%                 end
+%             end
+%             groupChangesUse = groupChangeBefor(1:idxBreak,:);
+%             groupChangeCompute = sortrows(groupChangesUse,{'time'});
+%             dateVecFirstEntry = datevec(groupChangeCompute.time(1));
+%             dateVecFirstEntry(1) = yAdaptive;
+%             dateVecFirstEntry(2) = mAdaptive;
+%             dateVecFirstEntry(3) = dAdaptive;
+%             dateVecFirstEntry(4) = 0;
+%             dateVecFirstEntry(5) = 0;
+%             dateVecFirstEntry(6) = 1;
+%             dateFirstEntry = datetime(dateVecFirstEntry);
+%             dateFirstEntry.TimeZone = groupChangeCompute.time(1).TimeZone;
+%             groupChangeCompute.time(1) = dateFirstEntry; 
+%             cntGroup = 1; 
+%             groupUseOut = [];  timeUse = [];
+%             for gc = 1:size(groupChangeCompute,1) 
+%                 switch groupChangeCompute(gc)
+%                     case 'A'
+%                         groupUse = 1;
+%                     case 'B'
+%                         groupUse = 2;
+%                     case 'C'
+%                         groupUse = 3;
+%                     case 'D'
+%                         groupUse = 4;
+%                 end
+%                 if gc > 1
+%                     groupUseOut(cntGroup) = groupUseOut(end); 
+%                     timeUse(cntGroup) = groupChangeCompute(gc);
+%                     cntGroup  = cntGroup  + 1;
+%                     groupUseOut(cntGroup) = groupUse;
+%                     timeUse(cntGroup) = groupChangeCompute(gc);
+%                     cntGroup  = cntGroup  + 1;
+%                 else
+%                     groupUseOut(cntGroup) = groupUse; 
+%                     timeUse(cntGroup) = groupChangeCompute(gc); 
+%                     cntGroup  = cntGroup  + 1;i
+%                 end
+%                 
+%             end
             
             %% plot 
             % compute weighted average for the day 
@@ -56,7 +120,9 @@ for m = 1:length(unqMonth)
             ylims = hsb.YLim;
             hsb.YLim(1) = hsb.YLim(1)*0.9;
             hsb.YLim(2) = hsb.YLim(2)*1.1;
-            ttluse = sprintf('%d/%d/%d (%.2fmA = avg current)',month(dayPlot.time(1)),day(dayPlot.time(1)),year(dayPlot.time(1)),weightedMean);
+            ttluse{1,1} = patientAndSide;
+            ttluse{1,2} = sprintf('%d/%d/%d (%.2fmA = avg current)',month(dayPlot.time(1)),day(dayPlot.time(1)),year(dayPlot.time(1)),weightedMean);
+            
             title(ttluse);
             ttlsave = sprintf('%d_%d_%d',month(dayPlot.time(1)),day(dayPlot.time(1)),year(dayPlot.time(1)));
             

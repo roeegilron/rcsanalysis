@@ -18,17 +18,17 @@ end
 
 deviceSettingsOut = adaptiveSettingsStruc.senseSettings;
 stimStatus = adaptiveSettingsStruc.stimStatus;
-stimState = adaptiveSettingsStruc.stimState;
-fftTable = adaptiveSettingsStruc.fftTable;
-powerTable = adaptiveSettingsStruc.powerTable;
-adaptiveSettings = adaptiveSettingsStruc.adaptiveSettings;
+stimState = adaptiveSettingsStruc.stimStateChanges{1};
+fftTable = adaptiveSettingsStruc.fftTable{1};
+powerTable = adaptiveSettingsStruc.powerTable{1};
+adaptiveSettings = adaptiveSettingsStruc.adaptiveSettings{1};
 
-stimStateRaw = stimStatus;
+stimStateRaw = stimState;
 stimState = table();
 % choose the stim state with the longest duration and with an
 % active group
 
-sortedStates = sortrows(stimStateRaw,{'activeGroup','duration'},{'descend','descend'});
+sortedStates = sortrows(stimStateRaw,{'time','duration'},{'descend','descend'});
 stimState = sortedStates(1,:);
 
 
@@ -82,22 +82,36 @@ strline = strline + 1;
 strOut{strline,1} = '';
 strline = strline + 1;
 
+% assuming one program! 
+states = [0:2];
+statesOut = '';
+for ss = 1:length(states)
+    fnuse = sprintf('currentMa_state%d',states(ss));
+    if adaptiveSettings.(fnuse)(1) == 25.5
+        statesOut = [statesOut ' ' sprintf('\t[state %d] HOLD',states(ss))];
+    else
+        statesOut = [statesOut ' ' sprintf('\t[state %d] %0.1fmA',states(ss),adaptiveSettings.(fnuse)(1))];
+    end
 
-% state 0 
-strOut{strline,1} = sprintf('\t[state %d] %0.1fmA',0,adaptiveSettings.currentMa_state0(1));
-strline = strline + 1;
-
-% state 1 
-if adaptiveSettings.currentMa_state1(1) == 25.5 
-    strOut{strline,1} = sprintf('\t[state %d] HOLD',1);
-else
-    strOut{strline,1} = sprintf('\t[state %d] %0.1fmA',1,adaptiveSettings.currentMa_state1(1));
 end
+strOut{strline,1} = statesOut;
 strline = strline + 1;
 
-% state 2
-strOut{strline,1} = sprintf('\t[state %d] %0.1fmA',2,adaptiveSettings.currentMa_state2(1));
+states = [3:5];
+statesOut = '';
+for ss = 1:length(states)
+    fnuse = sprintf('currentMa_state%d',states(ss));
+    if adaptiveSettings.(fnuse)(1) == 25.5
+        statesOut = [statesOut ' ' sprintf('\t[state %d] HOLD',states(ss))];
+    else
+        statesOut = [statesOut ' ' sprintf('\t[state %d] %0.1fmA',states(ss),adaptiveSettings.(fnuse)(1))];
+    end
+
+end
+strOut{strline,1} = statesOut;
 strline = strline + 1;
+
+
 
 % active Recharge 
 if stimState.active_recharge
@@ -205,11 +219,11 @@ end
 
 
 
-strOut{strline} = sprintf('\tramp up rate %.2f mA/sec',...
+strOut{strline} = sprintf('\tramp up rate %.5f mA/sec',...
     (adaptiveSettings.rise_rate(1)/655360)*10);
 strline = strline + 1;
 
-strOut{strline} = sprintf('\tramp down rate %.2f mA/sec\t',...
+strOut{strline} = sprintf('\tramp down rate %.5f mA/sec\t',...
     (adaptiveSettings.fall_rate(1)/655360)*10);
 strline = strline + 1;
 

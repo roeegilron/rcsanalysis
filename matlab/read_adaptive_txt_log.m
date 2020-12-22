@@ -1,4 +1,4 @@
-function adaptiveLogTable = read_adaptive_txt_log(fn)
+function [adaptiveLogTable, rechargeSessions, groupChanges] = read_adaptive_txt_log(fn)
 clc; close all;
 % initialize table
 adaptiveLogTable = table();
@@ -15,6 +15,7 @@ while cntBlock ~= (length(newBlockLines)-1)
     events{cntBlock} = str(newBlockLines(cntBlock) : newBlockLines(cntBlock+1));
     cntBlock = cntBlock + 1; 
 end
+eventsRaw = events;
 %% get all event types 
 for e = 1:length(events)
     str = events{e};
@@ -31,7 +32,7 @@ for e = 1:length(events)
 end
 idxuse = strcmp(adaptiveLogEvents.EventID,'AdaptiveTherapyStateChange');
 allEvents = events; 
-%%
+%% AdaptiveTherapyStateChange
 events = allEvents(idxuse);
 for e = 1:length(events)
     str = events{e};
@@ -135,7 +136,133 @@ for e = 1:length(events)
 
     
 end
+%% Recharge sesions 
+idxuse = strcmp(adaptiveLogEvents.EventID,'RechargeSesson');
+allEvents = eventsRaw; 
+events = allEvents(idxuse);
+rechargeSessions = table();
+for e = 1:length(events)
+    str = events{e};
+    car = regexp(str, '\r');
+    
+    xpr = ['Seconds = '];
+    cac1 = regexp( str, xpr );
+    
+    xpr = ['DateTime = '];
+    cac2 = regexp( str, xpr );
+    
+    clear hexstr
+    for t = 1:length(cac1)
+        hexstr(t,:) = str(cac1(t)+12:cac2(t)-3);
+    end
+    rawsecs = hex2dec(hexstr);
+    startTimeDt = datetime(datevec(rawsecs./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
+    rechargeSessions.time(e) = startTimeDt;
+    %%
+    
+    %% get type
+    xpr = ['RechargeSessionEventLogEntry.RechargeSessionStatus = '];
+    cac1 = regexp( str, xpr );
+    
+    
+    xpr = ['RechargeSessionEventLogEntry.Unused'];
+    cac2 = regexp( str, xpr );
+    clear status 
+    status = str(cac1+59:cac2-12);   
+    
+    rechargeSessions.status{e} = status;
+    %%
+end
+
+%% adaptive therapy status 
+idxuse = strcmp(adaptiveLogEvents.EventID,'AdaptiveTherapyStatusChanged');
+allEvents = eventsRaw; 
+events = allEvents(idxuse);
+adaptiveStatus = table();
+for e = 1:length(events)
+    str = events{e};
+    car = regexp(str, '\r');
+    
+    xpr = ['Seconds = '];
+    cac1 = regexp( str, xpr );
+    
+    xpr = ['DateTime = '];
+    cac2 = regexp( str, xpr );
+    
+    clear hexstr
+    for t = 1:length(cac1)
+        hexstr(t,:) = str(cac1(t)+12:cac2(t)-3);
+    end
+    rawsecs = hex2dec(hexstr);
+    startTimeDt = datetime(datevec(rawsecs./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
+    adaptiveStatus.time(e) = startTimeDt;
+    %%
+    
+    %% get type
+    xpr = ['AdaptiveTherapyStatusChangedEventLogEntry.Status = '];
+    cac1 = regexp( str, xpr );
+    
+    
+    xpr = ['AdaptiveTherapyStatusChangedEventLogEntry.Unused = '];
+    cac2 = regexp( str, xpr );
+    clear status 
+    status = str(cac1+57:cac2-12);   
+    
+    adaptiveStatus.status{e} = status;
+    %%
+end
+
+
+%% ActiveDeviceChanged - means group change 
+idxuse = strcmp(adaptiveLogEvents.EventID,'ActiveDeviceChanged');
+allEvents = eventsRaw; 
+events = allEvents(idxuse);
+groupChanges = table();
+for e = 1:length(events)
+    str = events{e};
+    car = regexp(str, '\r');
+    
+    xpr = ['Seconds = '];
+    cac1 = regexp( str, xpr );
+    
+    xpr = ['DateTime = '];
+    cac2 = regexp( str, xpr );
+    
+    clear hexstr
+    for t = 1:length(cac1)
+        hexstr(t,:) = str(cac1(t)+12:cac2(t)-3);
+    end
+    rawsecs = hex2dec(hexstr);
+    startTimeDt = datetime(datevec(rawsecs./86400 + datenum(2000,3,1,0,0,0))); % medtronic time - LSB is seconds
+    groupChanges.time(e) = startTimeDt;
+    %%
+    
+    %% get type
+    xpr = ['TherapyActiveGroupChangedEventLogEntry.NewGroup = '];
+    cac1 = regexp( str, xpr );
+    
+    
+    xpr = ['TherapyActiveGroupChangedEventLogEntry.Unused   = '];
+    cac2 = regexp( str, xpr );
+    clear status 
+    status = str(cac1+56:cac2-12);
+    switch status
+        case 'Group0'
+            groupUse = 'A';
+        case 'Group1'
+            groupUse = 'B';
+        case 'Group2'
+            groupUse = 'C';
+        case 'Group3'
+            groupUse = 'D';
+    end
+        
+    groupChanges.group{e} = groupUse;
+    %%
+end
 %%
+
+
 if size(adaptiveLogTable,1) > 30
     at = adaptiveLogTable(1:20,:);
     idxzero = at.newstate==0;

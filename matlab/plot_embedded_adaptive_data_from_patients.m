@@ -1,4 +1,7 @@
 function plot_embedded_adaptive_data_from_patients()
+%% add assing time 
+addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data'))
+%% 
 close all; clear all; clc;
 % set destination folders
 dropboxFolder = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
@@ -110,7 +113,67 @@ for s = 1:length(uniqueSides)
                 
                 
                 adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts;
+                % save out to a cell array of tables for the day 
                 aTables{cntTbl} = adaptiveTable;
+
+                % get actigraphy 
+                
+                
+                
+                
+                
+                
+                
+                Accel_fileToLoad = fullfile(pn,'RawDataAccel.json');
+                if isfile(Accel_fileToLoad)
+                    jsonobj_Accel = deserializeJSON(Accel_fileToLoad);
+                    if ~isempty(jsonobj_Accel.AccelData)
+                        disp('Loading Accelerometer Data')
+                        [outtable_Accel, srates_Accel] = createAccelTable(jsonobj_Accel);
+                        disp('Creating derivedTimes for accelerometer:')
+                        AccelData = assignTime(outtable_Accel);
+                    else
+                        AccelData = [];
+                    end
+                else
+                    AccelData = [];
+                end
+                ts = datetime(AccelData.DerivedTime/1000,...
+                    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                AccelData.DerivedTimesFromAssignTimesHumanReadable = ts;
+                % computer RMS 
+                x = AccelData.XSamples - mean(AccelData.XSamples);
+                y = AccelData.XSamples - mean(AccelData.YSamples);
+                z = AccelData.XSamples - mean(AccelData.ZSamples);
+                %     plot(ts,x,'LineWidth',1,'Color',[0.8 0 0 0.6]);
+                %     plot(ts,y,'LineWidth',1,'Color',[0.0 0.8 0 0.6]);
+                %     plot(ts,z,'LineWidth',1,'Color',[0.0 0 0.8 0.6]);
+                % reshape actigraphy over 3 seconds window (64*3)
+                accAxes = {'x','y','z'};
+                yAvg = [];
+                for ac = 1:length(accAxes)
+                    yDat = eval(accAxes{ac});
+                    uxtimesPower = ts;
+                    reshapeFactor = 64*3;
+                    yDatReshape = yDat(1:end-(mod(size(yDat,1), reshapeFactor)));
+                    timeToReshape= uxtimesPower(1:end-(mod(size(yDat,1), reshapeFactor)));
+                    yDatToAverage  = reshape(yDatReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
+                    timeToAverage  = reshape(timeToReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
+                    
+                    yAvg(ac,:) = rms(yDatToAverage - mean(yDatToAverage),1)'; % average rms
+                    tUse = timeToAverage(reshapeFactor,:);
+                end
+                rmsAverage = log10(mean(yAvg));
+                accTable = table();
+                accTable.tuse = tUse;
+                % moving mean - 21 seconds
+                mvMean = movmean(rmsAverage,7);
+                accTable.rmsAverage = rmsAverage;
+                accTable.mvMean = mvMean;
+                
+                accTables{cntTbl} = accTable;
+                
+                
                 cntTbl = cntTbl + 1;
             end
         end
@@ -120,12 +183,14 @@ for s = 1:length(uniqueSides)
         
         hfig = figure;
         hfig.Color = 'w';
-        for i = 1:3
-            hsb(i) = subplot(3,1,i);
+        nrows = 5;
+        for i = 1:nrows
+            hsb(i) = subplot(nrows,1,i);
             hold(hsb(i),'on');
         end
         
         controlSignal = [];
+        controlSignal_LD1 = [];
         for a = 1:length(aTables)
             adaptiveTable = aTables{a};
             % only remove outliers in the threshold
@@ -141,7 +206,7 @@ for s = 1:length(uniqueSides)
             ld0_low = ld0_low(~outlierIdx);
             timesUseDetector = timesUseDetector(~outlierIdx);
             
-            idxplot = 1; % first plot is detecorr
+            idxplot = 1; % first plot is detecorr LD1 
             controlSignal = [controlSignal; ld0];
             hold(hsb(idxplot),'on');
             hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
@@ -168,10 +233,51 @@ for s = 1:length(uniqueSides)
             set(hsb(idxplot),'FontSize',16);
             
             
+            idxplot = 2; % second plot is detecorr LD2
+            
+            ld1 = adaptiveTable.LD1_output;
+            ld1_high = adaptiveTable.LD1_highThreshold;
+            ld1_low = adaptiveTable.LD1_lowThreshold;
+            
+            
+            outlierIdx = isoutlier(ld1_high);
+            ld1 = ld1(~outlierIdx);
+            ld1_high = ld1_high(~outlierIdx);
+            ld1_low = ld1_low(~outlierIdx);
+            timesUseDetector = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
+            timesUseDetector = timesUseDetector(~outlierIdx);
+
+            
+            controlSignal_LD1 = [controlSignal_LD1; ld1];
+            hold(hsb(idxplot),'on');
+            hplt = plot(hsb(idxplot),timesUseDetector,ld1,'LineWidth',2.5,'Color',[0 0 0.8 ]);
+            plot(hsb(idxplot),timesUseDetector,movmean( ld1,[1 1200]),'LineWidth',4,'Color',[0 0.8 0 0.2]);
+            
+            hplt = plot(hsb(idxplot),timesUseDetector,ld1_high,'LineWidth',2,'Color',[0.8 0 0 ]);
+            hplt.LineStyle = '-.';
+            hplt.Color = [hplt.Color 0.7];
+            hplt = plot(hsb(idxplot),timesUseDetector,ld1_low,'LineWidth',2,'Color',[0.8 0 0]);
+            hplt.LineStyle = '-.';
+            hplt.Color = [hplt.Color 0.7];
+            prctile_99 = prctile(ld0,99);
+            prctile_1  = prctile(ld0,1);
+            if prctile_1 > ld1_low(1)
+                prctile_1 = ld1_low(1) * 0.9;
+            end
+            if prctile_99 < ld1_high(1)
+                prctile_99 = ld1_high(1)*1.1;
+            end
+            ylim(hsb(idxplot),[prctile_1 prctile_99]);
+            ttlus = sprintf('Control signal');
+            title(hsb(idxplot),ttlus);
+            ylabel(hsb(idxplot),'Control signal (a.u.)');
+            set(hsb(idxplot),'FontSize',16);
+            
+            
             % state
             
             
-            idxplot = 2; % current
+            idxplot = 3; % current
             hold(hsb(idxplot),'on');
             timesUseCur = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
             stateUse = adaptiveTable.CurrentAdaptiveState;
@@ -191,7 +297,7 @@ for s = 1:length(uniqueSides)
             
             % current
             
-            idxplot = 3; % current
+            idxplot = 4; % current
             hold(hsb(idxplot),'on');
             timesUseCur = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
             cur = adaptiveTable.CurrentProgramAmplitudesInMilliamps;
@@ -224,7 +330,30 @@ for s = 1:length(uniqueSides)
             set( hsb(idxplot),'FontSize',16);
             
             
+            
+            % plot actigraphy 
+            idxplot = 5; % current
+            hold(hsb(idxplot),'on');
+            accTable = accTables{a};
+            tUse = accTable.tuse;
+            rmsAverage = accTable.rmsAverage;
+            mvMean = accTable.mvMean;
+            hplt = plot(tUse,rmsAverage);
+            hplt.LineWidth = 1;
+            hplt.Color = [0.7 0.7 0 0.1];
+            % moving mean - 21 seconds
+            mvMean = movmean(rmsAverage,7);
+            hplt = plot(tUse,mvMean);
+            hplt.LineWidth = 2;
+            hplt.Color = [0.5 0.5 0 0.5];
+            legend({'rms, 20 sec mov. avg.'});
+            title('acc');
+            ylabel('RMS of acc (log10(g))');
+            set(gca,'FontSize',16)
+
+            
         end
+        linkaxes(hsb,'x');
         % plot percentile lines
         idxplot = 1;
         hsb(idxplot)

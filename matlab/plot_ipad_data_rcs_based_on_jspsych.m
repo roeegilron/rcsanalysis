@@ -156,7 +156,7 @@ idsUse = strcmp(taskDataLocs.patient,'RCS07');
 % XXXX
 
 % XXXXX Plot the behavioural data 
-plotBehavioural = 1; 
+plotBehavioural = 0; 
 % xxxxx
 handBrainRelation = {'contralateral','ipsilateral'};
 ccc = 1;
