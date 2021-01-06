@@ -65,16 +65,16 @@ tblPatient.duration.Format = 'hh:mm:ss';
 idxLonger = tblPatient.duration > minutes(20);
 tblPatient = tblPatient(idxLonger,:);
 
-plotSpectral = 1;
+plotSpectral = 1; % with the blanks
 % loop on sides
 uniqueSides = unique(tblPatient.side);
 
-outSpectral = table();
-
+spectralPatient = struct();
 if plotSpectral == 1 % plot all power bands
     for s = 1:length(uniqueSides)
         idxSide = strcmp(tblPatient.side,uniqueSides{s});
         tblSide = tblPatient(idxSide,:);
+        outSpectral = table();
         if ~isempty(tblSide)
             %% plot
             hfig = figure;
@@ -161,43 +161,30 @@ if plotSpectral == 1 % plot all power bands
                         idxBlank = spectTimes >= timeGap(te,1) & spectTimes <= timeGap(te,2);
                         ppp(:,idxBlank) = NaN;
                     end
-                    % compute pwelch, but only on sections larger
-                    % than 10 seconds
-                    %                     idxGapStart = [1; idxGapStart];
-                    %                     idxGapEnd   = [idxGapEnd; length(timeUse)];
-                    %                     idxGaps = [idxGapStart , idxGapEnd];
-                    %                     if  strcmp(uniquePatients{p},'RCS03') % a lot of missing data
-                    %                         idxGapsKeep = timeUse(idxGaps(:,2) - idxGaps(:,1)) >= seconds(1.5);
-                    %                     else
-                    %                         idxGapsKeep = timeUse(idxGaps(:,2) - idxGaps(:,1)) >= seconds(10);
-                    %                     end
-                    %                     durations   = timeUse(idxGaps(:,2) - idxGaps(:,1));
-                    %                     idxGaps = idxGaps( idxGapsKeep,:);
-                    %                     durations   = timeUse(idxGaps(:,2) - idxGaps(:,1));
-                    %                     for ii = 1:size(idxGaps,1)
-                    %                         yGap = y(idxGaps(ii,1) : idxGaps(ii,2));
-                    %                         yGap = yGap(~isnan(yGap));
-                    %                         [fftOut(ii,:),freqs]   = pwelch(yGap.*1e3,sr,sr/2,2:1:(sr/2 - 50),sr,'psd');
-                    %
-                    %                     end
                     
-                    %                     surf(hsb(c,1),spectTimes, fff, 10*log10(ppp), 'EdgeColor', 'none');
-                    %                     freqIdxUse =
-                    %                     pcolor(hsb(c,1),spectTimes, fff, 10*log10(ppp), 'EdgeColor', 'none');
                     spectTimesPcolor = seconds(spectTimes - spectTimes(1));
-                    idxFreqUse = fff >= 2 & fff <= 100;
                     axes(hsb(c,1));
-                    pcolor(datenum(spectTimes), fff(idxFreqUse) ,log10(ppp(idxFreqUse,:)));
                     
+                    %%
+                    
+                    %%
+                    % use pcolor
+                    idxFreqUse = fff >= 2 & fff <= 100;
+                    pcolor(datenum(spectTimes), fff(idxFreqUse) ,log10(ppp(idxFreqUse,:)));
                     colormap('jet')
                     shading('interp');
+                    
+                    
+                    
+                    
+                    
                     axis(hsb(c,1),'tight');
                     fnchan = sprintf('chan%d',c);
                     title(hsb(c,1),timeDomainSettings.(fnchan){1});
                     outSpectral.spectTimes{ss} = spectTimes;
-                    outSpectral.fff{ss} = fff; 
+                    outSpectral.fff{ss} = fff;
                     chanfn = sprintf('chan%d',c);
-                    outSpectral.(chanfn){ss} = ppp; 
+                    outSpectral.(chanfn){ss} = ppp;
                     
                 end
                 
@@ -242,7 +229,7 @@ if plotSpectral == 1 % plot all power bands
                 ylabel('RMS of acc (log10(g))');
                 outSpectral.accTime{ss} = tUse';
                 outSpectral.rmsAverage{ss} = rmsAverage';
-                outSpectral.mvMean{s} = mvMean';
+                outSpectral.mvMean{ss} = mvMean';
                 
                 
                 %%
@@ -251,16 +238,16 @@ if plotSpectral == 1 % plot all power bands
                 timeToPrint.Format = 'dd-MMM-yyyy';
                 
                 ttlUse = {};
-                if cntTtl == 1 
-                ttlUse{cntTtl,1} = sprintf('%s %s', metaData.subjectID,timeToPrint); cntTtl = cntTtl + 1;
+                if cntTtl == 1
+                    ttlUse{cntTtl,1} = sprintf('%s %s', metaData.subjectID,timeToPrint); cntTtl = cntTtl + 1;
                 end
-                cntTtl = cntTtl + 1; 
-                % print stim settings 
+                cntTtl = cntTtl + 1;
+                % print stim settings
                 for st = 1:size(stimLogSettings,1)
                     groupUse = stimLogSettings.activeGroup{1};
                     gropufn = sprintf('Group%s',groupUse);
                     groupstruc = stimLogSettings.(gropufn);
-                    % assuming one program 
+                    % assuming one program
                     tsStim = datetime(stimLogSettings.HostUnixTime/1000,...
                         'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
                     tsStim.Format = 'HH:mm';
@@ -273,86 +260,193 @@ if plotSpectral == 1 % plot all power bands
             end
             sgtitle(ttlUse);
         end
+        for c = 1:5
+            axes(hsb(c,1));
+            datetick('x','HH:MM','keeplimits')
+        end
+        linkaxes(hsb,'x');
+        linkaxes(hsb(1:4),'y');
+        ylim(hsb(1,1),[0 100]);
+        % plot the list of events
+        % plot the stim settinsg
+        spectralPatient(s).outSpectral = outSpectral;
+        spectralPatient(s).tblSide = tblSide;
+        
     end
-    for c = 1:5
-        axes(hsb(c,1));
-        datetick('x','HH:MM','keeplimits')
-    end
-    linkaxes(hsb,'x');
-    linkaxes(hsb(1:4),'y');
-    ylim(hsb(1,1),[0 100]);
-    % plot the list of events 
-    % plot the stim settinsg 
     
 end
 
-%% plot psds  
-hfig = figure;
-hfig.Color = 'w'; 
-hpanel = panel();
-hpanel.pack(2,2); 
-cnt = 1;
-for i = 1:2
-    for j = 1:2
-        hsb(cnt,1) = hpanel(i,j).select();
-        cnt = cnt + 1;
+
+
+
+
+%% plot spectral without the blanks
+for sn = 1:size(spectralPatient)
+    hfig = figure; 
+    outSpectral = spectralPatient(sn).outSpectral;
+    tblSide = spectralPatient(sn).tblSide;
+    hfig = figure;
+    hfig.Color = 'w';
+    
+    hpanel = panel();
+    hpanel.pack(4,1);
+    cnt = 1;
+    for i = 1:4
+        hsb(i,1) = hpanel(i,1).select();
     end
+
+    for c = 1:4
+        pppOut = [];
+        axes(hsb(c,1));
+        timesOut = [];
+        for ss = 1:size(tblSide,1)
+            chanfn = sprintf('chan%d',c);
+            ppp = outSpectral.(chanfn){ss};
+            fff = outSpectral.fff{ss};
+            idxFreqUse = fff >= 2 & fff <= 100;
+            pppOut = [pppOut, ppp];
+            timesOut = [timesOut,outSpectral.spectTimes{ss}];
+        end
+        idxFreqUse = fff >= 2 & fff <= 100;
+        pppUse = pppOut(idxFreqUse,~isnan(pppOut(1,:)));
+        timesKeep = timesOut(~isnan(pppOut(1,:)));
+        IblurY2 = imgaussfilt(pppUse,[1 15]);
+        him = imagesc(log10(IblurY2));
+
+        set(gca,'YDir','normal')
+        yticks = [4 12 30 50 60 65 70 75 80 100];
+        hsb(c,1).YTick = yticks;
+        % get time labels for x tick 
+        colormap(hsb(c,1),'jet');
+        shading interp
+        grid('on')
+        hsb(c,1).GridAlpha = 0.8;
+        hsb(c,1).Layer = 'top';
+        axis tight
+        title(tblSide.(chanfn){ss});
+        ylabel('Frequency (Hz)');
+      
+    end
+    linkaxes(hsb,'x');
+end
+xlims = [1 length(timesKeep)];
+hsb(4,1).XTick = floor(linspace(xlims(1), xlims(2),20));
+xticks = hsb(4,1).XTick;
+xticklabels = {};
+for xx = 1:length(xticks)
+    timeUseXtick = timesKeep(xticks(xx));
+    timeUseXtick.Format = 'HH:mm';
+    xticklabels{xx,1} = sprintf('%s',timeUseXtick);
+end
+for i = 1:3
+    hsb(i,1).XTick = [];
+    ylabel('Frequency (Hz)');
+end
+hsb(4,1).XTickLabel = xticklabels;
+hpanel.fontsize = 16; 
+hpanel.margintop = 20; 
+hpanel.margin = 20; 
+hpanel.de.margin = 10;
+%%
+
+
+
+
+
+
+
+
+
+
+
+
+%% plot psds  for each side
+for sn = 1:length(spectralPatient)
+    
+    outSpectral = spectralPatient(sn).outSpectral;
+    tblSide = spectralPatient(sn).tblSide;
+    hfig = figure;
+    hfig.Color = 'w';
+    hpanel = panel();
+    hpanel.pack('v',{0.1 0.9});
+    
+    hpanel(2).pack(2,2);
+    cnt = 1;
+    for i = 1:2
+        for j = 1:2
+            hsb(cnt,1) = hpanel(2,i,j).select();
+            cnt = cnt + 1;
+        end
+    end
+    
+    for ss = 1:size(tblSide,1)
+        
+        for c = 1:4
+            axes(hsb(c,1));
+            chanfn = sprintf('chan%d',c);
+            y = outSpectral.(chanfn){ss}.*1e3;
+            fff = outSpectral.fff{ss};
+            idxFreqUse = fff >= 2 & fff <= 100;
+            times = outSpectral.spectTimes{ss};
+            curTime = times(1);
+            % min number of chunk is number of spectral "jumps"
+            % expected in 10 minutes divided by 2
+            % e.g. min of 5 min of data
+            minChunks = floor((10*60)/seconds(mode(diff(times)))/2);
+            avgPsd = [];
+            cntpsd = 1;
+            while curTime < (times(end)-minutes(10))
+                idxuse = curTime <= times & (curTime + minutes(10)) >= times;
+                if sum(idxuse) > minChunks
+                    avgPsd(cntpsd,:) = nanmean(y(idxFreqUse,idxuse),2);
+                    cntpsd = cntpsd + 1;
+                end
+                curTime = curTime + minutes(10);
+            end
+            freqsplot = fff(idxFreqUse);
+            plot(freqsplot,log10(avgPsd),...
+                'LineWidth',0.5,...
+                'Color',[0 0 0.8 0.5]);
+            title(tblSide.(chanfn){ss});
+            hsbuse = gca;
+            hsbuse.XTick = [4 12 30 50 60 65 70 75 80 100];
+            grid on;
+            ylabel(hsbuse,'Power (log_1_0\muV^2/Hz)');
+            xlabel(hsbuse,'Frequency (Hz');
+        end
+    end
+    hpanel.fontsize = 16;
+    hpanel.de.margin = 30;
+    sgtitle(sprintf('%s %s',tblSide.patient{ss}, tblSide.side{ss}));
+    hpanel.margin = 20;
+    hpanel.de.margin = 20;
 end
 
-for ss = 1:size(tblSide,1)
-    for c = 1:4
-        axes(hsb(c,1));
-        chanfn = sprintf('chan%d',c);
-        y = outSpectral.(chanfn){ss};
-        fff = outSpectral.fff{ss};
-        idxFreqUse = fff >= 2 & fff <= 100;
-        times = outSpectral.spectTimes{ss};
-        curTime = times(1); 
-        % min number of chunk is number of spectral "jumps" 
-        % expected in 10 minutes divided by 2 
-        % e.g. min of 5 min of data 
-        minChunks = floor((10*60)/seconds(mode(diff(times)))/2);
-        avgPsd = [];
-        cntpsd = 1; 
-        while curTime < (times(end)-minutes(10))
-            idxuse = curTime <= times & (curTime + minutes(10)) >= times;
-            if sum(idxuse) > minChunks
-                avgPsd(cntpsd,:) = nanmean(y(idxFreqUse,idxuse),2);
-                cntpsd = cntpsd + 1;
-            end
-            curTime = curTime + minutes(10);
-        end
-        freqsplot = fff(idxFreqUse);
-        plot(freqsplot,log10(avgPsd).*10,...
-            'LineWidth',0.5,...
-            'Color',[0 0 0.8 0.5]);
-        title(tblSide.(chanfn){ss});
-        hsbuse = gca;
-        hsbuse.XTick = [4 12 30 50 60 65 70 75 80 100];
-        grid on; 
-        ylabel(hsbuse,'Power (log_1_0\muV^2/Hz)');
-        xlabel(hsbuse,'Frequency (Hz');
-    end
-end
-hpanel.fontsize = 16;
-hpanel.de.margin = 30;
 %%
 x = 2;
 
 %% plot in the same figure all relevant frequenciees, rescaled and smoothed.
-params.chan1 = [21, 65, 71]; 
+params.chan1 = [21, 65, 71];
 params.chan3 = [10 26 65 70];
 params.chan4 = [10 21 65 70];
-params.bw = 1; 
-params.smooth = 10*60; 
+params.bw = 1;
+params.smooth = 10*60;
+
+
+% params.chan1 = [21, 65, 71];
+params.chan3 = [8 74];
+params.chan4 = [8 74];
+params.bw = 1;
+params.smooth = 10*60;
+
 
 hsb  = [];
 
 hfig = figure;
-hfig.Color = 'w'; 
+hfig.Color = 'w';
 hpanel = panel();
-nrows = length( fieldnames(params))-2; 
-hpanel.pack(nrows,1); 
+nrows = length( fieldnames(params))-2;
+hpanel.pack(nrows,1);
 for n = 1:nrows
     hsb(n,1) = hpanel(n,1).select();
     hold on;
@@ -362,7 +456,7 @@ fieldnamesraw = fieldnames(params);
 idxfielnams = cellfun(@(x) any(strfind(x,'chan')),fieldnamesraw);
 fieldnamesuse = fieldnamesraw(idxfielnams);
 
-for fn = 1:length(fieldnamesuse) % loop on channels 
+for fn = 1:length(fieldnamesuse) % loop on channels
     freqCenters = params.(fieldnamesuse{fn});
     lgnds = {};
     hplt = [];
