@@ -6,10 +6,10 @@ rootdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Da
 figdirout = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/figures/brushing_exp';
 resdir = '/Users/roee/Box/RC-S_Studies_Regulatory_and_Data/Patient In-Clinic Data/figures/brushing_exp/results';
 foundDir1 = findFilesBVQX(rootdir,'*shing',struct('dirs',1,'depth',2));
-foundDir2 = findFilesBVQX(rootdir,'*shing',struct('dirs',1,'depth',3));
-foundDirs = [foundDir2, foundDir1];
+foundDir2 = findFilesBVQX(rootdir,'*shing',struct('dirs',1,'depth',1));
+foundDirs = [foundDir1, foundDir2];
 %% if save results, and plot psds
-saveAndPlot = 1;
+saveAndPlot = 0;
 if saveAndPlot
     
     for f = 1:length(foundDirs)
@@ -34,8 +34,7 @@ if saveAndPlot
     
     brushingData = table();
     cntDat = 1;
-    % XXX
-    for p = 2:size(uniquePatients,1)
+    for p = 1:size(uniquePatients,1)
         idxPatient = strcmp(tableTask.patient,uniquePatients{p});
         hfig = figure;
         hfig.Color = 'w';
@@ -64,30 +63,53 @@ if saveAndPlot
                         % requried. create fake times and movify them
                         figure; 
                         idxkeep = ~isnan(combinedDataTable.Accel_XSamples);
+                        hold on;
                         plot(combinedDataTable.DerivedTimeHuman(idxkeep), combinedDataTable.Accel_XSamples(idxkeep));
+                        plot(combinedDataTable.DerivedTimeHuman(idxkeep), combinedDataTable.Accel_YSamples(idxkeep));
+                        plot(combinedDataTable.DerivedTimeHuman(idxkeep), combinedDataTable.Accel_ZSamples(idxkeep));
                         
-                        % add rest 
+                        
+                        % add rest start 
                         cntEvent = size(eventTable,1);
                         eventTable(cntEvent + 1,:) = eventTable(cntEvent,:);
                         cntEvent = cntEvent + 1; 
-                        eventTable.EventSubType{cntEvent} = 'rest Start';
-                        eventTable.UnixOffsetTime(cntEvent) = datetime('21-Dec-2020 21:44:22.329','TimeZone','America/Los_Angeles');                        
+                        eventTable.EventSubType{cntEvent} = 'Rest Start';
+                        eventTable.UnixOffsetTime(cntEvent) = datetime('21-Dec-2020 21:45:24.000','TimeZone','America/Los_Angeles');                        
+                        % add rest end 
+                        cntEvent = size(eventTable,1);
+                        eventTable(cntEvent + 1,:) = eventTable(cntEvent,:);
+                        cntEvent = cntEvent + 1; 
+                        eventTable.EventSubType{cntEvent} = 'Rest End';
+                        eventTable.UnixOffsetTime(cntEvent) = datetime('21-Dec-2020 21:46:15.000','TimeZone','America/Los_Angeles');                        
+                        % add brushing start 
+                        cntEvent = size(eventTable,1);
+                        eventTable(cntEvent + 1,:) = eventTable(cntEvent,:);
+                        cntEvent = cntEvent + 1; 
+                        eventTable.EventSubType{cntEvent} = 'Brushing Start';
+                        eventTable.UnixOffsetTime(cntEvent) = datetime('21-Dec-2020 21:49:59.000','TimeZone','America/Los_Angeles');                        
+                        % add brushing start 
+                        cntEvent = size(eventTable,1);
+                        eventTable(cntEvent + 1,:) = eventTable(cntEvent,:);
+                        cntEvent = cntEvent + 1; 
+                        eventTable.EventSubType{cntEvent} = 'Brushing End';
+                        eventTable.UnixOffsetTime(cntEvent) = datetime('21-Dec-2020 21:50:55.000','TimeZone','America/Los_Angeles');                        
+                        
                     end
-                    
-
                     
                     %% loop on channels, and select a data chunk with no intereference                                            for e = 1:length(eventFind) % loop on events
                     for e = 1:length(eventFind) % loop on events
                         idxEvents = cellfun(@(x) any(strfind(lower(x),eventFind{e})),eventTable.EventSubType);
                         eventsUsed = eventTable(idxEvents,:);
                         % XXX 
-                        startTime = eventsUsed.insTimes(1) + seconds(10);
-                        endTime = eventsUsed.insTimes(2)  - seconds(10);
-                        % time doain data
+                        startTime = eventsUsed.UnixOffsetTime(1) + seconds(3);
+                        endTime = eventsUsed.UnixOffsetTime(2)  - seconds(3);
+                        % time domain data
                         t = combinedDataTable.DerivedTimeHuman;
                         idxuse = t > startTime & t < endTime;
                         timeUse = t(idxuse);
                         timeUse = timeUse - timeUse(1);
+                        
+                        
                         % make figure 
                         addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
                         hfig = figure;
@@ -102,26 +124,57 @@ if saveAndPlot
                             sr = tblPatient.senseSettings{1}.samplingRate;
                             chunkUse = combinedDataTable.(chanfn)(idxuse);
                             y = chunkUse - nanmean(chunkUse);
+                            % first make sure that y does'nt have NaN's at
+                            % check start:
+                            timeUseRaw = timeUse;
+                            cntNan = 1;
+                            if isnan(y(1))
+                                while isnan(y(cntNan))
+                                    cntNan = cntNan + 1;
+                                end
+                            end
+                            y = y(cntNan:end); 
+                            cntStart = cntNan;
+                            timeUse = timeUse(cntNan:end);
+                            % check end:
+                            cntNan = length(y);
+                            if isnan(y(cntNan))
+                                while isnan(y(cntNan))
+                                    cntNan = cntNan - 1;
+                                end
+                            end
+                            cntEnd = cntNan;
+                            y = y(1:cntNan); 
+                            timeUse = timeUse(1:cntNan);
                             plot(hsb(c),timeUse,y)
                             % plot spectral 
                             hsb(c,2) = hpanel(c,2).select();
                             yFilled = fillmissing(y,'constant',0);
                             [sss,fff,ttt,ppp] = spectrogram(yFilled,kaiser(128,5),64,512,sr,'yaxis');
                             % put nan's in gaps for spectral 
+                            
+                            
                             idxGapStart = find(diff(isnan(y))==1) + 1; 
                             idxGapEnd = find(diff(isnan(y))==-1) + 1; 
                             for te = 1:size(idxGapStart,1)
                                 timeGap(te,1) = seconds(timeUse(idxGapStart(te))) - 0.5;
                                 timeGap(te,2) = seconds(timeUse(idxGapEnd(te))) + 0.5;
                                 idxBlank = ttt >= timeGap(te,1) & ttt <= timeGap(te,2);
-                                ppp(:,idxBlank) = NaN;
+                                if  strcmp(uniquePatients{p},'RCS03') % a lot of missing data 
+                                else
+                                    ppp(:,idxBlank) = NaN;
+                                end
                             end
                             % compute pwelch, but only on sections larger
                             % than 10 seconds 
                             idxGapStart = [1; idxGapStart];
                             idxGapEnd   = [idxGapEnd; length(timeUse)];
                             idxGaps = [idxGapStart , idxGapEnd];
-                            idxGapsKeep = timeUse(idxGaps(:,2) - idxGaps(:,1)) >= seconds(10);
+                            if  strcmp(uniquePatients{p},'RCS03') % a lot of missing data
+                                idxGapsKeep = timeUse(idxGaps(:,2) - idxGaps(:,1)) >= seconds(1.5);
+                            else
+                                idxGapsKeep = timeUse(idxGaps(:,2) - idxGaps(:,1)) >= seconds(10);
+                            end
                             durations   = timeUse(idxGaps(:,2) - idxGaps(:,1)); 
                             idxGaps = idxGaps( idxGapsKeep,:);
                             durations   = timeUse(idxGaps(:,2) - idxGaps(:,1)); 
@@ -154,9 +207,9 @@ if saveAndPlot
                             zAccChunk = combinedDataTable.Accel_ZSamples(idxuse);
                             zAcc = zAccChunk - nanmean(zAccChunk);
                             % resample actigraphy for saving:
-                            [xAccResample,xTimes] = resample(xAcc,seconds(timeUse),sr);
-                            [yAccResample,yTimes] = resample(yAcc,seconds(timeUse),sr);
-                            [zAccResample,zTimes] = resample(zAcc,seconds(timeUse),sr);
+                            [xAccResample,xTimes] = resample(xAcc,seconds(timeUseRaw),sr);
+                            [yAccResample,yTimes] = resample(yAcc,seconds(timeUseRaw),sr);
+                            [zAccResample,zTimes] = resample(zAcc,seconds(timeUseRaw),sr);
                             
                             
                             brushingData.patient{cntDat} = tblPatient.patient{n};
@@ -213,11 +266,13 @@ if saveAndPlot
                         dataSide = dataPlot(idxR,:);
                         if ~isempty(dataSide)
                             ttlUse{2,1} = sprintf('R: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+                            sideUse = 'R';
                         end
                         idxL = strcmp(dataPlot.side,'L');
                         dataSide = dataPlot(idxL,:);
                         if ~isempty(dataSide)
                             ttlUse{2,1} = sprintf('L: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+                            sideUse = 'L';
                         end
                         ttlUse{3,1} = sprintf('%s',eventFind{e});
                         sgtitle(ttlUse);
@@ -346,6 +401,87 @@ if saveAndPlot
     end
     save(fullfile(resdir,'brushing_data.mat'),'brushingData');
 end
+%% plot psd 
+plotpsd = 0;
+if plotpsd
+    load(fullfile(resdir,'brushing_data.mat'),'brushingData');
+    % plot spectral represetnations of the data
+    uniquePatients = unique(brushingData.patient);
+    uniqueSides    = unique(brushingData.side);
+    eventFind = {'rest','brushing'};
+    colorsUse = [0.8 0 0 0.7;
+        0 0.8 0 0.7];
+    %%
+    cntDat = 1;
+    
+    for p = 1:size(uniquePatients,1)
+        idxPatient = strcmp(brushingData.patient,uniquePatients{p});
+        dataPlot = brushingData(idxPatient,:);
+        uniqueSides = unique(dataPlot.side); 
+        addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+        hfig = figure;
+        hfig.Color = 'w';
+        hpanel = panel();
+        hpanel.pack('v',{0.1 0.9});
+        hpanel(2).pack(3,2);
+
+        for ss = 1:length(uniqueSides)
+            idxSide  = strcmp(dataPlot.side,uniqueSides{ss});
+            dataPlotSide = dataPlot(idxSide,:);
+            uniqueElectrodes = unique(dataPlotSide.chanSense);
+            uniqueConditions = unique(dataPlotSide.cond);
+            for ee = 1:length(uniqueElectrodes)
+                for cc = 1:length(uniqueConditions)
+                    idxPlot = strcmp(uniqueElectrodes{ee},dataPlotSide.chanSense) & ... 
+                        strcmp(uniqueConditions{cc},dataPlotSide.cond);
+                    dataToPlot = dataPlotSide(idxPlot,:);
+                    fftOut = mean(cell2mat(dataToPlot.fftOut),1);
+                    hsb = hpanel(2,ee,ss).select();
+                    hold(hsb,'on');
+                    hplt(cc) = plot(hsb,dataToPlot.freqs{1},fftOut);
+                    switch uniqueConditions{cc}
+                        case 'brushing'
+                            clrUse = [0 0.8 0 0.8];
+                        case 'rest'
+                            clrUse = [0.8 0.0 0 0.8];
+                    end
+                    hplt(cc).Color = clrUse;
+                    hplt(cc).LineWidth = 3;
+                    ttluse = sprintf('%s %s' ,dataToPlot.chanSense{1},dataToPlot.side{1});
+                    title(ttluse);
+                    xlim(hsb,[0 100])
+                    hsb.XTick = [4 12 30 50 60 65 70 75 80 100];
+                    set(gca,'FontSize',10);
+                    ylabel(hsb,'Power (log_1_0\muV^2/Hz)');
+                    xlabel(hsb,'Frequency (Hz');
+                end
+                legend(uniqueConditions);
+                grid on;
+            end
+
+            ttlUse{1,1} = dataPlot.patient{1};
+            idxR = strcmp(dataPlot.side,'R');
+            dataSide = dataPlot(idxR,:);
+            ttlUse{2,1} = sprintf('R: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+            idxL = strcmp(dataPlot.side,'L');
+            dataSide = dataPlot(idxL,:);
+            ttlUse{3,1} = sprintf('L: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+            sgtitle(ttlUse);
+            
+            
+        end
+        prfig.plotwidth           = 17;
+        prfig.plotheight          = 12;
+        prfig.figdir             = figdirout;
+        prfig.figname             = sprintf('%s_psds',dataPlot.patient{1});
+        prfig.figtype             = '-djpeg';
+        plot_hfig(hfig,prfig)
+        close(hfig);
+
+        %%
+    end
+end
+
 %%
 plotspect = 0;
 if plotspect
@@ -369,13 +505,16 @@ if plotspect
             hsub(b) = subplot(4,4,b);
             data = dataPlot.rawData{b};
             fs = dataPlot.sampleRate(b);
-            spectrogram(data,kaiser(256,5),220,512,fs,'yaxis')
+            ttt = dataPlot.t{b};
+            fff = dataPlot.f{b};
+            ppp = dataPlot.p{b};
+            surf(hsub(b),seconds(ttt), fff, 10*log10(ppp), 'EdgeColor', 'none');
             ylim(hsub(b),[2 100]);
+            colormap(hsub(b),jet)
+            shading(hsub(b),'interp');
+            view(hsub(b),2);
             axis(hsub(b),'tight');
             
-            colormap(jet)
-            colorbar off;
-            shading(gca,'interp')
             ttluse = sprintf('%s %s %s' ,dataPlot.chanSense{b},dataPlot.side{b},dataPlot.cond{b});
             title(ttluse);
             ylim([0 100])
@@ -575,7 +714,7 @@ close all;
 
 %% plot pac with actigraphy changes 
 %% pac
-plotPacActigraphy = 1;
+plotPacActigraphy = 0;
 addpath(genpath('/Users/roee/Documents/Code/PAC'));
 
 if plotPacActigraphy 
@@ -584,7 +723,7 @@ if plotPacActigraphy
     
     %% pac params
     pacparams.PhaseFreqVector      = 1:1:10;
-    pacparams.AmpFreqVector        = 10:5:180;
+    pacparams.AmpFreqVector        = 10:5:100;
     
     pacparams.PhaseFreq_BandWidth  = 2;
     pacparams.AmpFreq_BandWidth    = 10;
@@ -634,7 +773,8 @@ if plotPacActigraphy
             end
             dataPac = [];
             dataPac(:,1) = dataAccRaw;
-            dataPac(:,2) = data;
+            dataFilled = fillmissing(data,'constant',0);
+            dataPac(:,2) = dataFilled;
             results = computePAC(dataPac',fs,pacparams);
             results = results(4); 
             %% pac plot
@@ -669,6 +809,202 @@ if plotPacActigraphy
     end
 end
 close all;
-%% 
+%% %% plot allign to peak of actigraphy brushing  
+plot_alligned = 1;
+if plot_alligned
+    load(fullfile(resdir,'brushing_data.mat'),'brushingData');
+    % plot spectral represetnations of the data
+    uniquePatients = unique(brushingData.patient);
+    uniqueSides    = unique(brushingData.side);
+    eventFind = {'brushing'};
+    colorsUse = [0.8 0 0 0.7;
+        0 0.8 0 0.7];
+    %%
+    cntDat = 1;
+    
+    for p = 1:size(uniquePatients,1)
+        idxPatient = strcmp(brushingData.patient,uniquePatients{p});
+        dataPlot = brushingData(idxPatient,:);
+        uniqueSides = unique(dataPlot.side); 
+        addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
+        hfig = figure;
+        hfig.Color = 'w';
+        hpanel = panel();
+        hpanel.pack('v',{0.1 0.9});
+        hpanel(2).pack(3,2);
+
+        for ss = 1:length(uniqueSides)
+            idxSide  = strcmp(dataPlot.side,uniqueSides{ss});
+            dataPlotSide = dataPlot(idxSide,:);
+            uniqueElectrodes = unique(dataPlotSide.chanSense);
+            uniqueConditions = unique(dataPlotSide.cond);
+            %% plot the actigraphy input data
+            idxPlot = strcmp('brushing',dataPlotSide.cond);
+            dataToPlot = dataPlotSide(idxPlot,:);
+
+            accPlot = dataToPlot.yAccResamp{1};
+            timePlotAcc = dataToPlot.time{1};
+            idxkeep = ~isnan(accPlot);
+            accPlot = accPlot(idxkeep);
+            timePlotAcc = timePlotAcc(idxkeep);
+            sr = dataToPlot.sampleRate(1);
+            [b,a]        = butter(3,[4 6] / (sr/2),'bandpass'); % user 3rd order butter filter
+            y_filt       = filtfilt(b,a,accPlot); %filter all
+            threshold = prctile(y_filt,75);
+            [PKS,LOCS]=  findpeaks(y_filt,sr,'MinPeakProminence',1);
+            
+            % plot the actigarphy and the hight points
+            hfig2 = figure;
+            hfig2.Color = 'w'; 
+            subplot(2,1,1);
+            hold on;
+            plot(seconds(timePlotAcc),y_filt);
+            scatter(LOCS,PKS,100,'filled')
+            tSpect = [];
+            tSpect = dataToPlot.t{1};
+            spectData = dataToPlot.p{1};
+            title('actigraphy filtered 4-6Hz'); 
+            
+            subplot(2,1,2);
+            sr = 64;
+            accPlot = dataToPlot.yAcc{1};
+            idxkeep = ~isnan(accPlot);
+            yFilled = fillmissing(accPlot(idxkeep),'constant',0);
+            [s,f,t,p] = spectrogram(yFilled,64,32,[1:1:20],64);
+            pcolor(t, f ,log10(p));            
+            colormap('jet')
+            shading('interp');
+            title('actigraphy spectrogram'); 
+            
+            ttlUse{1,1} = sprintf('%s %s',dataToPlot.patient{1},dataToPlot.side{1});
+            ttlUse{2,1} = sprintf('%s %.2fHz %2.fmA',dataToPlot.chanStim{1},dataToPlot.stimRate(1),dataToPlot.stimCurrent(1));
+            sgtitle(ttlUse);
+            
+            
+            prfig.plotwidth           = 17;
+            prfig.plotheight          = 10;
+            prfig.figdir             = figdirout;
+            prfig.figname             = sprintf('%s_%s_actigraphy_brushing_raw',dataToPlot.patient{1},dataToPlot.side{1});
+            prfig.figtype             = '-djpeg';
+            plot_hfig(hfig2,prfig)
+            close(hfig2);
+
+            %%
+
+            for ee = 1:length(uniqueElectrodes)
+                for cc = 1%:length(uniqueConditions)
+                    idxPlot = strcmp(uniqueElectrodes{ee},dataPlotSide.chanSense) & ... 
+                        strcmp(uniqueConditions{cc},dataPlotSide.cond);
+                    dataToPlot = dataPlotSide(idxPlot,:);
+                    rawData = dataToPlot.rawData;
+                    timePlot = dataToPlot.timeAcc{1}; 
+                    %%
+                    accPlot = dataToPlot.yAccResamp{1};
+                    timePlotAcc = dataToPlot.time{1};
+                    idxkeep = ~isnan(accPlot);
+                    accPlot = accPlot(idxkeep);
+                    timePlotAcc = timePlotAcc(idxkeep);
+                    sr = dataToPlot.sampleRate(1);
+                    [b,a]        = butter(3,[4 6] / (sr/2),'bandpass'); % user 3rd order butter filter
+                    y_filt       = filtfilt(b,a,accPlot); %filter all
+                    threshold = prctile(y_filt,75);
+                    [PKS,LOCS]=  findpeaks(y_filt,sr,'MinPeakProminence',1);
+                    
+                    %% plot the actigarphy and the hight points 
+%                     figure;
+%                     hold on;
+%                     plot(seconds(timePlotAcc),y_filt);
+%                     scatter(LOCS,PKS,100,'filled')
+%                     tSpect = [];
+%                     tSpect = dataToPlot.t{1};
+%                     spectData = dataToPlot.p{1};
+%                     
+                    %%
+                    spectAvg = [];
+                    cnt = 1; 
+                    % idx move 
+                    idxMove = 250; 
+                    accData = [];
+                    yRaw = dataToPlot.rawData{1};
+                    sr = dataToPlot.sampleRate;
+                    for ll = 10:length(LOCS)-10
+                        [val,idx] =  min(abs(seconds(timePlotAcc)  - LOCS(ll)));
+%                         spectAvg(cnt,:,:) = spectData(:,idx-idxMove:idx+idxMove);
+                        y = yRaw(idx-idxMove:idx+idxMove);
+                        srate = sr;
+                        %[s,f,t,p] = spectrogram(y',kaiser(256,5),220,512,srate,'yaxis');
+                        if sum(isnan(y))>1
+                        else
+                            [s,f,t,p] = spectrogram(y,64,32,[40:5:80],500);
+                            spectAvg(cnt,:,:) =  p;
+                            accData(cnt,:) = y_filt(idx-idxMove:idx+idxMove);
+                            cnt = cnt + 1;
+                        end
+                    end
+                    spectAvgAvg = squeeze(nanmean(spectAvg,1));
+%                     figure;
+%                     plot(accData','LineWidth',0.2,'Color',[0 0 0.8 0.02])
+                    
+                    
+                    hsb = hpanel(2,ee,ss).select();
+                    axes(hsb);
+                    pcolor(t, f ,10*log10(spectAvgAvg));     
+                    hold on; 
+                    xlabel('Time (s)');
+                    ylabel('Frequency (Hz)');
+                    yyaxis(gca,'right')
+                    plot([(1:size(accData,2))./sr], mean(accData,1)','LineWidth',5,'Color',[0 0 0.8 0.2])
+                    ylabel('acc. y axes');
+                    colormap('jet');
+                    shading('interp');
+                    axis('tight');
+                    xlim([0.1 0.9]);
+                    ttluse = sprintf('%s %s %s' ,dataToPlot.chanSense{1},dataToPlot.side{1},dataToPlot.cond{1});
+                    title(ttluse);
+                    
+
+
+                    %% plot spctral repreatnation of actigraphy data 
+%                     figure; 
+%                     sr = 64; 
+%                     accPlot = dataToPlot.yAcc{1};
+%                     idxkeep = ~isnan(accPlot);
+%                     yFilled = fillmissing(accPlot(idxkeep),'constant',0);
+%                     [s,f,t,p] = spectrogram(yFilled,64,32,[1:1:20],64);
+%                     pcolor(t, f ,log10(p));     
+%                     yyaxis(gca,'right')
+%                     plot(seconds(timePlotAcc),y_filt);
+%                     
+%                     colormap('jet')
+%                     shading('interp');
+
+                   
+                end
+            end
+
+            
+            
+        end
+        ttlUse{1,1} = dataPlot.patient{1};
+        idxR = strcmp(dataPlot.side,'R');
+        dataSide = dataPlot(idxR,:);
+        ttlUse{2,1} = sprintf('R: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+        idxL = strcmp(dataPlot.side,'L');
+        dataSide = dataPlot(idxL,:);
+        ttlUse{3,1} = sprintf('L: %s %.2fHz %2.fmA',dataSide.chanStim{1},dataSide.stimRate(1),dataSide.stimCurrent(1));
+        sgtitle(ttlUse);
+        
+        
+        prfig.plotwidth           = 17;
+        prfig.plotheight          = 12;
+        prfig.figdir             = figdirout;
+        prfig.figname             = sprintf('%s_alligned_acc_data',dataPlot.patient{1});
+        prfig.figtype             = '-djpeg';
+        plot_hfig(hfig,prfig)
+        close(hfig);
+
+        %%
+    end
+end
 
 end
