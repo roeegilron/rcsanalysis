@@ -446,7 +446,7 @@ axis tight;
 
 
 %% write to csv
-% fnsave = fullfile(pn, [fn '.csv']);
-% writetable(adaptiveTable,fnsave);
+fnsave = fullfile(pn, [fn '.csv']);
+writetable(adaptiveTable,fnsave);
 %%
 end

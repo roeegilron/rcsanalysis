@@ -1,7 +1,7 @@
 function plot_embedded_adaptive_data_from_patients()
-%% add assing time 
+%% add assing time
 addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data'))
-%% 
+%%
 close all; clear all; clc;
 % set destination folders
 dropboxFolder = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
@@ -35,8 +35,8 @@ tblPatient = tblall(idxPatient,:);
 
 
 
-% choose year 
-[y,m,d] = ymd(tblPatient.timeStart); 
+% choose year
+[y,m,d] = ymd(tblPatient.timeStart);
 uniqueYears = unique(y);
 for yy = 1:length(uniqueYears)
     fprintf('[%0.2d] %d\n',yy,uniqueYears(yy))
@@ -44,18 +44,18 @@ end
 yearidx = input('year idx ?');
 tblPatient = tblPatient(y == uniqueYears(yearidx),:);
 
-% choose month  
-[y,m,d] = ymd(tblPatient.timeStart); 
-uniqueMonths = unique(m); 
+% choose month
+[y,m,d] = ymd(tblPatient.timeStart);
+uniqueMonths = unique(m);
 for mm = 1:length(uniqueMonths)
     fprintf('[%0.2d] %d\n',mm,uniqueMonths(mm))
 end
 monthidx = input('month idx?');
 tblPatient = tblPatient(m == uniqueMonths(monthidx),:);
 
-% choose day  
+% choose day
 [y,m,d] = ymd(tblPatient.timeStart);
-uniqueDays = unique(d); 
+uniqueDays = unique(d);
 for dd = 1:length(uniqueDays)
     fprintf('[%0.2d] %d\n',dd,uniqueDays(dd))
 end
@@ -65,17 +65,17 @@ tblPatient.duration.Format = 'hh:mm:ss';
 
 idxLonger = tblPatient.duration > minutes(20);
 tblPatient = tblPatient(idxLonger,:);
-% loop on sides 
+% loop on sides
 
 uniqueSides = unique(tblPatient.side);
 
-for s = 1:length(uniqueSides) 
+for s = 1:length(uniqueSides)
     idxSide = strcmp(tblPatient.side,uniqueSides{s});
-    tblSide = tblPatient(idxSide,:); 
+    tblSide = tblPatient(idxSide,:);
     if ~isempty(tblSide)
-        %% get data 
+        %% get data
         aTables = {};
-        cntTbl  = 1; 
+        cntTbl  = 1;
         for su = 1:size(tblSide,1)
             ds = tblSide(su,:);
             if ds.duration > minutes(20)
@@ -84,97 +84,99 @@ for s = 1:length(uniqueSides)
                 fnAdaptive = fullfile(pn,'AdaptiveLog.json');
                 % load adapative
                 res = readAdaptiveJson(fnAdaptive);
-                tim = res.timing;
-                fnf = fieldnames(tim);
-                for fff = 1:length(fnf)
-                    tim.(fnf{fff})= tim.(fnf{fff})';
-                end
-                
-                ada = res.adaptive;
-                fnf = fieldnames(ada);
-                for fff = 1:length(fnf)
-                    ada.(fnf{fff})= ada.(fnf{fff})';
-                end
-                
-                timingTable = struct2table(tim);
-                adaptiveTableTemp = struct2table(ada);
-                adaptiveTable = [timingTable, adaptiveTableTemp];
-                % get sampling rate
-                deviceSettingsTable = get_meta_data_from_device_settings_file(ds.deviceSettingsFn{1});
-                fftInterval = deviceSettingsTable.fftTable{1}.interval;
-                samplingRate = 1000/fftInterval;
-                samplingRateCol = repmat(samplingRate,size(adaptiveTable,1),1);
-                adaptiveTable.samplerate = samplingRateCol;
-                adaptiveTable.packetsizes  = repmat(1,size(adaptiveTable,1),1);
-                
-                adaptiveTable = assignTime(adaptiveTable);
-                ts = datetime(adaptiveTable.DerivedTime/1000,...
-                    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                
-                
-                adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts;
-                % save out to a cell array of tables for the day 
-                aTables{cntTbl} = adaptiveTable;
-
-                % get actigraphy 
-                
-                
-                
-                
-                
-                
-                
-                Accel_fileToLoad = fullfile(pn,'RawDataAccel.json');
-                if isfile(Accel_fileToLoad)
-                    jsonobj_Accel = deserializeJSON(Accel_fileToLoad);
-                    if ~isempty(jsonobj_Accel.AccelData)
-                        disp('Loading Accelerometer Data')
-                        [outtable_Accel, srates_Accel] = createAccelTable(jsonobj_Accel);
-                        disp('Creating derivedTimes for accelerometer:')
-                        AccelData = assignTime(outtable_Accel);
+                if ~isempty(res)
+                    tim = res.timing;
+                    fnf = fieldnames(tim);
+                    for fff = 1:length(fnf)
+                        tim.(fnf{fff})= tim.(fnf{fff})';
+                    end
+                    
+                    ada = res.adaptive;
+                    fnf = fieldnames(ada);
+                    for fff = 1:length(fnf)
+                        ada.(fnf{fff})= ada.(fnf{fff})';
+                    end
+                    
+                    timingTable = struct2table(tim);
+                    adaptiveTableTemp = struct2table(ada);
+                    adaptiveTable = [timingTable, adaptiveTableTemp];
+                    % get sampling rate
+                    deviceSettingsTable = get_meta_data_from_device_settings_file(ds.deviceSettingsFn{1});
+                    fftInterval = deviceSettingsTable.fftTable{1}.interval;
+                    samplingRate = 1000/fftInterval;
+                    samplingRateCol = repmat(samplingRate,size(adaptiveTable,1),1);
+                    adaptiveTable.samplerate = samplingRateCol;
+                    adaptiveTable.packetsizes  = repmat(1,size(adaptiveTable,1),1);
+                    
+                    adaptiveTable = assignTime(adaptiveTable);
+                    ts = datetime(adaptiveTable.DerivedTime/1000,...
+                        'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                    
+                    
+                    adaptiveTable.DerivedTimesFromAssignTimesHumanReadable = ts;
+                    % save out to a cell array of tables for the day
+                    aTables{cntTbl} = adaptiveTable;
+                    
+                    % get actigraphy
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    Accel_fileToLoad = fullfile(pn,'RawDataAccel.json');
+                    if isfile(Accel_fileToLoad)
+                        jsonobj_Accel = deserializeJSON(Accel_fileToLoad);
+                        if ~isempty(jsonobj_Accel.AccelData)
+                            disp('Loading Accelerometer Data')
+                            [outtable_Accel, srates_Accel] = createAccelTable(jsonobj_Accel);
+                            disp('Creating derivedTimes for accelerometer:')
+                            AccelData = assignTime(outtable_Accel);
+                        else
+                            AccelData = [];
+                        end
                     else
                         AccelData = [];
                     end
-                else
-                    AccelData = [];
-                end
-                ts = datetime(AccelData.DerivedTime/1000,...
-                    'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                AccelData.DerivedTimesFromAssignTimesHumanReadable = ts;
-                % computer RMS 
-                x = AccelData.XSamples - mean(AccelData.XSamples);
-                y = AccelData.XSamples - mean(AccelData.YSamples);
-                z = AccelData.XSamples - mean(AccelData.ZSamples);
-                %     plot(ts,x,'LineWidth',1,'Color',[0.8 0 0 0.6]);
-                %     plot(ts,y,'LineWidth',1,'Color',[0.0 0.8 0 0.6]);
-                %     plot(ts,z,'LineWidth',1,'Color',[0.0 0 0.8 0.6]);
-                % reshape actigraphy over 3 seconds window (64*3)
-                accAxes = {'x','y','z'};
-                yAvg = [];
-                for ac = 1:length(accAxes)
-                    yDat = eval(accAxes{ac});
-                    uxtimesPower = ts;
-                    reshapeFactor = 64*3;
-                    yDatReshape = yDat(1:end-(mod(size(yDat,1), reshapeFactor)));
-                    timeToReshape= uxtimesPower(1:end-(mod(size(yDat,1), reshapeFactor)));
-                    yDatToAverage  = reshape(yDatReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
-                    timeToAverage  = reshape(timeToReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
+                    ts = datetime(AccelData.DerivedTime/1000,...
+                        'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+                    AccelData.DerivedTimesFromAssignTimesHumanReadable = ts;
+                    % computer RMS
+                    x = AccelData.XSamples - mean(AccelData.XSamples);
+                    y = AccelData.XSamples - mean(AccelData.YSamples);
+                    z = AccelData.XSamples - mean(AccelData.ZSamples);
+                    %     plot(ts,x,'LineWidth',1,'Color',[0.8 0 0 0.6]);
+                    %     plot(ts,y,'LineWidth',1,'Color',[0.0 0.8 0 0.6]);
+                    %     plot(ts,z,'LineWidth',1,'Color',[0.0 0 0.8 0.6]);
+                    % reshape actigraphy over 3 seconds window (64*3)
+                    accAxes = {'x','y','z'};
+                    yAvg = [];
+                    for ac = 1:length(accAxes)
+                        yDat = eval(accAxes{ac});
+                        uxtimesPower = ts;
+                        reshapeFactor = 64*3;
+                        yDatReshape = yDat(1:end-(mod(size(yDat,1), reshapeFactor)));
+                        timeToReshape= uxtimesPower(1:end-(mod(size(yDat,1), reshapeFactor)));
+                        yDatToAverage  = reshape(yDatReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
+                        timeToAverage  = reshape(timeToReshape,reshapeFactor,size(yDatReshape,1)/reshapeFactor);
+                        
+                        yAvg(ac,:) = rms(yDatToAverage - mean(yDatToAverage),1)'; % average rms
+                        tUse = timeToAverage(reshapeFactor,:);
+                    end
+                    rmsAverage = log10(mean(yAvg));
+                    accTable = table();
+                    accTable.tuse = tUse;
+                    % moving mean - 21 seconds
+                    mvMean = movmean(rmsAverage,7);
+                    accTable.rmsAverage = rmsAverage;
+                    accTable.mvMean = mvMean;
                     
-                    yAvg(ac,:) = rms(yDatToAverage - mean(yDatToAverage),1)'; % average rms
-                    tUse = timeToAverage(reshapeFactor,:);
+                    accTables{cntTbl} = accTable;
+                    
+                    
+                    cntTbl = cntTbl + 1;
                 end
-                rmsAverage = log10(mean(yAvg));
-                accTable = table();
-                accTable.tuse = tUse;
-                % moving mean - 21 seconds
-                mvMean = movmean(rmsAverage,7);
-                accTable.rmsAverage = rmsAverage;
-                accTable.mvMean = mvMean;
-                
-                accTables{cntTbl} = accTable;
-                
-                
-                cntTbl = cntTbl + 1;
             end
         end
         
@@ -206,7 +208,7 @@ for s = 1:length(uniqueSides)
             ld0_low = ld0_low(~outlierIdx);
             timesUseDetector = timesUseDetector(~outlierIdx);
             
-            idxplot = 1; % first plot is detecorr LD1 
+            idxplot = 1; % first plot is detecorr LD1
             controlSignal = [controlSignal; ld0];
             hold(hsb(idxplot),'on');
             hplt = plot(hsb(idxplot),timesUseDetector,ld0,'LineWidth',2.5,'Color',[0 0 0.8 ]);
@@ -246,7 +248,7 @@ for s = 1:length(uniqueSides)
             ld1_low = ld1_low(~outlierIdx);
             timesUseDetector = adaptiveTable.DerivedTimesFromAssignTimesHumanReadable;
             timesUseDetector = timesUseDetector(~outlierIdx);
-
+            
             
             controlSignal_LD1 = [controlSignal_LD1; ld1];
             hold(hsb(idxplot),'on');
@@ -331,7 +333,7 @@ for s = 1:length(uniqueSides)
             
             
             
-            % plot actigraphy 
+            % plot actigraphy
             idxplot = 5; % current
             hold(hsb(idxplot),'on');
             accTable = accTables{a};
@@ -350,7 +352,7 @@ for s = 1:length(uniqueSides)
             title('acc');
             ylabel('RMS of acc (log10(g))');
             set(gca,'FontSize',16)
-
+            
             
         end
         linkaxes(hsb,'x');
