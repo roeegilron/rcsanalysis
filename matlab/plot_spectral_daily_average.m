@@ -25,7 +25,7 @@ tblall =  masterTableOut(idxkeep,:);
 
 unqpatients = unique(tblall.patient);
 plotwhat = input('choose patient and side (1) or plot all(2)? ');
-if plotwhat == 1 % choose patients and side
+if plotwhat == 1 % choose patients and sidet
     fprintf('choose patient by idx\n');
     unqpatients = unique(tblall.patient);
     for uu = 1:length(unqpatients)
@@ -120,7 +120,7 @@ if plotSpectral == 1 % plot all power bands
                         
                         
                         
-                        %                 [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(pn);
+                        %                  [outdatcomplete,outRec,eventTable,outdatcompleteAcc,powerOut,adaptiveTable] =  MAIN_load_rcs_data_from_folder(pn);
                         eventFn = fullfile(pn,'EventLog.json');
                         eventTable  = loadEventLog(eventFn);
                         idxRemove = cellfun(@(x) any(strfind(x,'Application Version')),eventTable.EventType) | ...
@@ -129,7 +129,7 @@ if plotSpectral == 1 % plot all power bands
                         eventTableUse = eventTable(~idxRemove,:);
                         [combinedDataTable, debugTable, timeDomainSettings,powerSettings,...
                             fftSettings,metaData,stimSettingsOut,stimMetaData,stimLogSettings,...
-                            DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = DEMO_ProcessRCS(pn,3);
+                            DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = DEMO_ProcessRCS(pn,2);
                         
                         
                         ts = datetime(combinedDataTable.DerivedTime/1000,...
@@ -350,7 +350,9 @@ if plotSpectral == 1 % plot all power bands
                         end
                         %
                         filenameSaveOrLoad = fullfile(pn,'combinedDataTable.mat');
-                        save(filenameSaveOrLoad,'outSpectral','-append','-v7.3');
+                        save(filenameSaveOrLoad,'outSpectral', 'debugTable', 'timeDomainSettings','powerSettings',...
+                            'fftSettings','metaData','stimSettingsOut','stimMetaData','stimLogSettings',...
+                            'DetectorSettings','AdaptiveStimSettings','AdaptiveRuns_StimSettings');
                         sgtitle(ttlUse);
                     end
                 end
@@ -375,9 +377,20 @@ if plotSpectral == 1 % plot all power bands
 end
 
 
-
-
-
+%% get all event data for the day 
+eventTabOut = table();
+for t = 1:size(tblSide,1)
+    [pn,~] = fileparts(tblSide.deviceSettingsFn{t});
+    eventFn = fullfile(pn,'EventLog.json');
+    eventTable  = loadEventLog(eventFn);
+    idxRemove = cellfun(@(x) any(strfind(x,'Application Version')),eventTable.EventType) | ...
+        cellfun(@(x) any(strfind(x,'BatteryLevel')),eventTable.EventType) | ...
+        cellfun(@(x) any(strfind(x,'LeadLocation')),eventTable.EventType);
+    eventTableUse = eventTable(~idxRemove,:);
+    eventTabOut = [eventTabOut; eventTableUse];
+    
+    
+end
 %% plot spectral without the blanks
 hsb = gobjects();
 for sn = 1:size(spectralPatient,2)
@@ -415,7 +428,15 @@ for sn = 1:size(spectralPatient,2)
         
         set(gca,'YDir','normal')
         yticks = [4 12 30 50 60 65 70 75 80 100];
-        hsb(c,1).YTick = yticks;
+        tickLabels = {};
+        ticksuse = [];
+        for yy = 1:length(yticks)
+            [~,idx] = min(abs(yticks(yy)-fff));
+            ticksuse(yy) = idx; 
+            tickLabels{yy} = sprintf('%d',yticks(yy));
+        end
+        hsb(c,1).YTick = ticksuse;
+        hsb(c,1).YTickLabel = tickLabels;
         % get time labels for x tick
         colormap(hsb(c,1),'jet');
         shading interp
@@ -478,8 +499,19 @@ end
 
 %% look at cross frequency correlations
 hsb = gobjects();
+hfig = figure; 
+hfig.Color = 'w';
+hpanel = panel();
+hpanel.pack('v',{0.1 0.9});
+hpanel(2).pack(1,2);
+hsb = gobjects();
+params.smooth = 1500;
 for sn = 1:size(spectralPatient,2)
     outSpectral = spectralPatient(sn).outSpectral;
+    tblSide = spectralPatient(sn).tblSide;
+    hsb = hpanel(2,1,sn).select();
+    axes(hsb); 
+
     pppOutAll  = [];
     for c = 1:4
         pppOut = [];
@@ -496,43 +528,81 @@ for sn = 1:size(spectralPatient,2)
         pppOutAll(:,:,c) = pppOut(idxFreqUse,~isnan(pppOut(1,:)));
     end
     
-    yMvMean = movmean(pppOutAll(:,:,1)',[50*60 0],'omitnan');
+    yMvMean = movmean(pppOutAll(:,:,1)',[params.smooth 0],'omitnan');
     yMvMean = yMvMean(600:end,:);
     colmin = min(yMvMean);
     colmax = max(yMvMean);
     rescaledMvMean1 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
-    rescaledMvMean1 = rescaledMvMean1 -0.5;
+    rescaledMvMean1 = rescaledMvMean1;
     
-    yMvMean = movmean(pppOutAll(:,:,4)',[10*60 0],'omitnan');
+    yMvMean = movmean(pppOutAll(:,:,4)',[params.smooth 0],'omitnan');
     yMvMean = yMvMean(600:end,:);
     colmin = min(yMvMean);
     colmax = max(yMvMean);
     rescaledMvMean4 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
-    rescaledMvMean4 = rescaledMvMean4 -0.5;
+    rescaledMvMean4 = rescaledMvMean4;
     
     
     [corrs pvals] = corr(rescaledMvMean1,rescaledMvMean4,'type','Spearman');
     % [corrs pvals] = corrcoef(rescaledMvMean1,rescaledMvMean4);
     % pvalsCorr = pvals < 0.05/length(pvals(:));
-    hfig = figure;
-    hfig.Color = 'w';
     corrsDiff = corrs;
-    corrsDiff(corrs<0.6 & corrs>0 ) = NaN;
-    corrsDiff(corrs<0 & corrs>-0.3 ) = NaN;
+%     corrsDiff(corrs<0.6 & corrs>0 ) = NaN;
+%     corrsDiff(corrs<0 & corrs>-0.3 ) = NaN;
     b = imagesc(corrsDiff');
     set(b,'AlphaData',~isnan(corrsDiff'))
     
     colorbar;
     set(gca,'YDir','normal')
+    hsb(sn,1) = hsb;
     xlabel('STN freqs');
     ylabel('MC freqs');
     ticks = [4 12 30 50 60 65 70 75 80 100];
-    set(gca,'XTick',ticks);
-    set(gca,'YTick',ticks);
-    grid on;
+    
+    set(gca,'YDir','normal')
+    yticks = [4 12 30 50 60 65 70 75 80 100];
+    tickLabels = {};
+    ticksuse = [];
+    for yy = 1:length(yticks)
+        [~,idx] = min(abs(yticks(yy)-fff));
+        ticksuse(yy) = idx;
+        tickLabels{yy} = sprintf('%d',yticks(yy));
+    end
+    hsb(sn,1).YTick = ticksuse;
+    hsb(sn,1).YTickLabel = tickLabels;
+    hsb(sn,1).XTick = ticksuse;
+    hsb(sn,1).XTickLabel = tickLabels;
+
+    
     title('STN - MC amp correlations');
     set(gca,'FontSize',16);
+    
+            % create ttl
+    ttlUse = {};
+    cntTtl = 1;
+    dateUse  = tblSide.timeStart(1);
+    dateUse.Format = 'dd-MMM-uuuu';
+    % patient and date:
+    ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
+    cntTtl = cntTtl + 1;
+    % stim settings
+    for t = 1:size(tblSide,1)
+        dateUse  = tblSide.timeStart(t);
+        dateUse.Format = 'HH:mm';
+        ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
+        cntTtl = cntTtl + 1;
+    end
+    title(ttlUse);
+    axis tight; 
+    colorbar off; 
+    grid(hsb(sn,1),'on');
+    hsb(sn,1).GridAlpha = 0.8;
+    hsb(sn,1).Layer = 'top';
+
+    
+
 end
+hpanel.fontsize = 16;
 %%
 
 
@@ -631,24 +701,85 @@ x = 2;
 
 %% plot in the same figure all relevant frequenciees, rescaled and smoothed.
 for sn = 1:length(spectralPatient)
+    tblSide = spectralPatient(sn).tblSide;
+    patAndSide = sprintf('%s%s',spectralPatient(sn).tblSide.patient{1},...
+                 spectralPatient(sn).tblSide.side{1});
+    params = struct();
+    switch patAndSide
+        case 'RCS08R'
+            params.chan1 = [6, 23, 77];
+            params.chan3 = [4 23 77];
+            params.chan4 = [11 22 65 77];
+            
+
+        case 'RCS08L'
+            params.chan3 = [11 23 64 ];
+            params.chan4 = [11 22 32 65 ];
+            
+        case 'RCS07R'
+            if ~tblSide.stimulation_on(1)
+                % before stim - oct 10 2019
+                params.chan1 = [5 16 32 54 79 ]; % has some issue of interfernce
+                params.chan2 = [5 16 41 79]; % has some issue of interfernce
+                params.chan3 = [10 82];
+                params.chan4 = [10 17 83];
+                params.smooth = 1600;
+                params.bw = 3;
+            end
+            
+            if tblSide.stimulation_on(1)
+                % after stim - jun 25 2020
+                params.chan2 = [8 13 33 65];
+                params.chan3 = [14 8 17 65];
+                params.chan4 = [5 21 65];
+                params.smooth = 1600;
+                params.bw = 3;
+
+            end
+        case 'RCS07L'
+            if ~tblSide.stimulation_on(1)
+                % before stim - oct 10 2019
+                params.chan1 = [18]; % has some issue of interfernce
+                params.chan2 = [5 8 19 82]; % has some issue of interfernce
+                params.chan3 = [9 20 79 ];
+                params.chan4 = [8 22 79];
+                params.smooth = 1600;
+                params.bw = 3;
+            end
+            if tblSide.stimulation_on(1)
+                % after stim - jun 25 2020
+                params.chan2 = [7 16 65]; % has some issue of interfernce
+                params.chan3 = [10 19 65 ];
+                params.chan4 = [5 65];
+                params.smooth = 1600;
+                params.bw = 3;
+            end
+        case 'RCS06R'
+            if ~tblSide.stimulation_on(1)
+                % before stim - oct 13 2019
+                params.chan1 = [18]; % has some issue of interfernce
+                params.chan2 = [5 8 19 82]; % has some issue of interfernce
+                params.chan3 = [9 20 79 ];
+                params.chan4 = [8 22 79];
+                params.smooth = 1600;
+                params.bw = 3;
+            end
+            if tblSide.stimulation_on(1)
+                % after stim - jun 25 2020
+                params.chan2 = [7 16 65]; % has some issue of interfernce
+                params.chan3 = [10 19 65 ];
+                params.chan4 = [5 65];
+                params.smooth = 1600;
+                params.bw = 3;
+            end
+        case 'RCS06L'
+            
+        otherwise
+            
+    end
     
     outSpectral = spectralPatient(sn).outSpectral;
-    
-    params.chan1 = [21, 65, 71];
-    params.chan3 = [10 26 65 70];
-    params.chan4 = [10 21 65 70];
-    
-        params.chan1 = [14 25];
-    params.chan3 = [11 23 65 ];
-    params.chan4 = [11 23 65 ];
-
-    
-    
-    % params.chan1 = [21, 65, 71];
-    % params.chan3 = [8 74];
-    % params.chan4 = [8 74];
-    params.bw = 1;
-    params.smooth = 10*60;
+    tblSide = spectralPatient(sn).tblSide;
     
     
     hsb  = [];
@@ -674,6 +805,26 @@ for sn = 1:length(spectralPatient)
         hplt = [];
         for fq = 1:length(freqCenters)
             lgnds{fq} = sprintf('%dHz',freqCenters(fq));
+            % two loops - the first is to find the min/max for rescaling,
+            % the second to plot 
+            yMvOut = [];
+            for ss = 1:size(outSpectral,1)
+                chanfn = sprintf('chan%d',c);
+                y = outSpectral.(fieldnamesuse{fn}){ss};
+                fff = outSpectral.fff{ss};
+                bwupper = freqCenters(fq) + params.bw;
+                bwlower = freqCenters(fq) - params.bw;
+                idxFreqUse = fff >= bwlower & fff <= bwupper;
+                yFreqMean = mean(y(idxFreqUse,:),1);
+                yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
+                times = outSpectral.spectTimes{ss};
+                yMvOut = [yMvOut,yMvMean];
+                
+            end
+            minVal = min(yMvMean);
+            maxVal = max(yMvMean);
+%             rescale(yMvMean,'InputMin',colmin,'InputMax',colmax)
+            
             for ss = 1:size(outSpectral,1)
                 
                 axes(hsb(fn,1));
@@ -684,8 +835,8 @@ for sn = 1:length(spectralPatient)
                 bwlower = freqCenters(fq) - params.bw;
                 idxFreqUse = fff >= bwlower & fff <= bwupper;
                 yFreqMean = mean(y(idxFreqUse,:),1);
-                yMvMean = movmean(yFreqMean,[10*60 0],'omitnan');
-                rescaledMvMean = rescale(yMvMean,0 ,1);
+                yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
+                rescaledMvMean = rescale(yMvMean,'InputMin',minVal,'InputMax',maxVal);
                 times = outSpectral.spectTimes{ss};
                 
                 if bwupper <= 12
@@ -703,7 +854,7 @@ for sn = 1:length(spectralPatient)
             end
         end
         legend(hplt,lgnds);
-        title(tblSide.(fieldnamesuse{fn}){ss});
+        title(tblSide.(fieldnamesuse{fn}){1});
     end
     linkaxes(hsb,'x');
     
@@ -723,7 +874,7 @@ for sn = 1:length(spectralPatient)
         cntTtl = cntTtl + 1;
     end
     sgtitle(ttlUse);
-
+    fprintf('moving window is: %s\n',times(params.smooth)-times(1));
     
     hpanel.fontsize = 16;
     hpanel.margin = 12;
