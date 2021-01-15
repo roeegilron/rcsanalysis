@@ -352,7 +352,7 @@ if plotSpectral == 1 % plot all power bands
                         filenameSaveOrLoad = fullfile(pn,'combinedDataTable.mat');
                         save(filenameSaveOrLoad,'outSpectral', 'debugTable', 'timeDomainSettings','powerSettings',...
                             'fftSettings','metaData','stimSettingsOut','stimMetaData','stimLogSettings',...
-                            'DetectorSettings','AdaptiveStimSettings','AdaptiveRuns_StimSettings');
+                            'DetectorSettings','AdaptiveStimSettings','AdaptiveRuns_StimSettings','eventTableUse');
                         sgtitle(ttlUse);
                     end
                 end
