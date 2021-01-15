@@ -114,7 +114,7 @@ patientDates.date(cnt)    = datetime('12 Jan 2021','Format','dd MMM yyyy');
 cnt = cnt + 1;
 
 %% run through this list and move all the files from dropbox to destination
-for p = 1:size(patientDates,1)
+for p = 7:size(patientDates,1)  % XXX 
     patientFind = patientDates.patient{p};
     [yFind,mFind,dFind] = ymd(patientDates.date(p));
     [yAll,mAll,dAll   ] = ymd(tblall.timeStart);
@@ -181,7 +181,11 @@ for p = 1:size(patientDates,1)
                 % check if any additioanl directories inside
                 
                 jsons = findFilesBVQX(sessionsfound{f},'*.json',struct('depth',3));
-                texts = findFilesBVQX(sessionsfound{f},'*.txt',struct('depth',3));
+                try
+                    texts = findFilesBVQX(sessionsfound{f},'*.txt',struct('depth',3));
+                catch 
+                    texts = {};
+                end
                 additional_files_found =[jsons; texts];
                 % if json are not empty - its likely in a subfolder
                 % these are adaptive or text files
