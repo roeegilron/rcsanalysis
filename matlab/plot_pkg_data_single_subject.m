@@ -23,7 +23,7 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 globalparams.use10minute = 1; % use 10 minute averaging 
 globalparams.useIndStates = 1; % use a different state mix for each patient to define on/off 
 globalparams.normalizeData = 0; % normalize the data along psd rows (normalize each row) 
-globalparams.fontsize = 12;
+globalparams.fontsize = 20;
 globalparams.anglexticks = 45;
 
 %% data selection PKG data 
@@ -36,10 +36,10 @@ pkgDB
 %% 
 
 %% print the database and choose the date range you want to look for overlapping RC+S data within: 
-STATE_USE_ON = 'on';    % 1) on (no DK)
-STATE_USE_OFF = 'off_tremorScore_50percentile';   % 1) off_tremor (off & tremor)
+% some of the possibleStates (as an example) = {'off','off tremor','on','on dyskinesia','on dyskinesia',' {'dyskinesia severe tremor'} ','tremor','sleep','tremor sleep','uncategorized'};
+statesUse = {'dyskinesia severe','on'}; % for now choosing 2 states to assess difference
 PAT_GROUP = 'GP';
-patient = 'RCS10'; 
+patient = 'RCS09'; 
 patient_psd_file_suffix = 'stim_off'; % the specific psd file trying to plot 
 % will have a suffix chosenn during the creation process 
 
@@ -80,12 +80,12 @@ for ss = 1:length(ff)
     rcsSideUse{ss} = patraw(end);
 end
 
-figdircreate = fullfile(boxsyncdatadir,'figures',[STATE_USE_ON,'_',STATE_USE_OFF]);
-resultsdircreate = fullfile(boxsyncdatadir,'results',[STATE_USE_ON,'_',STATE_USE_OFF]);
+figdircreate = fullfile(boxsyncdatadir,'figures',['states_',statesUse{1},'_',statesUse{2}]);
+resultsdircreate = fullfile(boxsyncdatadir,'results',['states_',statesUse{1},'_',statesUse{2}]);
 mkdir(figdircreate{1});
 mkdir(resultsdircreate{1});
 figdirout = figdircreate{1};
-resdirout = resultsdircreate{1};
+resdirout = resultsdircreate{1}; 
 %%
 
 %% decide what to plot 
@@ -295,29 +295,16 @@ for dd = 1:length(psdrFiles)
             case 'RCS03'
                 onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
                 dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
-                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                        cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
                 offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);
+                
                 allstates = rawstates;
                 allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
                 allstates(offtremoridx) = {'off tremor'};
+                allstates(dkidx) = {'dyskinesia'};
                 allstates(sleeidx) = {'sleep'};
-                statesUse = {'off tremor','on'};
-                % duration time per labeled state
-                statesDuration = table();
-                statesDuration.total = sum(allDataPkgRcsAcc.duration);
-                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
-                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
-                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
-                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
-                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
-                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
-                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
-                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;                
-                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
-                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
-                statesDuration
                 
             case 'RCS05'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
@@ -331,6 +318,7 @@ for dd = 1:length(psdrFiles)
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
                 statesUse = {'off','on','sleep'};
+                
             case 'RCS06'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
                         cellfun(@(x) any(strfind(x,'on')),rawstates);
@@ -343,17 +331,15 @@ for dd = 1:length(psdrFiles)
                 tremorScores = allDataPkgRcsAcc.tremorScore; 
                 idxwithScores = allDataPkgRcsAcc.tremorScore~=0; 
                 tremscore = prctile(tremorScores(idxwithScores),50);
-                idxOver50     = allDataPkgRcsAcc.tremorScore >= tremscore;
-                
+                idxOver50     = allDataPkgRcsAcc.tremorScore >= tremscore;                
                 offidx = idxwithScores & idxOver50;
 
-                
                 allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-%                 statesUse = {'off','on','sleep'};
+                
             case 'RCS07'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
                         cellfun(@(x) any(strfind(x,'on')),rawstates);
@@ -377,70 +363,56 @@ for dd = 1:length(psdrFiles)
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-%                 statesUse = {'off','on','sleep'};
 
             case 'RCS09'
-                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
-                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
+                            cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                             cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
                 offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);              
+                
                 allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offtremoridx) = {'off tremor'};
+                allstates(dkidx) = {'dyskinesia severe'};
                 allstates(sleeidx) = {'sleep'};
-                statesUse = {'off tremor','on'};
-                % duration time per labeled state
-                statesDuration = table();
-                statesDuration.total = sum(allDataPkgRcsAcc.duration);
-                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
-                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
-                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
-                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
-                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
-                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
-                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
-                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;     
-                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
-                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
-                statesDuration
-                
                 
             case 'RCS10'
                 onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
                 dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
-                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                            cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
                 offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);                              
-%                 tremorScores = allDataPkgRcsAcc.tremorScore; 
-%                 idxwithScores = allDataPkgRcsAcc.tremorScore~=0; 
-%                 tremscore = prctile(tremorScores(idxwithScores),50);
-%                 idxOver50     = allDataPkgRcsAcc.tremorScore >= tremscore;
-%                 
-%                 offtremoridx = idxwithScores & idxOver50;
+
                 allstates = rawstates;
                 allstates(onidx) = {'on'};
-                allstates(offtremoridx) = {'off tremor Score 50%'};
+                allstates(offidx) = {'off'};
+                allstates(offtremoridx) = {'off tremor'};
                 allstates(sleeidx) = {'sleep'};
-                statesUse = {'off tremor','on'};
-                % duration time per labeled state
-                statesDuration = table();
-                statesDuration.total = sum(allDataPkgRcsAcc.duration);
-                statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
-                statesDuration.off_perc = 100*statesDuration.off/statesDuration.total;
-                statesDuration.off_tremor = sum(allDataPkgRcsAcc.duration(offtremoridx));
-                statesDuration.off_tremor_perc = 100*statesDuration.off_tremor/statesDuration.total;
-                statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
-                statesDuration.onperc = 100*statesDuration.on/statesDuration.total;
-                statesDuration.dk = sum(allDataPkgRcsAcc.duration(dkidx));
-                statesDuration.dkperc = 100*statesDuration.dk/statesDuration.total;     
-                statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
-                statesDuration.sleepperc = 100*statesDuration.sleep/statesDuration.total;
-                statesDuration
                 
         end
+        % duration time per labeled state
+        statesDuration = table();
+        statesDuration.total = sum(allDataPkgRcsAcc.duration);
+        statesDuration.off = sum(allDataPkgRcsAcc.duration(offidx));
+        statesDuration.('off %') = round(100*statesDuration.off/statesDuration.total);
+        if ~isempty(offtremoridx)
+            statesDuration.('off tremor') = sum(allDataPkgRcsAcc.duration(offtremoridx));
+            statesDuration.('off tremor %') = round(100*statesDuration.('off tremor')/statesDuration.total);
+        end
+        statesDuration.on = sum(allDataPkgRcsAcc.duration(onidx));
+        statesDuration.('on %') = round(100*statesDuration.on/statesDuration.total);
+        if ~isempty(dkidx)
+            statesDuration.('dyskinesia severe')= sum(allDataPkgRcsAcc.duration(dkidx));
+            statesDuration.('dyskinesia severe %') = round(100*statesDuration.('dyskinesia severe')/statesDuration.total);     
+        end
+        statesDuration.sleep = sum(allDataPkgRcsAcc.duration(sleeidx));
+        statesDuration.('sleep %') = round(100*statesDuration.sleep/statesDuration.total);
+        statesDuration
+
+                
     else
         allstates = allDataPkgRcsAcc.states; 
         statesUse = {'off','on','dyskinesia severe'};
@@ -505,7 +477,7 @@ for dd = 1:length(psdrFiles)
                     hForLeg(s) = hsbH.mainLine;
 
                 end
-               % save the median data 
+               % save the median data  % ### juan: this is not being used?
                
                rawdat = allDataPkgRcsAcc.(fn);
                rawdat = rawdat(labels,:);
@@ -536,15 +508,23 @@ for dd = 1:length(psdrFiles)
         fnmsv = fullfile(resdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','pkg_states',patientUse{dd},pkgSideUse{dd})); 
         save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','psdResults','titles');
         clear prfig;
-        sgtitle(sprintf('state estimate %s %s PKG %s', patientUse{dd},rcsSideUse{dd}, pkgSideUse{dd}),'FontSize',20);
+        
+        grandTitle = {};
+        grandTitle{1,1} = sprintf('state estimate %s %s PKG %s', patientUse{dd},rcsSideUse{dd}, pkgSideUse{dd});        
+        grandTitle{1,2} = sprintf('%s state, %s (hh:mm:ss) hours of data (%s%% time)',statesUse{1}, statesDuration.(statesUse{1}),num2str(round(statesDuration.([statesUse{1},' %']))));
+        grandTitle{1,3} = sprintf('%s state, %s (hh:mm:ss) hours of data (%s%% time)',statesUse{2}, statesDuration.(statesUse{2}),num2str(round(statesDuration.([statesUse{2},' %']))));
+        sgtitle(grandTitle,'FontSize',globalparams.fontsize);
+        
         prfig.plotwidth           = 15;
         prfig.plotheight          = 10;
         prfig.figdir             = figdirout;
         prfig.figname             = sprintf('%s %s pkg _10_min_avgerage','pkg_states',patientUse{dd},pkgSideUse{dd});
         plot_hfig(hfig,prfig)   
-%         close(hfig);
-%         fnmsave = fullfile(resultsdir,'patientPSD_at_home.mat');
-%         save(fnmsave,'patientPSD_at_home');
+        close(hfig);
+        
+        writetable(statesDuration,fullfile(figdirout,[patientUse{dd},'_pkg',pkgSideUse{dd},'_','allStatesDurations.txt']))
+        fnmsave = fullfile(resdirout,'patientPSD_at_home.mat');
+        save(fnmsave,'patientPSD_at_home');
 
     end
     %%
@@ -558,74 +538,115 @@ for dd = 1:length(psdrFiles)
             case 'RCS02'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                         cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
+                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
+%                 statesUse = {'off','on','sleep'};
 
+            case 'RCS03'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);
+                
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(offtremoridx) = {'off tremor'};
+                allstates(dkidx) = {'dyskinesia'};
+                allstates(sleeidx) = {'sleep'};
+                
             case 'RCS05'
-                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
+                        cellfun(@(x) any(strfind(x,'on')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                                allstates(onidx) = {'on'};
+                allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-
+                statesUse = {'off','on','sleep'};
+                
             case 'RCS06'
-                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'on')),rawstates);
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
+                        cellfun(@(x) any(strfind(x,'on')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                                allstates(onidx) = {'on'};
-                allstates(onidx) = {'on'};
-                allstates(offidx) = {'off'};
-                allstates(sleeidx) = {'sleep'};
-                statesUse = {'off','on'};
+                % change jan 6 2020 
+                onidx = ...
+                    cellfun(@(x) any(strcmp(x,'on')),rawstates);
+                tremorScores = allDataPkgRcsAcc.tremorScore; 
+                idxwithScores = allDataPkgRcsAcc.tremorScore~=0; 
+                tremscore = prctile(tremorScores(idxwithScores),50);
+                idxOver50     = allDataPkgRcsAcc.tremorScore >= tremscore;                
+                offidx = idxwithScores & idxOver50;
 
-            case 'RCS07'
-                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'on')),rawstates);
-                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
-                    cellfun(@(x) any(strfind(x,'tremor')),rawstates);
-                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                                allstates(onidx) = {'on'};
+                allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
                 
+            case 'RCS07'
+                onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ... 
+                        cellfun(@(x) any(strfind(x,'on')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                         cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(sleeidx) = {'sleep'};
+                statesUse = {'off','on'};
+                statesUse = {'off','on','sleep'};
             case 'RCS08'
                 onidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'on')),rawstates);
                 offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
                     cellfun(@(x) any(strfind(x,'tremor')),rawstates);
                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-                allstates(onidx) = {'on'};
+                allstates = rawstates;
                 allstates(onidx) = {'on'};
                 allstates(offidx) = {'off'};
                 allstates(sleeidx) = {'sleep'};
                 statesUse = {'off','on'};
-                                
-%             case 'RCS10'
-%                 onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
-%                 ontremoridx = cellfun(@(x) x == 0,num2cell(allDataPkgRcsAcc.tremor));
-%                 
-%                 offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);
-%                 sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
-%                 allstates = rawstates;
-%                 allstates(onidx) = {'on'};
-%                 allstates(offtremoridx) = {'off tremor'};
-%                 allstates(sleeidx) = {'sleep'};
-%                 statesUse = {'off tremor','on'};
-%                 statesUse = {'off','on','sleep'};
+
+            case 'RCS09'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates) | ...
+                            cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia severe')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates) | ...
+                            cellfun(@(x) any(strfind(x,'tremor')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);              
+                
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offtremoridx) = {'off tremor'};
+                allstates(dkidx) = {'dyskinesia severe'};
+                allstates(sleeidx) = {'sleep'};
+                
+            case 'RCS10'
+                onidx = cellfun(@(x) any(strfind(x,'on')),rawstates);
+                dkidx = cellfun(@(x) any(strfind(x,'dyskinesia')),rawstates);
+                offidx = cellfun(@(x) any(strfind(x,'off')),rawstates);
+                sleeidx = cellfun(@(x) any(strfind(x,'sleep')),rawstates);
+                offtremoridx = cellfun(@(x) any(strfind(x,'off tremor')),rawstates);                              
+
+                allstates = rawstates;
+                allstates(onidx) = {'on'};
+                allstates(offidx) = {'off'};
+                allstates(offtremoridx) = {'off tremor'};
+                allstates(sleeidx) = {'sleep'};
 
         end
         xticks = [4 8 12 20 30 60 80];
@@ -658,7 +679,6 @@ for dd = 1:length(psdrFiles)
                 labelsCheck(:,s) = labels;
                 
                 dat = [];
-                globalparams.normalizeData = 0;
                 if globalparams.normalizeData
                     dat = allDataPkgRcsAccCoh.(fn);
                     idxnormalize = cohResults.ff > 3 &  cohResults.ff <90;
@@ -733,7 +753,13 @@ for dd = 1:length(psdrFiles)
         fnmsv = fullfile(resdirout,sprintf('%s %s pkg %s _10_min_avgerage.mat','coh_states',patientUse{dd},pkgSideUse{dd})); 
         save(fnmsv,'allDataPkgRcsAcc','allstates','statesUse','patientCOH_at_home');
         clear prfig;
-        sgtitle(sprintf('state estimate %s PKG %s coherence', patientUse{dd},pkgSideUse{dd}),'FontSize',20);
+        
+        grandTitle = {};
+        grandTitle{1,1} = sprintf('state estimate %s %s PKG %s', patientUse{dd},rcsSideUse{dd}, pkgSideUse{dd});        
+        grandTitle{1,2} = sprintf('%s state, %s (hh:mm:ss) hours of data (%s%% time)',statesUse{1}, statesDuration.(statesUse{1}),num2str(round(statesDuration.([statesUse{1},' %']))));
+        grandTitle{1,3} = sprintf('%s state, %s (hh:mm:ss) hours of data (%s%% time)',statesUse{2}, statesDuration.(statesUse{2}),num2str(round(statesDuration.([statesUse{2},' %']))));
+        sgtitle(grandTitle,'FontSize',globalparams.fontsize);
+        
         prfig.plotwidth           = 15;
         prfig.plotheight          = 10;
         prfig.figdir             = figdirout;

@@ -22,7 +22,7 @@ addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')));
 %% load the data
 globalparams.use10minute = 1; % use 10 minute averaging
 globalparams.useIndStates = 1; % use a different state mix for each patient to define on/off
-globalparams.normalizeData = 1; % normalize the data along psd rows (normalize each row)
+globalparams.normalizeData = 0; % normalize the data along psd rows (normalize each row)
 PAT_GROUP = 'GP';
 
 %% data selection PKG data
@@ -82,11 +82,10 @@ DROPBOX_PATH = dropboxdir;
 addpath(genpath(fullfile(pwd,'toolboxes','shadedErrorBar')))
 
 %% loop on both sides seperatly:
-sides = {'L','R'}; % these sides refer to RC+S 
-sidesPKG = {'R','L'}; % you need contralateral sides for PKG 
+sides = {'R'}; % these sides refer to RC+S 
+sidesPKG = {'L'}; % you need contralateral sides for PKG 
 
 for sd = 1:length(sides)
-    
     
     %% create one big pkg table 
     % get subject and side 
@@ -193,7 +192,7 @@ for sd = 1:length(sides)
         if ~isempty(matchingPsdTimes)
             duration = matchingPsdTimes(end) - matchingPsdTimes(1);
              maxGap   = max(diff(matchingPsdTimes));
-            if duration >= minutes(5) & maxGap < minutes(1)
+            if duration >= minutes(2) & maxGap < minutes(2) % ### juan: this makes RCS03R (before programming) not working (minutes(5) & maxGap < minutes(1))
                 allDataPkgRcsAcc.key0fftOut(cnt,:) = mean(psdResults.key0fftOut(:,idxMatch)',1);
                 allDataPkgRcsAcc.key1fftOut(cnt,:) = mean(psdResults.key1fftOut(:,idxMatch)',1);
                 allDataPkgRcsAcc.key2fftOut(cnt,:) = mean(psdResults.key2fftOut(:,idxMatch)',1);
@@ -277,7 +276,7 @@ for sd = 1:length(sides)
         if ~isempty(matchingPsdTimes)
             duration = matchingPsdTimes(end) - matchingPsdTimes(1);
             maxGap   = max(diff(matchingPsdTimes));
-            if duration >= minutes(5) & maxGap < minutes(3)
+            if duration >= minutes(2) & maxGap < minutes(2)
                 for ccc = 1:4
                     allDataPkgRcsAcc.(fieldnamesloop{ccc})(i,:)= ...
                         mean(cohResults.(fieldnamesloop{ccc})(:,idxMatch)',1);
