@@ -1,7 +1,8 @@
 function plot_spectral_daily_average()
 addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 close all; clc; clear all;
-addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
+addpath('/Users/juananso/Dropbox (Personal)/Work/Git_Repo/UCSF-rcs-data-analysis/code')
+% addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
 
 
 % set destination folders
@@ -103,9 +104,13 @@ if plotSpectral == 1 % plot all power bands
             for ss = 1:size(tblSide,1)
                 if tblSide.timeDomainStreaming(ss)
                     [pn,fn] = fileparts(tblSide.deviceSettingsFn{ss});
+                     % remove depency to user
+                    idxdatapn = pn(findstr(pn,'Starr Lab Dropbox'):end);
+                    pn = findFilesBVQX('/Users',idxdatapn,struct('dirs',1,'depth',2));
+                    pn = pn{1}; % convert struct to string array
                     % if the data exists - just load it
                     filenameSaveOrLoad = fullfile(pn,'combinedDataTable.mat');
-                    isFile = exist(filenameSaveOrLoad,'file');
+                    isFile = exist('filenameSaveOrLoad','file');
                     skipPlot = 0; % skip all the load if you have done computation already
                     if isFile
                         fileMeta = memmapfile(filenameSaveOrLoad);
@@ -381,6 +386,9 @@ end
 eventTabOut = table();
 for t = 1:size(tblSide,1)
     [pn,~] = fileparts(tblSide.deviceSettingsFn{t});
+    % remove depency to user
+    idxdatapn = pn(findstr(pn,'Starr Lab Dropbox'):end);
+    pn = findFilesBVQX('/Users',idxdatapn,struct('dirs',1,'depth',2));
     eventFn = fullfile(pn,'EventLog.json');
     eventTable  = loadEventLog(eventFn);
     idxRemove = cellfun(@(x) any(strfind(x,'Application Version')),eventTable.EventType) | ...
