@@ -10,8 +10,8 @@ ds = get_meta_data_from_device_settings_file(fndeviceSettings);
 patientAndSide = sprintf('%s %s',ds.patient{1},ds.side{1});
 %% get detector settings 
 addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
-[DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = createAdaptiveSettingsfromDeviceSettings(pnn);
-[TD_SettingsOut, Power_SettingsOut, FFT_SettingsOut, metaData] = createDeviceSettingsTable(pnn);
+% [DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = createAdaptiveSettingsfromDeviceSettings(pnn);
+% [TD_SettingsOut, Power_SettingsOut, FFT_SettingsOut, metaData] = createDeviceSettingsTable(pnn);
 strOut = getAdaptiveHumanReadaleSettings(ds,1);
 %%
 allDays =  day(adaptiveLogTable.time);
