@@ -1,18 +1,27 @@
 function plot_adaptive_log(fn)
 %%
 %%
+warning('off','MATLAB:table:RowsAddedExistingVars');
 [adaptiveLogTable, rechargeSessions, groupChanges] = read_adaptive_txt_log(fn);
+
 % find device settings so you can also print some meta data on the log 
 [pn,~] = fileparts(fn); 
 [pnn,~] = fileparts(pn); 
 fndeviceSettings = fullfile(pnn,'DeviceSettings.json'); 
+
+%% need access to the database / downloaded file for these settings 
 ds = get_meta_data_from_device_settings_file(fndeviceSettings);
 patientAndSide = sprintf('%s %s',ds.patient{1},ds.side{1});
+
 %% get detector settings 
-addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
+% addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
+% strOut = getAdaptiveHumanReadaleSettings(ds,1);
+
+
+% old left overt - need to fix 
 % [DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = createAdaptiveSettingsfromDeviceSettings(pnn);
 % [TD_SettingsOut, Power_SettingsOut, FFT_SettingsOut, metaData] = createDeviceSettingsTable(pnn);
-strOut = getAdaptiveHumanReadaleSettings(ds,1);
+
 %%
 allDays =  day(adaptiveLogTable.time);
 allMonths = month(adaptiveLogTable.time);
@@ -31,18 +40,22 @@ for m = 1:length(unqMonth)
                 if i == 1 
                    dayPlot.time(dCnt) = aPlot.time(i); 
                    dayPlot.current(dCnt) = aPlot.prog0(i); 
+                   dayPlot.state(dCnt)   = aPlot.newstate(i);
                    dCnt = dCnt + 1; 
                 else 
                    if aPlot.prog0(i) == aPlot.prog0(i-1)
                        dayPlot.time(dCnt) = aPlot.time(i);
                        dayPlot.current(dCnt) = aPlot.prog0(i);
+                       dayPlot.state(dCnt)   = aPlot.newstate(i);
                        dCnt = dCnt + 1;
                    else
                        dayPlot.time(dCnt) = aPlot.time(i);
                        dayPlot.current(dCnt) = aPlot.prog0(i-1);
+                       dayPlot.state(dCnt)   = aPlot.newstate(i-1);
                        dCnt = dCnt + 1;
                        dayPlot.time(dCnt) = aPlot.time(i);
                        dayPlot.current(dCnt) = aPlot.prog0(i);
+                       dayPlot.state(dCnt)   = aPlot.newstate(i);
                        dCnt = dCnt + 1;
                    end
                 end
@@ -134,6 +147,13 @@ for m = 1:length(unqMonth)
             prfig.figtype             = '-djpeg';
             plot_hfig(hfig,prfig)
             close(hfig);
+            
+            % save data 
+            [yyy,mmm,ddd] = ymd(dayPlot.time(1));
+            [hhh,MIN,~] = hms(dayPlot.time(1));
+            fnsave = sprintf('%d_%0.2d_%0.2d__%0.2d-%0.2d.mat',yyy,mmm,ddd,hhh,MIN);
+            fnTosave = fullfile(pn,fnsave);
+            save(fnTosave,'aPlot');
 
             %%
         end
@@ -142,6 +162,4 @@ end
 return 
 
 %%
-figure;
-plot(adaptiveLogTable.time, adaptiveLogTable.prog0)
 end

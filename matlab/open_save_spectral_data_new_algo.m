@@ -5,6 +5,8 @@ function open_save_spectral_data_new_algo()
 fnuse = '/Volumes/RCS_DATA/chronic_stim_vs_off/database/database_from_device_settings.mat';
 load(fnuse);
 addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
+addpath(genpath('/Users/roee/Starr_Lab_Folder/Data_Analysis/Analysis-rcs-data/code'));
+
 
 %%
 
