@@ -1,9 +1,9 @@
 function plot_spectral_daily_average()
-addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
-close all; clc; clear all;
+
+restoredefaultpath
+addpath(fullfile(pwd,'toolboxes','panel-2.14'));
 addpath('/Users/juananso/Dropbox (Personal)/Work/Git_Repo/UCSF-rcs-data-analysis/code')
 % addpath(genpath('/Users/roee/Documents/Code/Analysis-rcs-data/code'));
-
 
 % set destination folders
 dropboxFolder = findFilesBVQX('/Users','Starr Lab Dropbox',struct('dirs',1,'depth',2));
@@ -36,7 +36,6 @@ if plotwhat == 1 % choose patients and sidet
 end
 idxPatient = strcmp(tblall.patient , unqpatients(patidx));
 tblPatient = tblall(idxPatient,:);
-
 
 
 % choose year
@@ -74,7 +73,7 @@ if sum(idxLonger) == 0
     fprintf('no session is longer than 20 minutes, exiting for this day\n');
     return;
 end
-tblPatient = tblPatient(idxLonger,:);
+tblPatient = tblPatient(idxLonger,:)
 
 
 
@@ -83,6 +82,7 @@ plotSpectral = 1; % with the blanks
 uniqueSides = unique(tblPatient.side);
 
 spectralPatient = struct();
+
 if plotSpectral == 1 % plot all power bands
     for s = 1:length(uniqueSides)
         idxSide = strcmp(tblPatient.side,uniqueSides{s});
@@ -205,7 +205,7 @@ if plotSpectral == 1 % plot all power bands
                             %%
                             % use pcolor
                             idxFreqUse = fff >= 2 & fff <= 100;
-                            %                     pcolor(datenum(spectTimes), fff(idxFreqUse) ,log10(ppp(idxFreqUse,:)));
+                            pcolor(datenum(spectTimes), fff(idxFreqUse) ,log10(ppp(idxFreqUse,:)));
                             colormap('jet')
                             shading('interp');
                             
@@ -334,25 +334,25 @@ if plotSpectral == 1 % plot all power bands
                         timeToPrint.Format = 'dd-MMM-yyyy';
                         
                         ttlUse = {};
-                        if cntTtl == 1
-                            ttlUse{cntTtl,1} = sprintf('%s %s', metaData.subjectID,timeToPrint); cntTtl = cntTtl + 1;
-                        end
+%                         if cntTtl == 1
+%                             ttlUse{cntTtl,1} = sprintf('%s %s', metaData.subjectID,timeToPrint); cntTtl = cntTtl + 1;
+%                         end
                         cntTtl = cntTtl + 1;
                         % print stim settings
-                        for st = 1:size(stimLogSettings,1)
-                            groupUse = stimLogSettings.activeGroup{st};
-                            gropufn = sprintf('Group%s',groupUse);
-                            groupstruc = stimLogSettings.(gropufn)(st);
-                            % assuming one program
-                            tsStim = datetime(stimLogSettings.HostUnixTime(st)/1000,...
-                                'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
-                            tsStim.Format = 'HH:mm';
-                            stimSettingStr = sprintf('%s: %.2fmA %.2fHz',tsStim,...
-                                groupstruc.ampInMilliamps(1),groupstruc.RateInHz(1));
-                            
-                            ttlUse{cntTtl,1} = stimSettingStr;
-                            cntTtl = cntTtl + 1;
-                        end
+%                         for st = 1:size(stimLogSettings,1)
+%                             groupUse = stimLogSettings.activeGroup{st};
+%                             gropufn = sprintf('Group%s',groupUse);
+%                             groupstruc = stimLogSettings.(gropufn)(st);
+%                             % assuming one program
+%                             tsStim = datetime(stimLogSettings.HostUnixTime(st)/1000,...
+%                                 'ConvertFrom','posixTime','TimeZone','America/Los_Angeles','Format','dd-MMM-yyyy HH:mm:ss.SSS');
+%                             tsStim.Format = 'HH:mm';
+%                             stimSettingStr = sprintf('%s: %.2fmA %.2fHz',tsStim,...
+%                                 groupstruc.ampInMilliamps(1),groupstruc.RateInHz(1));
+%                             
+%                             ttlUse{cntTtl,1} = stimSettingStr;
+%                             cntTtl = cntTtl + 1;
+%                         end
                         %
                         filenameSaveOrLoad = fullfile(pn,'combinedDataTable.mat');
                         save(filenameSaveOrLoad,'outSpectral', 'debugTable', 'timeDomainSettings','powerSettings',...
@@ -390,7 +390,7 @@ for t = 1:size(tblSide,1)
     idxdatapn = pn(findstr(pn,'Starr Lab Dropbox'):end);
     pn = findFilesBVQX('/Users',idxdatapn,struct('dirs',1,'depth',2));
     eventFn = fullfile(pn,'EventLog.json');
-    eventTable  = loadEventLog(eventFn);
+    eventTable  = loadEventLog(eventFn{1});
     idxRemove = cellfun(@(x) any(strfind(x,'Application Version')),eventTable.EventType) | ...
         cellfun(@(x) any(strfind(x,'BatteryLevel')),eventTable.EventType) | ...
         cellfun(@(x) any(strfind(x,'LeadLocation')),eventTable.EventType);
@@ -505,115 +505,113 @@ end
 
 
 
-%% look at cross frequency correlations
-hsb = gobjects();
-hfig = figure; 
-hfig.Color = 'w';
-hpanel = panel();
-hpanel.pack('v',{0.1 0.9});
-hpanel(2).pack(1,2);
-hsb = gobjects();
-params.smooth = 1500;
-for sn = 1:size(spectralPatient,2)
-    outSpectral = spectralPatient(sn).outSpectral;
-    tblSide = spectralPatient(sn).tblSide;
-    hsb = hpanel(2,1,sn).select();
-    axes(hsb); 
-
-    pppOutAll  = [];
-    for c = 1:4
-        pppOut = [];
-        timesOut = [];
-        for ss = 1:size(outSpectral,1)
-            chanfn = sprintf('chan%d',c);
-            ppp = outSpectral.(chanfn){ss};
-            fff = outSpectral.fff{ss};
-            idxFreqUse = fff >= 2 & fff <= 100;
-            pppOut = [pppOut, ppp];
-            timesOut = [timesOut,outSpectral.spectTimes{ss}];
-        end
-        idxFreqUse = fff >= 2 & fff <= 100;
-        pppOutAll(:,:,c) = pppOut(idxFreqUse,~isnan(pppOut(1,:)));
-    end
-    
-    yMvMean = movmean(pppOutAll(:,:,1)',[params.smooth 0],'omitnan');
-    yMvMean = yMvMean(600:end,:);
-    colmin = min(yMvMean);
-    colmax = max(yMvMean);
-    rescaledMvMean1 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
-    rescaledMvMean1 = rescaledMvMean1;
-    
-    yMvMean = movmean(pppOutAll(:,:,4)',[params.smooth 0],'omitnan');
-    yMvMean = yMvMean(600:end,:);
-    colmin = min(yMvMean);
-    colmax = max(yMvMean);
-    rescaledMvMean4 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
-    rescaledMvMean4 = rescaledMvMean4;
-    
-    
-    [corrs pvals] = corr(rescaledMvMean1,rescaledMvMean4,'type','Spearman');
-    % [corrs pvals] = corrcoef(rescaledMvMean1,rescaledMvMean4);
-    % pvalsCorr = pvals < 0.05/length(pvals(:));
-    corrsDiff = corrs;
-%     corrsDiff(corrs<0.6 & corrs>0 ) = NaN;
-%     corrsDiff(corrs<0 & corrs>-0.3 ) = NaN;
-    b = imagesc(corrsDiff');
-    set(b,'AlphaData',~isnan(corrsDiff'))
-    
-    colorbar;
-    set(gca,'YDir','normal')
-    hsb(sn,1) = hsb;
-    xlabel('STN freqs');
-    ylabel('MC freqs');
-    ticks = [4 12 30 50 60 65 70 75 80 100];
-    
-    set(gca,'YDir','normal')
-    yticks = [4 12 30 50 60 65 70 75 80 100];
-    tickLabels = {};
-    ticksuse = [];
-    for yy = 1:length(yticks)
-        [~,idx] = min(abs(yticks(yy)-fff));
-        ticksuse(yy) = idx;
-        tickLabels{yy} = sprintf('%d',yticks(yy));
-    end
-    hsb(sn,1).YTick = ticksuse;
-    hsb(sn,1).YTickLabel = tickLabels;
-    hsb(sn,1).XTick = ticksuse;
-    hsb(sn,1).XTickLabel = tickLabels;
-
-    
-    title('STN - MC amp correlations');
-    set(gca,'FontSize',16);
-    
-            % create ttl
-    ttlUse = {};
-    cntTtl = 1;
-    dateUse  = tblSide.timeStart(1);
-    dateUse.Format = 'dd-MMM-uuuu';
-    % patient and date:
-    ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
-    cntTtl = cntTtl + 1;
-    % stim settings
-    for t = 1:size(tblSide,1)
-        dateUse  = tblSide.timeStart(t);
-        dateUse.Format = 'HH:mm';
-        ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
-        cntTtl = cntTtl + 1;
-    end
-    title(ttlUse);
-    axis tight; 
-    colorbar off; 
-    grid(hsb(sn,1),'on');
-    hsb(sn,1).GridAlpha = 0.8;
-    hsb(sn,1).Layer = 'top';
-
-    
-
-end
-hpanel.fontsize = 16;
-%%
-
-
+% %% look at cross frequency correlations
+% hsb = gobjects();
+% hfig = figure; 
+% hfig.Color = 'w';
+% hpanel = panel();
+% hpanel.pack('v',{0.1 0.9});
+% hpanel(2).pack(1,2);
+% hsb = gobjects();
+% params.smooth = 1500;
+% for sn = 1:size(spectralPatient,2)
+%     outSpectral = spectralPatient(sn).outSpectral;
+%     tblSide = spectralPatient(sn).tblSide;
+%     hsb = hpanel(2,1,sn).select();
+%     axes(hsb); 
+% 
+%     pppOutAll  = [];
+%     for c = 1:4
+%         pppOut = [];
+%         timesOut = [];
+%         for ss = 1:size(outSpectral,1)
+%             chanfn = sprintf('chan%d',c);
+%             ppp = outSpectral.(chanfn){ss};
+%             fff = outSpectral.fff{ss};
+%             idxFreqUse = fff >= 2 & fff <= 100;
+%             pppOut = [pppOut, ppp];
+%             timesOut = [timesOut,outSpectral.spectTimes{ss}];
+%         end
+%         idxFreqUse = fff >= 2 & fff <= 100;
+%         pppOutAll(:,:,c) = pppOut(idxFreqUse,~isnan(pppOut(1,:)));
+%     end
+%     
+%     yMvMean = movmean(pppOutAll(:,:,1)',[params.smooth 0],'omitnan');
+%     yMvMean = yMvMean(600:end,:);
+%     colmin = min(yMvMean);
+%     colmax = max(yMvMean);
+%     rescaledMvMean1 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
+%     rescaledMvMean1 = rescaledMvMean1;
+%     
+%     yMvMean = movmean(pppOutAll(:,:,4)',[params.smooth 0],'omitnan');
+%     yMvMean = yMvMean(600:end,:);
+%     colmin = min(yMvMean);
+%     colmax = max(yMvMean);
+%     rescaledMvMean4 = rescale(yMvMean,'InputMin',colmin,'InputMax',colmax);
+%     rescaledMvMean4 = rescaledMvMean4;
+%     
+%     
+%     [corrs pvals] = corr(rescaledMvMean1,rescaledMvMean4,'type','Spearman');
+%     % [corrs pvals] = corrcoef(rescaledMvMean1,rescaledMvMean4);
+%     % pvalsCorr = pvals < 0.05/length(pvals(:));
+%     corrsDiff = corrs;
+% %     corrsDiff(corrs<0.6 & corrs>0 ) = NaN;
+% %     corrsDiff(corrs<0 & corrs>-0.3 ) = NaN;
+%     b = imagesc(corrsDiff');
+%     set(b,'AlphaData',~isnan(corrsDiff'))
+%     
+%     colorbar;
+%     set(gca,'YDir','normal')
+%     hsb(sn,1) = hsb;
+%     xlabel('STN freqs');
+%     ylabel('MC freqs');
+%     ticks = [4 12 30 50 60 65 70 75 80 100];
+%     
+%     set(gca,'YDir','normal')
+%     yticks = [4 12 30 50 60 65 70 75 80 100];
+%     tickLabels = {};
+%     ticksuse = [];
+%     for yy = 1:length(yticks)
+%         [~,idx] = min(abs(yticks(yy)-fff));
+%         ticksuse(yy) = idx;
+%         tickLabels{yy} = sprintf('%d',yticks(yy));
+%     end
+%     hsb(sn,1).YTick = ticksuse;
+%     hsb(sn,1).YTickLabel = tickLabels;
+%     hsb(sn,1).XTick = ticksuse;
+%     hsb(sn,1).XTickLabel = tickLabels;
+% 
+%     
+%     title('STN - MC amp correlations');
+%     set(gca,'FontSize',16);
+%     
+%             % create ttl
+%     ttlUse = {};
+%     cntTtl = 1;
+%     dateUse  = tblSide.timeStart(1);
+%     dateUse.Format = 'dd-MMM-uuuu';
+%     % patient and date:
+%     ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
+%     cntTtl = cntTtl + 1;
+%     % stim settings
+%     for t = 1:size(tblSide,1)
+%         dateUse  = tblSide.timeStart(t);
+%         dateUse.Format = 'HH:mm';
+%         ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
+%         cntTtl = cntTtl + 1;
+%     end
+%     title(ttlUse);
+%     axis tight; 
+%     colorbar off; 
+%     grid(hsb(sn,1),'on');
+%     hsb(sn,1).GridAlpha = 0.8;
+%     hsb(sn,1).Layer = 'top';
+% 
+%     
+% 
+% end
+% hpanel.fontsize = 16;
+% %%
 
 
 
@@ -624,374 +622,376 @@ hpanel.fontsize = 16;
 
 
 
-%% plot psds  for each side
-for sn = 1:length(spectralPatient)
-    
-    outSpectral = spectralPatient(sn).outSpectral;
-    tblSide = spectralPatient(sn).tblSide;
-    hfig = figure;
-    hfig.Color = 'w';
-    hpanel = panel();
-    hpanel.pack('v',{0.1 0.9});
-    
-    hpanel(2).pack(2,2);
-    cnt = 1;
-    for i = 1:2
-        for j = 1:2
-            hsb(cnt,1) = hpanel(2,i,j).select();
-            cnt = cnt + 1;
-        end
-    end
-    
-    for ss = 1:size(outSpectral,1)
-        
-        for c = 1:4
-            axes(hsb(c,1));
-            chanfn = sprintf('chan%d',c);
-            y = outSpectral.(chanfn){ss}.*1e3;
-            fff = outSpectral.fff{ss};
-            idxFreqUse = fff >= 2 & fff <= 100;
-            times = outSpectral.spectTimes{ss};
-            curTime = times(1);
-            % min number of chunk is number of spectral "jumps"
-            % expected in 10 minutes divided by 2
-            % e.g. min of 5 min of data
-            minChunks = floor((10*60)/seconds(mode(diff(times)))/2);
-            avgPsd = [];
-            cntpsd = 1;
-            while curTime < (times(end)-minutes(10))
-                idxuse = curTime <= times & (curTime + minutes(10)) >= times;
-                if sum(idxuse) > minChunks
-                    avgPsd(cntpsd,:) = nanmean(y(idxFreqUse,idxuse),2);
-                    cntpsd = cntpsd + 1;
-                end
-                curTime = curTime + minutes(10);
-            end
-            freqsplot = fff(idxFreqUse);
-            plot(freqsplot,log10(avgPsd),...
-                'LineWidth',0.5,...
-                'Color',[0 0 0.8 0.5]);
-            title(tblSide.(chanfn){ss});
-            hsbuse = gca;
-            hsbuse.XTick = [4 12 30 50 60 65 70 75 80 100];
-            grid on;
-            ylabel(hsbuse,'Power (log_1_0\muV^2/Hz)');
-            xlabel(hsbuse,'Frequency (Hz');
-        end
-    end
-    
-        % create ttl
-    ttlUse = {};
-    cntTtl = 1;
-    dateUse  = tblSide.timeStart(1);
-    dateUse.Format = 'dd-MMM-uuuu';
-    % patient and date:
-    ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
-    cntTtl = cntTtl + 1;
-    % stim settings
-    for t = 1:size(tblSide,1)
-        dateUse  = tblSide.timeStart(t);
-        dateUse.Format = 'HH:mm';
-        ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
-        cntTtl = cntTtl + 1;
-    end
-    sgtitle(ttlUse);
-
-    
-    hpanel.fontsize = 16;
-    hpanel.de.margin = 30;
-    hpanel.margin = 20;
-    hpanel.de.margin = 20;
-end
-
-%%
-x = 2;
-
-%% plot in the same figure all relevant frequenciees, rescaled and smoothed.
-for sn = 1:length(spectralPatient)
-    tblSide = spectralPatient(sn).tblSide;
-    patAndSide = sprintf('%s%s',spectralPatient(sn).tblSide.patient{1},...
-                 spectralPatient(sn).tblSide.side{1});
-    params = struct();
-    switch patAndSide
-        case 'RCS08R'
-            params.chan1 = [6, 23, 77];
-            params.chan3 = [4 23 77];
-            params.chan4 = [11 22 65 77];
-            
-
-        case 'RCS08L'
-            params.chan3 = [11 23 64 ];
-            params.chan4 = [11 22 32 65 ];
-            
-        case 'RCS07R'
-            if ~tblSide.stimulation_on(1)
-                % before stim - oct 10 2019
-                params.chan1 = [5 16 32 54 79 ]; % has some issue of interfernce
-                params.chan2 = [5 16 41 79]; % has some issue of interfernce
-                params.chan3 = [10 82];
-                params.chan4 = [10 17 83];
-                params.smooth = 1600;
-                params.bw = 3;
-            end
-            
-            if tblSide.stimulation_on(1)
-                % after stim - jun 25 2020
-                params.chan2 = [8 13 33 65];
-                params.chan3 = [14 8 17 65];
-                params.chan4 = [5 21 65];
-                params.smooth = 1600;
-                params.bw = 3;
-
-            end
-        case 'RCS07L'
-            if ~tblSide.stimulation_on(1)
-                % before stim - oct 10 2019
-                params.chan1 = [18]; % has some issue of interfernce
-                params.chan2 = [5 8 19 82]; % has some issue of interfernce
-                params.chan3 = [9 20 79 ];
-                params.chan4 = [8 22 79];
-                params.smooth = 1600;
-                params.bw = 3;
-            end
-            if tblSide.stimulation_on(1)
-                % after stim - jun 25 2020
-                params.chan2 = [7 16 65]; % has some issue of interfernce
-                params.chan3 = [10 19 65 ];
-                params.chan4 = [5 65];
-                params.smooth = 1600;
-                params.bw = 3;
-            end
-        case 'RCS06R'
-            if ~tblSide.stimulation_on(1)
-                % before stim - oct 13 2019
-                params.chan1 = [18]; % has some issue of interfernce
-                params.chan2 = [5 8 19 82]; % has some issue of interfernce
-                params.chan3 = [9 20 79 ];
-                params.chan4 = [8 22 79];
-                params.smooth = 1600;
-                params.bw = 3;
-            end
-            if tblSide.stimulation_on(1)
-                % after stim - jun 25 2020
-                params.chan2 = [7 16 65]; % has some issue of interfernce
-                params.chan3 = [10 19 65 ];
-                params.chan4 = [5 65];
-                params.smooth = 1600;
-                params.bw = 3;
-            end
-        case 'RCS06L'
-            
-        otherwise
-            
-    end
-    
-    outSpectral = spectralPatient(sn).outSpectral;
-    tblSide = spectralPatient(sn).tblSide;
-    
-    
-    hsb  = [];
-    
-    hfig = figure;
-    hfig.Color = 'w';
-    hpanel = panel();
-    hpanel.pack('v',{0.1 0.9});
-    nrows = length( fieldnames(params))-2;
-    hpanel(2).pack(nrows,1);
-    for n = 1:nrows
-        hsb(n,1) = hpanel(2,n,1).select();
-        hold on;
-    end
-    
-    fieldnamesraw = fieldnames(params);
-    idxfielnams = cellfun(@(x) any(strfind(x,'chan')),fieldnamesraw);
-    fieldnamesuse = fieldnamesraw(idxfielnams);
-    
-    for fn = 1:length(fieldnamesuse) % loop on channels
-        freqCenters = params.(fieldnamesuse{fn});
-        lgnds = {};
-        hplt = [];
-        for fq = 1:length(freqCenters)
-            lgnds{fq} = sprintf('%dHz',freqCenters(fq));
-            % two loops - the first is to find the min/max for rescaling,
-            % the second to plot 
-            yMvOut = [];
-            for ss = 1:size(outSpectral,1)
-                chanfn = sprintf('chan%d',c);
-                y = outSpectral.(fieldnamesuse{fn}){ss};
-                fff = outSpectral.fff{ss};
-                bwupper = freqCenters(fq) + params.bw;
-                bwlower = freqCenters(fq) - params.bw;
-                idxFreqUse = fff >= bwlower & fff <= bwupper;
-                yFreqMean = mean(y(idxFreqUse,:),1);
-                yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
-                times = outSpectral.spectTimes{ss};
-                yMvOut = [yMvOut,yMvMean];
-                
-            end
-            minVal = min(yMvMean);
-            maxVal = max(yMvMean);
-%             rescale(yMvMean,'InputMin',colmin,'InputMax',colmax)
-            
-            for ss = 1:size(outSpectral,1)
-                
-                axes(hsb(fn,1));
-                chanfn = sprintf('chan%d',c);
-                y = outSpectral.(fieldnamesuse{fn}){ss};
-                fff = outSpectral.fff{ss};
-                bwupper = freqCenters(fq) + params.bw;
-                bwlower = freqCenters(fq) - params.bw;
-                idxFreqUse = fff >= bwlower & fff <= bwupper;
-                yFreqMean = mean(y(idxFreqUse,:),1);
-                yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
-                rescaledMvMean = rescale(yMvMean,'InputMin',minVal,'InputMax',maxVal);
-                times = outSpectral.spectTimes{ss};
-                
-                if bwupper <= 12
-                    colorUse = [0.8 0 0 0.5];
-                elseif bwupper >12 & bwupper < 30
-                    colorUse = [0 0.8 0 0.5];
-                elseif bwupper > 63 & bwupper < 67
-                    colorUse = [0 0 0.8 0.5];
-                elseif bwupper > 68
-                    colorUse = [0 0.5 0.5 0.5];
-                else
-                    colorUse = [0 0 0 0.5];
-                end
-                hplt(fq) = plot(times,rescaledMvMean,'Color',colorUse,'LineWidth',2);
-            end
-        end
-        legend(hplt,lgnds);
-        title(tblSide.(fieldnamesuse{fn}){1});
-    end
-    linkaxes(hsb,'x');
-    
-    % create ttl
-    ttlUse = {};
-    cntTtl = 1;
-    dateUse  = tblSide.timeStart(1);
-    dateUse.Format = 'dd-MMM-uuuu';
-    % patient and date:
-    ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
-    cntTtl = cntTtl + 1;
-    % stim settings
-    for t = 1:size(tblSide,1)
-        dateUse  = tblSide.timeStart(t);
-        dateUse.Format = 'HH:mm';
-        ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
-        cntTtl = cntTtl + 1;
-    end
-    sgtitle(ttlUse);
-    fprintf('moving window is: %s\n',times(params.smooth)-times(1));
-    
-    hpanel.fontsize = 16;
-    hpanel.margin = 12;
-    hpanel.de.margin = 30;
-end
-%%
 
 
+% %% plot psds  for each side
+% for sn = 1:length(spectralPatient)
+%     
+%     outSpectral = spectralPatient(sn).outSpectral;
+%     tblSide = spectralPatient(sn).tblSide;
+%     hfig = figure;
+%     hfig.Color = 'w';
+%     hpanel = panel();
+%     hpanel.pack('v',{0.1 0.9});
+%     
+%     hpanel(2).pack(2,2);
+%     cnt = 1;
+%     for i = 1:2
+%         for j = 1:2
+%             hsb(cnt,1) = hpanel(2,i,j).select();
+%             cnt = cnt + 1;
+%         end
+%     end
+%     
+%     for ss = 1:size(outSpectral,1)
+%         
+%         for c = 1:4
+%             axes(hsb(c,1));
+%             chanfn = sprintf('chan%d',c);
+%             y = outSpectral.(chanfn){ss}.*1e3;
+%             fff = outSpectral.fff{ss};
+%             idxFreqUse = fff >= 2 & fff <= 100;
+%             times = outSpectral.spectTimes{ss};
+%             curTime = times(1);
+%             % min number of chunk is number of spectral "jumps"
+%             % expected in 10 minutes divided by 2
+%             % e.g. min of 5 min of data
+%             minChunks = floor((10*60)/seconds(mode(diff(times)))/2);
+%             avgPsd = [];
+%             cntpsd = 1;
+%             while curTime < (times(end)-minutes(10))
+%                 idxuse = curTime <= times & (curTime + minutes(10)) >= times;
+%                 if sum(idxuse) > minChunks
+%                     avgPsd(cntpsd,:) = nanmean(y(idxFreqUse,idxuse),2);
+%                     cntpsd = cntpsd + 1;
+%                 end
+%                 curTime = curTime + minutes(10);
+%             end
+%             freqsplot = fff(idxFreqUse);
+%             plot(freqsplot,log10(avgPsd),...
+%                 'LineWidth',0.5,...
+%                 'Color',[0 0 0.8 0.5]);
+%             title(tblSide.(chanfn){ss});
+%             hsbuse = gca;
+%             hsbuse.XTick = [4 12 30 50 60 65 70 75 80 100];
+%             grid on;
+%             ylabel(hsbuse,'Power (log_1_0\muV^2/Hz)');
+%             xlabel(hsbuse,'Frequency (Hz');
+%         end
+%     end
+%     
+%         % create ttl
+%     ttlUse = {};
+%     cntTtl = 1;
+%     dateUse  = tblSide.timeStart(1);
+%     dateUse.Format = 'dd-MMM-uuuu';
+%     % patient and date:
+%     ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
+%     cntTtl = cntTtl + 1;
+%     % stim settings
+%     for t = 1:size(tblSide,1)
+%         dateUse  = tblSide.timeStart(t);
+%         dateUse.Format = 'HH:mm';
+%         ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
+%         cntTtl = cntTtl + 1;
+%     end
+%     sgtitle(ttlUse);
+% 
+%     
+%     hpanel.fontsize = 16;
+%     hpanel.de.margin = 30;
+%     hpanel.margin = 20;
+%     hpanel.de.margin = 20;
+% end
+% 
+% %%
+% x = 2;
 
-
-%% plot frequncy "barcodes" 
-params = [];
-for sn = 1:length(spectralPatient)
-    
-    outSpectral = spectralPatient(sn).outSpectral;
-    
-    params.chan1 = [14 25];
-    params.chan3 = [11 23 65 ];
-    params.chan4 = [11 23 65 ];
-    params.bw = 1;
-    params.smooth = 10*60;
-    
-    
-    % params.chan1 = [21, 65, 71];
-    % params.chan3 = [8 74];
-    % params.chan4 = [8 74];
-    params.bw = 1;
-    params.smooth = 10*60;
-    
-    
-    hsb  = [];
-    
-    hfig = figure;
-    hfig.Color = 'w';
-    hpanel = panel();
-    hpanel.pack('v',{0.1 0.9});
-    nrows = length( fieldnames(params))-2;
-    hpanel(2).pack(nrows,1);
-    for n = 1:nrows
-        hsb(n,1) = hpanel(2,n,1).select();
-        hold on;
-    end
-    
-    fieldnamesraw = fieldnames(params);
-    idxfielnams = cellfun(@(x) any(strfind(x,'chan')),fieldnamesraw);
-    fieldnamesuse = fieldnamesraw(idxfielnams);
-    
-    for fn = 1:length(fieldnamesuse) % loop on channels
-        freqCenters = params.(fieldnamesuse{fn});
-        lgnds = {};
-        hplt = [];
-        for fq = 1:length(freqCenters)
-            lgnds{fq} = sprintf('%dHz',freqCenters(fq));
-            for ss = 1:size(outSpectral,1)
-                
-                axes(hsb(fn,1));
-                chanfn = sprintf('chan%d',c);
-                y = outSpectral.(fieldnamesuse{fn}){ss};
-                fff = outSpectral.fff{ss};
-                bwupper = freqCenters(fq) + params.bw;
-                bwlower = freqCenters(fq) - params.bw;
-                idxFreqUse = fff >= bwlower & fff <= bwupper;
-                yFreqMean = mean(y(idxFreqUse,:),1);
-                yMvMean = movmean(yFreqMean,[10*60 0],'omitnan');
-                rescaledMvMean = rescale(yMvMean,0 ,1);
-                times = outSpectral.spectTimes{ss};
-                
-                if bwupper <= 12
-                    colorUse = [0.8 0 0 0.5];
-                elseif bwupper >12 & bwupper < 30
-                    colorUse = [0 0.8 0 0.5];
-                elseif bwupper > 63 & bwupper < 67
-                    colorUse = [0 0 0.8 0.5];
-                elseif bwupper > 68
-                    colorUse = [0 0.5 0.5 0.5];
-                else
-                    colorUse = [0 0 0 0.5];
-                end
-                hplt(fq) = plot(times,rescaledMvMean,'Color',colorUse,'LineWidth',2);
-                hplt(fq) = imagesc(rescaledMvMean);
-                
-            end
-        end
+% %% plot in the same figure all relevant frequenciees, rescaled and smoothed.
+% for sn = 1:length(spectralPatient)
+%     tblSide = spectralPatient(sn).tblSide;
+%     patAndSide = sprintf('%s%s',spectralPatient(sn).tblSide.patient{1},...
+%                  spectralPatient(sn).tblSide.side{1});
+%     params = struct();
+%     switch patAndSide
+%         case 'RCS08R'
+%             params.chan1 = [6, 23, 77];
+%             params.chan3 = [4 23 77];
+%             params.chan4 = [11 22 65 77];
+%             
+% 
+%         case 'RCS08L'
+%             params.chan3 = [11 23 64 ];
+%             params.chan4 = [11 22 32 65 ];
+%             
+%         case 'RCS07R'
+%             if ~tblSide.stimulation_on(1)
+%                 % before stim - oct 10 2019
+%                 params.chan1 = [5 16 32 54 79 ]; % has some issue of interfernce
+%                 params.chan2 = [5 16 41 79]; % has some issue of interfernce
+%                 params.chan3 = [10 82];
+%                 params.chan4 = [10 17 83];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+%             end
+%             
+%             if tblSide.stimulation_on(1)
+%                 % after stim - jun 25 2020
+%                 params.chan2 = [8 13 33 65];
+%                 params.chan3 = [14 8 17 65];
+%                 params.chan4 = [5 21 65];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+% 
+%             end
+%         case 'RCS07L'
+%             if ~tblSide.stimulation_on(1)
+%                 % before stim - oct 10 2019
+%                 params.chan1 = [18]; % has some issue of interfernce
+%                 params.chan2 = [5 8 19 82]; % has some issue of interfernce
+%                 params.chan3 = [9 20 79 ];
+%                 params.chan4 = [8 22 79];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+%             end
+%             if tblSide.stimulation_on(1)
+%                 % after stim - jun 25 2020
+%                 params.chan2 = [7 16 65]; % has some issue of interfernce
+%                 params.chan3 = [10 19 65 ];
+%                 params.chan4 = [5 65];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+%             end
+%         case 'RCS06R'
+%             if ~tblSide.stimulation_on(1)
+%                 % before stim - oct 13 2019
+%                 params.chan1 = [18]; % has some issue of interfernce
+%                 params.chan2 = [5 8 19 82]; % has some issue of interfernce
+%                 params.chan3 = [9 20 79 ];
+%                 params.chan4 = [8 22 79];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+%             end
+%             if tblSide.stimulation_on(1)
+%                 % after stim - jun 25 2020
+%                 params.chan2 = [7 16 65]; % has some issue of interfernce
+%                 params.chan3 = [10 19 65 ];
+%                 params.chan4 = [5 65];
+%                 params.smooth = 1600;
+%                 params.bw = 3;
+%             end
+%         case 'RCS06L'
+%             
+%         otherwise
+%             
+%     end
+%     
+%     outSpectral = spectralPatient(sn).outSpectral;
+%     tblSide = spectralPatient(sn).tblSide;
+%     
+%     
+%     hsb  = [];
+%     
+%     hfig = figure;
+%     hfig.Color = 'w';
+%     hpanel = panel();
+%     hpanel.pack('v',{0.1 0.9});
+%     nrows = length( fieldnames(params))-2;
+%     hpanel(2).pack(nrows,1);
+%     for n = 1:nrows
+%         hsb(n,1) = hpanel(2,n,1).select();
+%         hold on;
+%     end
+%     
+%     fieldnamesraw = fieldnames(params);
+%     idxfielnams = cellfun(@(x) any(strfind(x,'chan')),fieldnamesraw);
+%     fieldnamesuse = fieldnamesraw(idxfielnams);
+%     
+%     for fn = 1:length(fieldnamesuse) % loop on channels
+%         freqCenters = params.(fieldnamesuse{fn});
+%         lgnds = {};
+%         hplt = [];
+%         for fq = 1:length(freqCenters)
+%             lgnds{fq} = sprintf('%dHz',freqCenters(fq));
+%             % two loops - the first is to find the min/max for rescaling,
+%             % the second to plot 
+%             yMvOut = [];
+%             for ss = 1:size(outSpectral,1)
+%                 chanfn = sprintf('chan%d',c);
+%                 y = outSpectral.(fieldnamesuse{fn}){ss};
+%                 fff = outSpectral.fff{ss};
+%                 bwupper = freqCenters(fq) + params.bw;
+%                 bwlower = freqCenters(fq) - params.bw;
+%                 idxFreqUse = fff >= bwlower & fff <= bwupper;
+%                 yFreqMean = mean(y(idxFreqUse,:),1);
+%                 yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
+%                 times = outSpectral.spectTimes{ss};
+%                 yMvOut = [yMvOut,yMvMean];
+%                 
+%             end
+%             minVal = min(yMvMean);
+%             maxVal = max(yMvMean);
+% %             rescale(yMvMean,'InputMin',colmin,'InputMax',colmax)
+%             
+%             for ss = 1:size(outSpectral,1)
+%                 
+%                 axes(hsb(fn,1));
+%                 chanfn = sprintf('chan%d',c);
+%                 y = outSpectral.(fieldnamesuse{fn}){ss};
+%                 fff = outSpectral.fff{ss};
+%                 bwupper = freqCenters(fq) + params.bw;
+%                 bwlower = freqCenters(fq) - params.bw;
+%                 idxFreqUse = fff >= bwlower & fff <= bwupper;
+%                 yFreqMean = mean(y(idxFreqUse,:),1);
+%                 yMvMean = movmean(yFreqMean,[params.smooth 0],'omitnan');
+%                 rescaledMvMean = rescale(yMvMean,'InputMin',minVal,'InputMax',maxVal);
+%                 times = outSpectral.spectTimes{ss};
+%                 
+%                 if bwupper <= 12
+%                     colorUse = [0.8 0 0 0.5];
+%                 elseif bwupper >12 & bwupper < 30
+%                     colorUse = [0 0.8 0 0.5];
+%                 elseif bwupper > 63 & bwupper < 67
+%                     colorUse = [0 0 0.8 0.5];
+%                 elseif bwupper > 68
+%                     colorUse = [0 0.5 0.5 0.5];
+%                 else
+%                     colorUse = [0 0 0 0.5];
+%                 end
+%                 hplt(fq) = plot(times,rescaledMvMean,'Color',colorUse,'LineWidth',2);
+%             end
+%         end
 %         legend(hplt,lgnds);
-        title(tblSide.(fieldnamesuse{fn}){ss});
-    end
-    linkaxes(hsb,'x');
-    
-    % create ttl
-    ttlUse = {};
-    cntTtl = 1;
-    dateUse  = tblSide.timeStart(1);
-    dateUse.Format = 'dd-MMM-uuuu';
-    % patient and date:
-    ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
-    cntTtl = cntTtl + 1;
-    % stim settings
-    for t = 1:size(tblSide,1)
-        dateUse  = tblSide.timeStart(t);
-        dateUse.Format = 'HH:mm';
-        ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
-        cntTtl = cntTtl + 1;
-    end
-    sgtitle(ttlUse);
-
-    
-    hpanel.fontsize = 16;
-    hpanel.margin = 12;
-    hpanel.de.margin = 30;
-end
-%%
+%         title(tblSide.(fieldnamesuse{fn}){1});
+%     end
+%     linkaxes(hsb,'x');
+%     
+%     % create ttl
+%     ttlUse = {};
+%     cntTtl = 1;
+%     dateUse  = tblSide.timeStart(1);
+%     dateUse.Format = 'dd-MMM-uuuu';
+%     % patient and date:
+%     ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
+%     cntTtl = cntTtl + 1;
+%     % stim settings
+%     for t = 1:size(tblSide,1)
+%         dateUse  = tblSide.timeStart(t);
+%         dateUse.Format = 'HH:mm';
+%         ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
+%         cntTtl = cntTtl + 1;
+%     end
+%     sgtitle(ttlUse);
+%     fprintf('moving window is: %s\n',times(params.smooth)-times(1));
+%     
+%     hpanel.fontsize = 16;
+%     hpanel.margin = 12;
+%     hpanel.de.margin = 30;
+% end
+% %%
+% 
+% 
+% 
+% 
+% %% plot frequncy "barcodes" 
+% params = [];
+% for sn = 1:length(spectralPatient)
+%     
+%     outSpectral = spectralPatient(sn).outSpectral;
+%     
+%     params.chan1 = [14 25];
+%     params.chan3 = [11 23 65 ];
+%     params.chan4 = [11 23 65 ];
+%     params.bw = 1;
+%     params.smooth = 10*60;
+%     
+%     
+%     % params.chan1 = [21, 65, 71];
+%     % params.chan3 = [8 74];
+%     % params.chan4 = [8 74];
+%     params.bw = 1;
+%     params.smooth = 10*60;
+%     
+%     
+%     hsb  = [];
+%     
+%     hfig = figure;
+%     hfig.Color = 'w';
+%     hpanel = panel();
+%     hpanel.pack('v',{0.1 0.9});
+%     nrows = length( fieldnames(params))-2;
+%     hpanel(2).pack(nrows,1);
+%     for n = 1:nrows
+%         hsb(n,1) = hpanel(2,n,1).select();
+%         hold on;
+%     end
+%     
+%     fieldnamesraw = fieldnames(params);
+%     idxfielnams = cellfun(@(x) any(strfind(x,'chan')),fieldnamesraw);
+%     fieldnamesuse = fieldnamesraw(idxfielnams);
+%     
+%     for fn = 1:length(fieldnamesuse) % loop on channels
+%         freqCenters = params.(fieldnamesuse{fn});
+%         lgnds = {};
+%         hplt = [];
+%         for fq = 1:length(freqCenters)
+%             lgnds{fq} = sprintf('%dHz',freqCenters(fq));
+%             for ss = 1:size(outSpectral,1)
+%                 
+%                 axes(hsb(fn,1));
+%                 chanfn = sprintf('chan%d',c);
+%                 y = outSpectral.(fieldnamesuse{fn}){ss};
+%                 fff = outSpectral.fff{ss};
+%                 bwupper = freqCenters(fq) + params.bw;
+%                 bwlower = freqCenters(fq) - params.bw;
+%                 idxFreqUse = fff >= bwlower & fff <= bwupper;
+%                 yFreqMean = mean(y(idxFreqUse,:),1);
+%                 yMvMean = movmean(yFreqMean,[10*60 0],'omitnan');
+%                 rescaledMvMean = rescale(yMvMean,0 ,1);
+%                 times = outSpectral.spectTimes{ss};
+%                 
+%                 if bwupper <= 12
+%                     colorUse = [0.8 0 0 0.5];
+%                 elseif bwupper >12 & bwupper < 30
+%                     colorUse = [0 0.8 0 0.5];
+%                 elseif bwupper > 63 & bwupper < 67
+%                     colorUse = [0 0 0.8 0.5];
+%                 elseif bwupper > 68
+%                     colorUse = [0 0.5 0.5 0.5];
+%                 else
+%                     colorUse = [0 0 0 0.5];
+%                 end
+%                 hplt(fq) = plot(times,rescaledMvMean,'Color',colorUse,'LineWidth',2);
+%                 hplt(fq) = imagesc(rescaledMvMean);
+%                 
+%             end
+%         end
+% %         legend(hplt,lgnds);
+%         title(tblSide.(fieldnamesuse{fn}){ss});
+%     end
+%     linkaxes(hsb,'x');
+%     
+%     % create ttl
+%     ttlUse = {};
+%     cntTtl = 1;
+%     dateUse  = tblSide.timeStart(1);
+%     dateUse.Format = 'dd-MMM-uuuu';
+%     % patient and date:
+%     ttlUse{cntTtl,1} = sprintf('%s %s %s', tblSide.patient{1},tblSide.side{1},dateUse);
+%     cntTtl = cntTtl + 1;
+%     % stim settings
+%     for t = 1:size(tblSide,1)
+%         dateUse  = tblSide.timeStart(t);
+%         dateUse.Format = 'HH:mm';
+%         ttlUse{cntTtl,1} = sprintf('%s:\t %s %.2fmA %.2fHz', dateUse,tblSide.electrodes{t},tblSide.amplitude_mA(t),tblSide.rate_Hz(t));
+%         cntTtl = cntTtl + 1;
+%     end
+%     sgtitle(ttlUse);
+% 
+%     
+%     hpanel.fontsize = 16;
+%     hpanel.margin = 12;
+%     hpanel.de.margin = 30;
+% end
+%
 
