@@ -33,7 +33,7 @@ for i = 1:size(montageData,1)
     hfig.Color = 'w';
     hfig.Position = [1000         547        1020         791];
     hpanel = panel();
-    hpanel.pack(4,5);
+    hpanel.pack(5,5);
     % raw data
     % check min number of samples, and flag if a lot of packet loss
     % default is that this recording is "good"
@@ -49,9 +49,9 @@ for i = 1:size(montageData,1)
         badMontageRec = 1;
     end
     % check if there is a gap in this data selection is larger than 10 * 1/smaple rate - which is too much
-    if max(diff(seconds(x))) > (1/ montageData.samplingRate(i))*100
-        badMontageRec = 1;
-    end
+%     if max(diff(seconds(x))) > (1/ montageData.samplingRate(i))*100
+%         badMontageRec = 1;
+%     end
     if ~badMontageRec
         if isduration(x)
             idxuse = x > seconds(3) & x < (x(end)-seconds(3));
@@ -64,7 +64,7 @@ for i = 1:size(montageData,1)
         ydat = montageData.data{i};
         ydat = ydat(idxuse,:);
         for c = 1:4
-            hsb = hpanel(c,1).select();
+            hsb = hpanel(c+1,1).select();
             axes(hsb);
             y = ydat(:,c);
             y = y - mean(y);
@@ -80,7 +80,7 @@ for i = 1:size(montageData,1)
         end
         % spectrogram
         for c = 1:4
-            hsb = hpanel(c,2).select();
+            hsb = hpanel(c+1,2).select();
             axes(hsb);
             y = ydat(:,c);
             y = y - mean(y);
@@ -98,7 +98,7 @@ for i = 1:size(montageData,1)
         end
         % psd
         for c = 1:4
-            hsb = hpanel(c,3).select();
+            hsb = hpanel(c+1,3).select();
             axes(hsb);
             hold on;
             y = ydat(:,c);
@@ -137,7 +137,7 @@ for i = 1:size(montageData,1)
             pacparams.AmpFreqVector        = 10:5:420;
         end
         for c = 1:4
-            hsb = hpanel(c,4).select();
+            hsb = hpanel(c+1,4).select();
             axes(hsb);
             hold on;
             y = ydat(:,c);
@@ -176,9 +176,9 @@ for i = 1:size(montageData,1)
             end
             for c = 1:size(copairs,1)
                 if sr == 1000
-                    hsb = hpanel(r,5).select();
+                    hsb = hpanel(r+1,5).select();
                 else
-                    hsb = hpanel(c,5).select();
+                    hsb = hpanel(c+1,5).select();
                 end
                 axes(hsb);
                 hold on;
@@ -207,8 +207,10 @@ for i = 1:size(montageData,1)
             end
         end
         timeStart = datetime(montageData.startTime(i),'Format','HH:mm');
-        fntitle = sprintf('%0.2d %s %s %s',i,montageData.patient{i},montageData.side{i},timeStart);
-        %     sgtitle(fntitle)
+        fntitle{1} = sprintf('%0.2d %s %s %s',i,montageData.patient{i},montageData.side{i},timeStart);
+        fntitle{2} = sprintf('%s %s %s %s %s %s %s',montageData.chan1{i},', ',montageData.chan2{i},', ',montageData.chan3{i},', ',montageData.chan4{i});
+        fntitle = {fntitle{1};fntitle{2}};
+        sgtitle(fntitle)
         
         hpanel.margin = [20 20 20 20];
         hpanel.fontsize = 13;
@@ -217,7 +219,7 @@ for i = 1:size(montageData,1)
         timeStart = datetime(montageData.startTime(i),'Format','dd-MMM-yyyy_HH-mm');
         fnsave = sprintf('%s_%s_%s_%0.2d',montageData.patient{i},montageData.side{i},timeStart,i);
         prfig.plotwidth           = 20;
-        prfig.plotheight          = 15;
+        prfig.plotheight          = 20;
         prfig.figdir              = figdir;
         prfig.figtype             = '-djpeg';
         prfig.closeafterprint     = 0;
