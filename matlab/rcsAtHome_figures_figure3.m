@@ -96,6 +96,8 @@ if plotpanels
 end
 %%
 %% panel B- psd in clinic - on off from one patient
+plotIndividLines = 1; % don't plot shaded error bards 
+
 if plotpanels
     close all; clear all;
 end
@@ -107,7 +109,7 @@ load('/Users/roee/Starr_Lab_Folder/Data_Analysis/RCS_data/results/in_clinic/rest
 
 % original function:
 % plot_chopped_data_comparisons
-colorsUse   = [ 0 0.8 0 0.5; 0.8 0 0 0.5];
+colorsUse   = [ [27 158  119]./255  , 0.5; [217 95 2]./255 0.75];
 medstates = {'on','off'};
 electrodes = {'STN 0-2','M1 9-11'};
 datTabl = patientPSD_in_clinic;
@@ -130,7 +132,7 @@ for e = 1:2
             strcmp(datTabl.electrode,electrodes{e}) & ...
             strcmp(datTabl.medstate,medstates{m} );
         % plot
-        plot(datTabl.ff{idxuse},datTabl.fftOutNorm{idxuse},'LineWidth',2,'Color',colorsUse(m,:));
+        plot(datTabl.ff{idxuse},datTabl.fftOutNorm{idxuse},'LineWidth',1.5,'Color',colorsUse(m,:));
         
     end
     xlim(hsb(e,1),[3.5 89.5]);
@@ -141,7 +143,7 @@ for e = 1:2
     ylabel('Norm. Power','FontName','Arial','FontSize',11);
     
     if e == 1
-        hLeg = legend({'defined on','defined off'},'FontName','Arial','FontSize',10);
+        hLeg = legend({'defined on','defined off'},'FontName','Arial','FontSize',7);
         hLeg.Box = 'off';
     end
     hsb(e,1).XTick = [];
@@ -174,7 +176,7 @@ for m = 1:2
     x = cohPlot.ffCoh{1};
     y = cohPlot.mscoherence{1};
     plot(x,y,...
-        'LineWidth',2,'Color',colorsUse(m,:));
+        'LineWidth',1.5,'Color',colorsUse(m,:));
 end
 xlabel('Frequency (Hz)','FontName','Arial','FontSize',11);
 ylabel('ms coherence'); 
@@ -230,6 +232,9 @@ titlesUse = {'STN contacts','M1 contacts'};
 
 medstatecheck = {'on','off'};
 colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
+colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
+colorsuse   = [ [27 158  119]./255  , 0.75; [217 95 2]./255 0.75];
+
 for a = 1:length(areas)
     if ~plotpanels
         hsb(e,2) = hpanel(3,a,1).select(); cntplt = cntplt + 1;
@@ -246,18 +251,26 @@ for a = 1:length(areas)
         
         x = freqschecking; 
         y = fftout; 
-        % stadnard error or mean 
-        hsbH = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
-        % 1 std 
-%       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1}); 
-
-        hsbH.mainLine.Color = colorsuse(m,:);
-        hsbH.mainLine.LineWidth = 2;
-        hsbH.patch.FaceAlpha = 0;
-        hsbH.patch.FaceColor = colorsuse(m,1:3); 
-        hsbH.edge(1).Color = [1 1 1];
-        hsbH.edge(2).Color = [1 1 1];
-        hLine(m) = hsbH.mainLine;
+        
+        if plotIndividLines
+            hplt = plot(x,y,'LineWidth',0.2,'Color',[colorsuse(m,1:3) 0.5]);
+            hLine(m) = hplt(1);
+        else
+            % stadnard error or mean
+            %         hsbH = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
+            % 1 std
+            hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1});
+            
+            hsbH.mainLine.Color = colorsuse(m,:);
+            hsbH.mainLine.LineWidth = 0.5;
+            hsbH.patch.FaceAlpha = 0.5;
+            hsbH.patch.FaceColor = colorsuse(m,1:3);
+            hsbH.edge(1).Color = [1 1 1];
+            hsbH.edge(2).Color = [1 1 1];
+            hsbH.edge(1).Visible = 'off';
+            hsbH.edge(2).Visible = 'off';
+            hLine(m) = hsbH.mainLine;
+        end
     end
 
     
@@ -336,12 +349,14 @@ for a = 1:length(areas)
     ylims = get(gca,'YLim');
     if ~isempty(xfreqssig)
         plot(xfreqssig,[ylims(2) ylims(2)],'Color',[0.5 0.5 0.5],'LineWidth',2);
+    else
+        fprintf('nothing sign mc');
     end
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     % %%%%%%%%%%%%%%%%%%%%%%%%% do stats
     if a == 1 
-        hLegend = legend(hLine,{'defined on','defined off'});
+        hLegend = legend(hLine,{'defined on','defined off'},'FontSize',7);
         hLegend.Box = 'off';
     end
     xlim([5 90]);
@@ -377,7 +392,6 @@ areas = {'STN','M1'};
 titlesUse = {'STN contacts','M1 contacts'};
 
 medstatecheck = {'on','off'};
-colorsuse = [0 0.8 0 0.5; 0.8 0 0 0.5]; 
 pdb = patientCOH_in_clinic;
 psdall = []; 
 ff = []; 
@@ -397,18 +411,27 @@ for m = 1:length(medstatecheck)
     
     x = ff(idxnorm);
     y = fftout;
-    % stadnard error or mean
-    hsbH = shadedErrorBar(x',y,{@median,@(y) std(y)./sqrt(size(y,1))});
-    % 1 std
-    %       hsbH = shadedErrorBar(freqschecking,fftout,{@mean,@(x) std(x)*1});
     
-    hsbH.mainLine.Color = colorsuse(m,:);
-    hsbH.mainLine.LineWidth = 2;
-    hsbH.patch.FaceAlpha = 0;
-    hsbH.patch.FaceColor = colorsuse(m,1:3);
-    hsbH.edge(1).Color = [1 1 1];
-    hsbH.edge(2).Color = [1 1 1];
-    hLine(m) = hsbH.mainLine;
+    if plotIndividLines
+        hplt = plot(x,y,'LineWidth',0.2,'Color',[colorsuse(m,1:3) 0.5]);
+        hLine(m) = hplt(1);
+    else
+        % stadnard error or mean
+        %     hsbH = shadedErrorBar(x',y,{@median,@(y) std(y)./sqrt(size(y,1))});
+        % 1 std
+        hsbH = shadedErrorBar(x',y,{@mean,@(x) std(x)*1});
+        
+        
+        hsbH.mainLine.Color = colorsuse(m,:);
+        hsbH.mainLine.LineWidth = 0.5;
+        hsbH.patch.FaceAlpha = 0.5;
+        hsbH.patch.FaceColor = colorsuse(m,1:3);
+        hsbH.edge(1).Color = [1 1 1];
+        hsbH.edge(2).Color = [1 1 1];
+        hsbH.edge(1).Visible = 'off';
+        hsbH.edge(2).Visible = 'off';
+        hLine(m) = hsbH.mainLine;
+    end
 end
 
 
@@ -603,23 +626,37 @@ hsb.YAxis.Visible = 'off';
 if ~plotpanels
     %% plot all 
     figdirout = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig3_data_examples_in_clinic';
-    hpanel.fontsize = 10;
-    hpanel.de.margin = 10;
+    hpanel.fontsize = 6;
+    hpanel.de.fontsize = 6;
+    hpanel.de.margin = 7;
     hpanel(1).marginright = 40;
     hpanel(2).marginright = 15;
     
 
     
     
-    prfig.plotwidth           = 10;
-    prfig.plotheight          = 7;
+    prfig.plotwidth           = 7.08;
+    prfig.plotheight          = 4.42;
     prfig.figdir             = figdirout;
-    prfig.figname             = 'Fig3_all_nomovement_just_stn_vector_v5_not_vector';
+    prfig.figname             = 'Fig3_all_nomovement_just_stn_vector_v8_not_vector_IND';
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     %%
 end
 return 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 %% previous stuff 
@@ -709,7 +746,7 @@ for c = [1 4]
                 'lineprops',{colors2{s},'markerfacecolor','r','LineWidth',2});
             statesUsing{cntstt} = statesUse{s};cntstt = cntstt + 1;
             hsbH.mainLine.Color = [colors(s,:) 0.5];
-            hsbH.mainLine.LineWidth = 3;
+            hsbH.mainLine.LineWidth = 1.5;
             hsbH.patch.FaceAlpha = 0.1;
         end
         % save the median data

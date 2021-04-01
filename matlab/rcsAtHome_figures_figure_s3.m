@@ -123,7 +123,7 @@ for tt = 1:size(tablePlot,1)
     end
     if plotShaded
 %         hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)./sqrt(size(y,1))});
-        hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)});
+        hshadedError = shadedErrorBar(x,y,{@median,@(y) std(y)*0.5});
         
         hshadedError.mainLine.Color = colorUse;
         hshadedError.mainLine.LineWidth = 2;

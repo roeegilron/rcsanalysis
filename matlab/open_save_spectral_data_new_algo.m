@@ -23,7 +23,7 @@ for sss = 1:size(masterTableLightOut,1)
             variableInfo = who('-file', filenameSaveOrLoad);
             if sum(cellfun(@(x) any(strfind(x,'outSpectral')),variableInfo))>0
                 load(filenameSaveOrLoad,'outSpectral');
-                skipPlot = 1;
+                skipPlot = 0;
             end
         end
         
@@ -41,9 +41,17 @@ for sss = 1:size(masterTableLightOut,1)
             end
             try
                 start = tic;
-                [combinedDataTable, debugTable, timeDomainSettings,powerSettings,...
-                    fftSettings,metaData,stimSettingsOut,stimMetaData,stimLogSettings,...
-                    DetectorSettings,AdaptiveStimSettings,AdaptiveRuns_StimSettings] = DEMO_ProcessRCS(pn,2);
+                [unifiedDerivedTimes,...
+                    timeDomainData, timeDomainData_onlyTimeVariables, timeDomain_timeVariableNames,...
+                    AccelData, AccelData_onlyTimeVariables, Accel_timeVariableNames,...
+                    PowerData, PowerData_onlyTimeVariables, Power_timeVariableNames,...
+                    FFTData, FFTData_onlyTimeVariables, FFT_timeVariableNames,...
+                    AdaptiveData, AdaptiveData_onlyTimeVariables, Adaptive_timeVariableNames,...
+                    timeDomainSettings, powerSettings, fftSettings, eventLogTable,...
+                    metaData, stimSettingsOut, stimMetaData, stimLogSettings,...
+                    DetectorSettings, AdaptiveStimSettings, AdaptiveEmbeddedRuns_StimSettings] = ProcessRCS(pn,1);
+                dataStreams = {timeDomainData, AccelData, PowerData, FFTData, AdaptiveData};
+                [combinedDataTable] = createCombinedTable(dataStreams,unifiedDerivedTimes,metaData);
                 timeToLoad = toc(start);
                 masterTableLightOut.timeToLoad(sss) = seconds(timeToLoad);
                 
@@ -144,9 +152,7 @@ for sss = 1:size(masterTableLightOut,1)
                 outSpectral.mvMean{ss} = mvMean';
                 
                 filenameSaveOrLoad = fullfile(pn,'combinedDataTable.mat');
-                save(filenameSaveOrLoad,'outSpectral', 'debugTable', 'timeDomainSettings','powerSettings',...
-                    'fftSettings','metaData','stimSettingsOut','stimMetaData','stimLogSettings',...
-                    'DetectorSettings','AdaptiveStimSettings','AdaptiveRuns_StimSettings','eventTableUse');
+                save(filenameSaveOrLoad,'outSpectral','eventTableUse','-append')
             catch
                 failedFiles{sss} = pn;
             end

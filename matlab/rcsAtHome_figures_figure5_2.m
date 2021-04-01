@@ -338,7 +338,7 @@ for p = 1:length(uniquPatients)
         idxDelta = strcmp(deltaTable.patient,uniquPatients{p}) & ... 
             strcmp(deltaTable.side,sidesDelta{s});
         deltaUpdrs = deltaTable.delta(idxDelta);
-        hscat(p) = scatter(aucScore,deltaUpdrs,200,colorsSubs(p,:),'filled','MarkerFaceAlpha',0.8);
+        hscat(p) = scatter(aucScore,deltaUpdrs,50,colorsSubs(p,:),'filled','MarkerFaceAlpha',0.8);
         
         scores(cnt) = aucScore;
         updrs(cnt)  = deltaUpdrs;
@@ -352,7 +352,7 @@ yFit = polyval(coefficients , xFit);
 hold on;
 plot(xFit, yFit, 'Color',[0.5 0.5 0.5 0.2],'LineStyle','-.', 'LineWidth', 3);
 
-hLegend = legend(uniquPatients,'Location','northeastoutside');
+hLegend = legend(uniquPatients,'Location','northeast');
 hLegend.Box = 'off';
 xlabel('AUC'); 
 ylabel('Delta UPDRS off-on');
@@ -379,6 +379,16 @@ if ~plotpanels
     prfig.figtype             = '-dpdf';
     plot_hfig(hfig,prfig)
     % close(hfig);
+else
+    set(hsb,'FontSize',6);
+    prfig.plotwidth           = 2.55;
+    prfig.plotheight          = 1.96;
+    prfig.figdir              = figdirout;
+    prfig.figname             = 'Fig5_v2_AUC_and_updrs_v6_only_updrs_corr';
+    prfig.figtype             = '-dpdf';
+    plot_hfig(hfig,prfig)
+    % close(hfig);
+    
 end
 %%
 return 

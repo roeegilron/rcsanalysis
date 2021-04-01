@@ -87,8 +87,8 @@ hleg.Box = 'off';
 % save fig 
 if plotpanels
     savefig(hfig,fullfile(figdirout,sprintf('Fig%d_panelA_hours_recorded_at_home',fignum)));
-    prfig.plotwidth           = 5;
-    prfig.plotheight          = 2.5;
+    prfig.plotwidth           = 2.16;
+    prfig.plotheight          = 4.37;
     prfig.figdir             = figdirout;
     prfig.figname             = sprintf('Fig%d_panelA_hours_recorded_at_home',fignum);
     prfig.figtype             = '-dpdf';
@@ -441,8 +441,8 @@ for m = 1:length(medstate)
     
     errs = errs';
 
-
-    hsbH = shadedErrorBar(ff,mean(cohs),errs); 
+    yy = cohs;
+    hsbH = shadedErrorBar(ff,cohs,{@median,@(yy) std(yy)./sqrt(size(yy,1))});
     hsbH.mainLine.Color = colorsUse(m,:);
     hsbH.mainLine.LineWidth = 1;
     hsbH.edge(1).Color = [1 1 1];
@@ -534,9 +534,14 @@ title('STN-M1 coherence');
 if plotpanels
     % save fig
     savefig(hfig,fullfile(figdirout,sprintf('Fig%d_panelB_psd_coh_group',fignum)));
+    for i=1:length(hfig.Children)
+        if strcmp(hfig.Children(i).Type,'axes')
+            hfig.Children(i).FontSize = 6;
+        end
+    end
     
-    prfig.plotwidth           = 6;
-    prfig.plotheight          = 9;
+    prfig.plotwidth           = 2.16;
+    prfig.plotheight          = 4.37;
     prfig.figdir             = figdirout;
     prfig.figname             = sprintf('Fig%d_panelB_psd_coh_group',fignum);
     prfig.figtype             = '-dpdf';

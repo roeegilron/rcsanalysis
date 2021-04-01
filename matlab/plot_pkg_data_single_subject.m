@@ -2398,7 +2398,7 @@ end
              idxuse = strcmp(allstates,'off') | strcmp(allstates,'on');
              labelsRaw = allstates(idxuse);
              labels = zeros(size(labelsRaw,1),1);
-             labels(strcmp(labelsRaw,'on')) = 1;
+             labels(strcmp(labelsRaw,'on')) = 1;1
              % loop on areas
              alldat = [];
              for c = 1:length(cnls)

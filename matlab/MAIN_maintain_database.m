@@ -14,7 +14,7 @@ move_and_delete_folders(); % second call is to delete folders that are empty
 create_database_from_device_settings_files()
 
 %% print reports using the new device settings file method 
-print_report_from_device_settings_database_file_per_patient
+print_report_from_device_settings_database_file_per_patient()
 
 %% convert all .json files to .mat files
 convert_all_files_from_mat_into_json();

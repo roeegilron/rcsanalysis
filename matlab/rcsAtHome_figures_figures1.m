@@ -167,24 +167,80 @@ for i = 1:5
         ticklabels = {'0.00','0.25','0.50','0.75','1.00'};
         hsb.YTick = yticksuse;
         hsb.YTickLabel = ticklabels;
+        hsb.YLim = [yticksuse(1) yticksuse(end)];
     end
 end
-% axs = hfig.Children; 
-% for a = 1:length(axs)
-%     axs(a).Children(1).YData = axs(a).YLim; 
-%     axs(a).Children(2).YData = axs(a).YLim; 
-% end
+
+%% make a vector based and image based plot, the merge them. 
+%% start with vector based 
+
+%% HIDE ALL LINES aside from 13-30 lines - VECTOR ONLY 
+axs = hfig.Children; 
+for a = 1:length(axs)
+    idxturnoff = cellfun(@(x) size(x,2), {axs(a).Children.XData})' ==  2;
+    axxOff = axs(a).Children(idxturnoff);
+    for ll = 1:length(axxOff)
+            axxOff(ll).Visible = 'on';
+    end
+    
+    idxturnoff = cellfun(@(x) size(x,2), {axs(a).Children.XData})' >  3;
+    axxOff = axs(a).Children(idxturnoff);
+    for ll = 1:length(axxOff)
+            axxOff(ll).Visible = 'off';
+    end
+end
 
 hpanel.fontsize = 10; 
 hpanel.margintop = 15;
-
-
-
-
 hpanel.margin = [30 15 15 15];
-
+prfig.figdir             = figdirout;
+prfig.figtype             = '-dpdf';
 prfig.plotwidth           = 7.0;
 prfig.plotheight          = 8.5;
+
+prfig.figname             = sprintf('FigS1_raw_psd_data_p4_v6_VECTOR_ONLY');
+
+plot_hfig(hfig,prfig)
+
+%%
+%% HIDE ALL eveything else - just pring a jpeg to put under vector image 
+
+for a = 1:length(axs)
+    idxturnoff = cellfun(@(x) size(x,2), {axs(a).Children.XData})' ==  2;
+    axxOff = axs(a).Children(idxturnoff);
+    for ll = 1:length(axxOff)
+            axxOff(ll).Visible = 'off';
+    end
+    
+    idxturnoff = cellfun(@(x) size(x,2), {axs(a).Children.XData})' >  3;
+    axxOff = axs(a).Children(idxturnoff);
+    for ll = 1:length(axxOff)
+            axxOff(ll).Visible = 'on';
+    end
+    axs(a).XLabel.Visible = 'off';
+    axs(a).YLabel.Visible = 'off';
+    axs(a).Title.Visible = 'off';
+    axs(a).XTick = [];
+    axs(a).YTick = [];
+    axs(a).Box = 'off';
+    axs(a).XColor = [1 1 1];
+    axs(a).YColor = [1 1 1];
+end
+%%
+hpanel.fontsize = 10; 
+hpanel.margintop = 15;
+hpanel.margin = [30 15 15 15];
+prfig.figdir              = figdirout;
+prfig.resolution          = 600;
+prfig.figtype             = '-djpeg';
+prfig.plotwidth           = 7.0;
+prfig.plotheight          = 8.5;
+
+prfig.figname             = sprintf('FigS1_raw_psd_data_p4_v6_JPEG_ONLY');
+
+plot_hfig(hfig,prfig)
+%% 
+
 
 
 

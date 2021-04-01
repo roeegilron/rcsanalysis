@@ -515,7 +515,6 @@ for dd = 1:length(psdrFiles)
             savefn = sprintf('coherence_ %s pkg %s.mat',patient{dd},pkgSideUse);
             fnmsave = fullfile(resultsdir,savefn);
             save(fnmsave,'allDataPkgRcsAccCoh','cohResults','idxkeepcoherence');
-
         else
             for i = 1:size(allDataPkgRcsAcc.timeStart,2) % this is looping on rcs data structure
                 minTime = allDataPkgRcsAcc.timeStart(i) - minutes(5);

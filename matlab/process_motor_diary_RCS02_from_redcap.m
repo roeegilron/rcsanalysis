@@ -1,8 +1,8 @@
 function process_motor_diary_RCS02_from_redcap() 
 %% load data 
 datafn = '/Users/roee/Box/rcs paper paper on first five bilateral implants/revision for nature biotechnology/figures/Fig7.1_new_adaptive/RCS02-MotorDiaryExportWear_DATA_2020-08-14_1059.csv';
+datafn = '/Users/roee/Downloads/RCS02_MD_OL_v_CL.csv';
 dataRaw = readtable(datafn); 
-dataRaw = dataRaw(end-1:end,:);
 rawFieldNames = fieldnames(dataRaw);
 idxDate = cellfun(@(x) any(strfind(x,'date_day')),rawFieldNames);
 idxState = cellfun(@(x) any(strfind(x,'state')),rawFieldNames);

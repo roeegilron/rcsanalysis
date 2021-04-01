@@ -1,12 +1,15 @@
 function anaylze_ipad_data_PARRM()
+%%
 clear all;
 close all;
-load('/Users/roee/Box/movement_task_data_at_home/results/masterTableUsePARRM.mat');
-load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
+% load('/Users/roee/Box/movement_task_data_at_home/results/masterTableUsePARRM.mat');
+% load('/Users/roee/Box/movement_task_data_at_home/results/parrm_no_parrm_figures/masterTableUseAllFilters.mat');
+load('/Users/roee/Box/movement_task_data_at_home/results/newPARRMData.mat');
 figdir = '/Users/roee/Box/movement_task_data_at_home/figures';
 resdir = '/Users/roee/Box/movement_task_data_at_home/results'; % laptop
 
-tuse = masterTableUse;
+% tuse = masterTableUse;
+tuse = newData;
 % tuse = masterTableUse(logical(masterTableUse.stimulation_on),:);
 
 %%
@@ -41,6 +44,7 @@ addpath(pathadd);
 % end
 
 typesOfAnalysis = {'rcsHampelData','rcsNotchData','rcsMatchData','rcsPARRMData','rcsRawData'};
+typesOfAnalysis = {'rcsPARRMData'};
 % typesOfAnalysis = {'rcsPARRMData','rcsHampelData','rcsNotchData','rcsMatchData'};
 for ttt = 1:length(typesOfAnalysis)
     for m = 1:size(tuse,1)
@@ -104,7 +108,7 @@ for ttt = 1:length(typesOfAnalysis)
         largeTitle{4,1} = sprintf('%s - %s', timeStart,timeEnd);
         largeTitle{5,1} = sprintf('%s', typesOfAnalysis{ttt});
         sgtitle(largeTitle);
-        fnmsv = sprintf('%s_%s-brain-%s-hand_%s___%s____%d-%0.2d-%0.2d__%0.2d-%0.2d_%s',...
+        fnmsv = sprintf('%s_%s-brain-%s-hand_%s___%s____%d-%0.2d-%0.2d__%0.2d-%0.2d_%s_newPARRM',...
             patient,brainSideChoose,handUsed,...
             handBrainRelation,...
             timeparams.analysis,...

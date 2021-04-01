@@ -323,7 +323,7 @@ for e = 1:length(events)
     cac1 = regexp( str, xpr );
     
     
-    xpr = ['LdDetectionEntry.PreviousDetectionState = '];
+    xpr = ['LdDetectionEntry.x = '];
     cac2 = regexp( str, xpr );
 
     tempstr = str(cac1:cac2);
