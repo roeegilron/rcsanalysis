@@ -700,8 +700,47 @@ try
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_4.7_c1');
 end
 %%
+%% RCS14 L
+try
+    % before stim
+    outputfolder = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS14');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan1,'+1-0 lpf1-450Hz lpf2-1700Hz sr-500Hz');
+    idxstim      = dbUse.stimulation_on == 0;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+    
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxTdIsStrm & idxAccIsStrm & idxScbsUsed;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+    
+    % during stim  - % no data with this configuration need to move files
+    % over and reindex 
+    outputfolder = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data';
+    idxpat       = strcmp(dbUse.patient,'RCS14');
+    idxside      = strcmp(dbUse.side,'L');
+    idxsense     = strcmp(dbUse.chan2,'+3-1 lpf1-100Hz lpf2-100Hz sr-250Hz');
+    idxstim      = dbUse.stimulation_on == 1;
+    idxElec      = strcmp(dbUse.electrodes,'+2 -c ');
+    idxstimRate  = dbUse.rate_Hz == 149.30;
+    idxstimLev   = dbUse.amplitude_mA >= 4.6;
+    idxTdIsStrm  = dbUse.timeDomainStreaming == 1;
+    idxAccIsStrm = dbUse.accelerometryStreaming == 1;
+    idxScbsUsed  = dbUse.recordedWithScbs == 1;
+    
+    idxconcat = idxpat & idxside & idxsense & idxstim & idxstimLev & idxTdIsStrm & idxAccIsStrm & idxstimRate & idxScbsUsed & idxElec;
+    patDBtoConcat = dbUse(idxconcat,:);
+    sum(patDBtoConcat.duration)
+    concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_4.6_c2');
 end
 
+
+end
+
+if GETDT
 %% RCS04 L
 try
     % before stim
@@ -718,6 +757,8 @@ try
     patDBtoConcat = dbUse(idxconcat,:);
     sum(patDBtoConcat.duration)
     concatenate_and_plot_TD_data_from_database_table(patDBtoConcat,outputfolder,'stim_off');
+end
+
 end
 
 

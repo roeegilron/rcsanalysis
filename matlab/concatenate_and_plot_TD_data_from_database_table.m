@@ -332,6 +332,8 @@ switch patient
         areaname = 'gpi';
     case 'RCS10'
         areaname = 'gpi';
+    case 'RCS14'
+        areaname = 'gpi';
 end
 
 startall = tic;

@@ -3,7 +3,7 @@ function plot_subject_specific_data_psd_coherence_home_data_raw()
 
 rootdir = '/Users/juananso/Starr Lab Dropbox/RC+S Patient Un-Synced Data/database/processed_data/';
 figdirout = fullfile(rootdir,'figures');
-ff = findFilesBVQX(rootdir,'RCS09_L*psdAndCoherence*.mat');
+ff = findFilesBVQX(rootdir,'RCS14_L*psdAndCoherence*.mat');
 params.plotpsds = 1;
 
 ff
