@@ -73,7 +73,7 @@ if params.resaveData
                     logtime = patTable.timeStart(ss);
                     logtime.Format = 'dd-MMM-uuuu--HH-mm';
                     
-                    fnuse = sprintf('%s%s_%s.mat',patTable.patient{s},patTable.side{s}, logtime);
+                    fnuse = sprintf('%s%s_%s.mat',patTable.patient{ss},patTable.side{ss}, logtime);
                     fnsave = fullfile(logDir,fnuse);
                     
                     if exist(fnsave,'file')
@@ -188,15 +188,42 @@ end
 allDaysLog = dateshift(adaptiveLogBothSides.time,'start','day');
 allDaysDet = dateshift(adaptiveDetectionEventsBothSides.time,'start','day');
 unqDays = unique(allDaysLog);
+% only choose unique days within the last 5 days 
+idxdayschoose = unqDays >= (datetime - days(5)) & unqDays <= datetime;
+unqDays = unqDays(idxdayschoose); 
 for d = 1:length(unqDays)
     idxuseLog = allDaysLog == unqDays(d);
     idxuseDet = allDaysDet == unqDays(d);
     if sum(idxuse) > 0 % data exists
         adaptiveTableDayLog = adaptiveLogBothSides(idxuseLog,:);
         adaptiveTableDayDet = adaptiveDetectionEventsBothSides(idxuseDet,:);
-        plot_adaptive_day_both_sides(adaptiveTableDayLog,adaptiveTableDayDet);
+        [hfig, hpanel] = plot_adaptive_day_both_sides(adaptiveTableDayLog,adaptiveTableDayDet);
+        % plot adaptive for each day
+        datesave = sprintf('%d_%0.2d_%0.2d',year(unqDays(d)),month(unqDays(d)),day(unqDays(d)));
+        fnsave = sprintf('%s_%s%s_adaptive_day_both_sides',datesave,patTable.patient{1});
+        figdiruse = fullfile(figdir,patTable.patient{1});
+        if ~exist(figdiruse)
+            mkdir(figdiruse);
+        end
+        if ~exist(fullfile(figdiruse,fnsave),'file') % check if this has been plotted already
+            % plot
+            hpanel.margintop = 20;
+            hpanel.fontsize = 8;
+            hpanel.de.margin = 25;
+
+            prfig.plotwidth           = 10*1.6;
+            prfig.plotheight          = 6*1.6;
+            prfig.figdir              = figdiruse;
+            prfig.figname             = fnsave;
+            prfig.figtype             = '-djpeg';
+            plot_hfig(hfig,prfig)
+            close(hfig);
+        end
+
     end
 end
+
+return 
 
 %% plot daily states and group changes - per side ( seperately 
 for ff = 1:length(adaptiveLogFilenames)
@@ -486,14 +513,14 @@ end
 
 function plot_day_current_from_log(dayPlot,patTable,weightedMean,hsb)
 axes(hsb);
-hPlt = plot(hsb,datenum(dayPlot.time),dayPlot.current,'LineWidth',1,'Color',[0 0 0.8 0.5]);
+hPlt = plot(hsb,datenum(dayPlot.time),dayPlot.current,'LineWidth',2,'Color',[0 0 0.8 0.5]);
 xlabel(hsb,'time');
 ylabel(hsb,'current');
 hsb = hsb;
 ylims = hsb.YLim;
 hsb.YLim(1) = hsb.YLim(1)*0.9;
 hsb.YLim(2) = hsb.YLim(2)*1.1;
-ttluse{1,1} = sprintf('%s %s',patTable.patient{1},patTable.side{1});
+ttluse{1,1} = sprintf('%s %s',dayPlot.patient{1},dayPlot.side{1});
 [~,dayRec] = weekday(dayPlot.time(1));
 ttluse{1,2} = sprintf('(%s) %d/%d/%d (%.2fmA = avg current)',dayRec,month(dayPlot.time(1)),day(dayPlot.time(1)),year(dayPlot.time(1)),weightedMean);
 
@@ -518,14 +545,14 @@ end
 
 function plot_state_current_from_log(dayPlot,patTable,weightedMean,hsb)
 axes(hsb);
-hPlt = plot(hsb,datenum(dayPlot.time),dayPlot.state,'LineWidth',1,'Color',[0 0 0.8 0.5]);
+hPlt = plot(hsb,datenum(dayPlot.time),dayPlot.state,'LineWidth',2,'Color',[0.5 0.5 0 0.5]);
 xlabel(hsb,'time');
 ylabel(hsb,'state');
 hsb = hsb;
 ylims = hsb.YLim;
 hsb.YLim(1) = hsb.YLim(1)*0.9;
 hsb.YLim(2) = hsb.YLim(2)*1.1;
-ttluse{1,1} = sprintf('%s %s',patTable.patient{1},patTable.side{1});
+ttluse{1,1} = sprintf('%s %s',dayPlot.patient{1},dayPlot.side{1});
 ttluse{1,2} = sprintf('%d/%d/%d (%.2fmA = avg current)',month(dayPlot.time(1)),day(dayPlot.time(1)),year(dayPlot.time(1)),weightedMean);
 
 title(ttluse);
@@ -656,75 +683,98 @@ end
 end
 
 
-function plot_adaptive_day_both_sides(aPlot,adaptiveTableDayDet)
-if ~isempty(aPlot)
-    aPlot = sortrows(aPlot,'time');
-    dayPlot = table();
-    dCnt = 1;
-    for i = 1:size(aPlot,1)
-        if i == 1
-            dayPlot.time(dCnt) = aPlot.time(i);
-            dayPlot.current(dCnt) = aPlot.prog0(i);
-            dayPlot.state(dCnt)   = aPlot.newstate(i);
-            dCnt = dCnt + 1;
-        else
-            if aPlot.prog0(i) == 500%aPlot.prog0(i-1)
+function [hfig, hpanel] = plot_adaptive_day_both_sides(aPlotBoth,adaptiveTableDayDet)
+unqsides = unique(aPlotBoth.side);
+
+
+
+for s = 1:length(unqsides)
+    idxuse = unqsides(s) == aPlotBoth.side;
+    aPlot = aPlotBoth(idxuse,:);
+    if ~isempty(aPlot)
+        aPlot = sortrows(aPlot,'time');
+        dayPlot = table();
+        dCnt = 1;
+        for i = 1:size(aPlot,1)
+            if i == 1
+                dayPlot.patient{dCnt} = aPlot.patient(i,:);
+                dayPlot.side{dCnt}    =  aPlot.side(i,:);
+                
                 dayPlot.time(dCnt) = aPlot.time(i);
                 dayPlot.current(dCnt) = aPlot.prog0(i);
                 dayPlot.state(dCnt)   = aPlot.newstate(i);
                 dCnt = dCnt + 1;
             else
-                dayPlot.time(dCnt) = aPlot.time(i);
-                dayPlot.current(dCnt) = aPlot.prog0(i-1);
-                dayPlot.state(dCnt)   = aPlot.newstate(i-1);
-                dCnt = dCnt + 1;
-                dayPlot.time(dCnt) = aPlot.time(i);
-                dayPlot.current(dCnt) = aPlot.prog0(i);
-                dayPlot.state(dCnt)   = aPlot.newstate(i);
-                dCnt = dCnt + 1;
+                if aPlot.prog0(i) == 500%aPlot.prog0(i-1)
+                    dayPlot.patient{dCnt} = aPlot.patient(i,:);
+                    dayPlot.side{dCnt}    =  aPlot.side(i,:);
+                    
+                    dayPlot.time(dCnt) = aPlot.time(i);
+                    dayPlot.current(dCnt) = aPlot.prog0(i);
+                    dayPlot.state(dCnt)   = aPlot.newstate(i);
+                    dCnt = dCnt + 1;
+                else
+                    dayPlot.patient{dCnt} = aPlot.patient(i,:);
+                    dayPlot.side{dCnt}    =  aPlot.side(i,:);
+                    dayPlot.time(dCnt) = aPlot.time(i);
+                    dayPlot.current(dCnt) = aPlot.prog0(i-1);
+                    dayPlot.state(dCnt)   = aPlot.newstate(i-1);
+                    dCnt = dCnt + 1;
+                    
+                    dayPlot.patient{dCnt} = aPlot.patient(i,:);
+                    dayPlot.side{dCnt}    =  aPlot.side(i,:);
+                    dayPlot.time(dCnt) = aPlot.time(i);
+                    dayPlot.current(dCnt) = aPlot.prog0(i);
+                    dayPlot.state(dCnt)   = aPlot.newstate(i);
+                    dCnt = dCnt + 1;
+                end
             end
         end
+        outData(s).dayPlot = dayPlot;
+        outData(s).side = unqsides(s);
+        outData(s).patient = dayPlot.patient{1};
     end
 end
-
 %% plot
+addpath(genpath(fullfile(pwd,'toolboxes','panel-2.14')));
 hfig = figure;
 hfig.Color = 'w';
 hpanel = panel();
-hpanel.pack('v',{0.4 0.3 0.2});
-
-% plot current
-hsb = hpanel(1).select(); % current
-plot_day_current_from_log(dayPlot,patTable,weightedMean,hsb)
-hsb = hpanel(2).select(); % state
-plot_state_current_from_log(dayPlot,patTable,weightedMean,hsb)
-hsb = hpanel(3).select(); % motor diary - if exists try to find and plot
-dataExists = plot_motor_diary_forday_log(dayPlot,patTable,weightedMean,hsb);
-% try to find motor diary data if it exisxts
-
+hpanel.pack('v',{0.2 0.2 0.2 0.2});
 % format this a bit better
 hsb = gobjects();
-for i = 1:3
+for i = 1:4
     hsb(i,1) = hpanel(i).select();
 end
 
 
-% formaking
-if dataExists
-    endIdx = 3;
-    linkaxes(hsb,'x')
-else
-    endIdx = 2;
-    linkaxes(hsb(1:endIdx),'x')
+cntplt = 1;
+for s = 1:length(outData)    
+    % plot current
+    hsbUse = hsb(cntplt,1); cntplt = cntplt + 1; 
+    plot_day_current_from_log(outData(s).dayPlot,outData(s).dayPlot,0.0,hsbUse)
+    % plot state 
+    hsbUse = hsb(cntplt,1); cntplt = cntplt + 1; 
+    plot_state_current_from_log(outData(s).dayPlot,outData(s).dayPlot,0.0,hsbUse)
 end
 
-for i = 1:endIdx-1
-    hsb(i,1).XTick = [];
-    hsb(i,1).XTickLabels = '';
-    hsb(i,1).XLabel.String = '';
+for i = 1:4
+    hax = hsb(i,1);
+    timeStart = dateshift(datetime(datevec(hax.XLim(1))) ,'start','hour');
+    timeEnd   = dateshift(datetime(datevec(hax.XLim(2))) ,'end','hour');
+    xticks = datenum(timeStart : minutes(30) : timeEnd);
+    hax.XTick = xticks;
+    datetick(hax,'x',15,'keeplimits','keepticks');
+    grid(hax,'on');
+    hax.GridAlpha = 0.4;
+    hax.Layer = 'top';
+    hax.XTickLabelRotation = 45;
+
 end
+
+linkaxes(hsb,'x');
 hpanel.margintop = 20;
-hpanel.de.margin = 12;
+hpanel.de.margin = 25;
 
 
 end
